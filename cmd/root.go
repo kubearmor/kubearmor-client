@@ -1,11 +1,25 @@
 package cmd
 
 import (
+	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 )
+
+var k8sClient *kubernetes.Clientset
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+
+		//Initialise k8sClient for all child commands to inherit
+		k8sClient, err = k8s.ConnectK8sClient()
+		if err != nil {
+			log.Error().Msgf("unable to create Kubernetes client: %w", err.Error())
+		}
+	},
 	Use:   "kubearmor",
 	Short: "A CLI Utility to help manage KubeArmor",
 	Long: `CLI Utility to help manage KubeArmor
