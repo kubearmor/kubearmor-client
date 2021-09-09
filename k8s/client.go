@@ -9,10 +9,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
+	client "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/client/clientset/versioned/typed/security.kubearmor.com/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to auth with cloud providers
 )
 
-func ConnectK8sClient() (*kubernetes.Clientset, error) {
+func ConnectK8sClient() (*kubernetes.Clientset, *client.SecurityV1Client, error) {
 	var kubeconfig *string
 	homeDir := ""
 	if h := os.Getenv("HOME"); h != "" {
@@ -31,15 +32,21 @@ func ConnectK8sClient() (*kubernetes.Clientset, error) {
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 
-	return clientset, nil
+	ctrlClient, err := client.NewForConfig(config)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return clientset, nil, err
+	}
+
+	return clientset, ctrlClient, nil
 }

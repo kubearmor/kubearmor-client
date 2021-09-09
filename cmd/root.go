@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/client/clientset/versioned/typed/security.kubearmor.com/v1"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -8,6 +9,7 @@ import (
 )
 
 var k8sClient *kubernetes.Clientset
+var crdClient *ksp.SecurityV1Client
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -15,9 +17,9 @@ var rootCmd = &cobra.Command{
 		var err error
 
 		//Initialise k8sClient for all child commands to inherit
-		k8sClient, err = k8s.ConnectK8sClient()
+		k8sClient, crdClient, err = k8s.ConnectK8sClient()
 		if err != nil {
-			log.Error().Msgf("unable to create Kubernetes client: %w", err.Error())
+			log.Error().Msgf("unable to create Kubernetes clients: %w", err.Error())
 		}
 	},
 	Use:   "kubearmor",
