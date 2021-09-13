@@ -11,6 +11,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
 	k8s.io/apimachinery v0.22.1
+	k8s.io/cli-runtime v0.22.1
 	k8s.io/client-go v0.22.1
 	k8s.io/utils v0.0.0-20210802155522-efc7438f0176 // indirect
 )

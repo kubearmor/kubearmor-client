@@ -13,7 +13,7 @@ var getCmd = &cobra.Command{
 	Short: "Display specified resources",
 	Long:  `Display specified resources`,
 	Run: func(cmd *cobra.Command, args []string) {
-		get.Resources(crdClient, options)
+		get.Resources(client, options)
 	},
 }
 

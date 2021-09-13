@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	kspClient "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/client/clientset/versioned/typed/security.kubearmor.com/v1"
+	"github.com/kubearmor/kubearmor-client/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -12,8 +12,8 @@ type Options struct {
 	Namespace string
 }
 
-func Resources(c *kspClient.SecurityV1Client, o Options) {
-	kspInterface := c.KubeArmorPolicies(o.Namespace)
+func Resources(c *k8s.Client, o Options) {
+	kspInterface := c.KSPClientset.KubeArmorPolicies(o.Namespace)
 	policies, err := kspInterface.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("error %v", err)
