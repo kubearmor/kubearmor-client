@@ -12,11 +12,11 @@ type Options struct {
 	Namespace string
 }
 
-func Resources(c *k8s.Client, o Options) {
+func Resources(c *k8s.Client, o Options) error {
 	kspInterface := c.KSPClientset.KubeArmorPolicies(o.Namespace)
 	policies, err := kspInterface.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		fmt.Printf("error %v", err)
+		return err
 	}
 	if len(policies.Items) > 0 {
 		fmt.Printf("Resources found in %s namespace: \n", o.Namespace)
@@ -26,4 +26,5 @@ func Resources(c *k8s.Client, o Options) {
 	} else {
 		fmt.Printf("No Resource found in %s namespace", o.Namespace)
 	}
+	return nil
 }

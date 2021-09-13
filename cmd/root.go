@@ -30,6 +30,7 @@ KubeArmor is a container-aware runtime security enforcement system that
 restricts the behavior (such as process execution, file access, and networking
 operation) of containers at the system level.
 	`,
+	SilenceUsage: true,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

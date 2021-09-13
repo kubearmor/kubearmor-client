@@ -12,13 +12,15 @@ var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Display specified resources",
 	Long:  `Display specified resources`,
-	Run: func(cmd *cobra.Command, args []string) {
-		get.Resources(client, options)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := get.Resources(client, options); err != nil {
+			return err
+		}
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(getCmd)
-	getCmd.Flags().StringVarP(&options.Namespace, "all-namespaces", "A", "all", "Namespace for resources")
-	getCmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "default", "Namespace for resources")
+	getCmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace for resources")
 }
