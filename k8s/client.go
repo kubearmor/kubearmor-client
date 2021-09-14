@@ -7,11 +7,13 @@ import (
 
 	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/client/clientset/versioned/typed/security.kubearmor.com/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to auth with cloud providers
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Client struct {
 	K8sClientset kubernetes.Interface
 	KSPClientset ksp.SecurityV1Interface
+	RawConfig    clientcmdapi.Config
 }
 
 func ConnectK8sClient() (*Client, error) {
@@ -25,6 +27,11 @@ func ConnectK8sClient() (*Client, error) {
 	rawKubeConfigLoader := restClientGetter.ToRawKubeConfigLoader()
 
 	config, err := rawKubeConfigLoader.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	rawConfig, err := rawKubeConfigLoader.RawConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -44,5 +51,6 @@ func ConnectK8sClient() (*Client, error) {
 	return &Client{
 		K8sClientset: clientset,
 		KSPClientset: kspClientset,
+		RawConfig:    rawConfig,
 	}, nil
 }
