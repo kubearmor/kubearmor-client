@@ -17,7 +17,7 @@ import (
 func K8sInstaller(c *k8s.Client) error {
 	env := autoDetectEnvironment(c)
 	if env == "none" {
-		return errors.New("unsupported environment")
+		return errors.New("unsupported environment or cluster not configured correctly")
 	}
 	fmt.Printf("Auto Detected Environment : %s\n", env)
 	fmt.Print("Service Account ...\n")
@@ -154,17 +154,21 @@ func K8sUninstaller(c *k8s.Client) error {
 }
 
 func autoDetectEnvironment(c *k8s.Client) (name string) {
-	clusterContext := c.RawConfig.CurrentContext
-	clusterName := c.RawConfig.Contexts[clusterContext].Cluster
-	var env string
+	var env = "none"
+	contextName := c.RawConfig.CurrentContext
+	clusterContext, exists := c.RawConfig.Contexts[contextName]
+	if !exists {
+		return env
+	}
+	clusterName := clusterContext.Cluster
 
 	// Detecting Environment based on cluster name and context
-	if clusterName == "minikube" || clusterContext == "minikube" {
+	if clusterName == "minikube" || contextName == "minikube" {
 		env = "minikube"
 		return env
 	}
 
-	if strings.HasPrefix(clusterName, "microk8s-") || clusterContext == "microk8s" {
+	if strings.HasPrefix(clusterName, "microk8s-") || contextName == "microk8s" {
 		env = "microk8s"
 		return env
 	}
@@ -190,6 +194,5 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		env = "generic"
 		return env
 	}
-	env = "none"
 	return env
 }
