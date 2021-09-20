@@ -412,10 +412,10 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 			ReadOnly:  true,
 		})
 		volumes = append(volumes, corev1.Volume{
-			Name: "containerd-sock-path ",
+			Name: "containerd-sock-path",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/run/containerd/containerd.sock",
+					Path: "/var/snap/microk8s/common/run/containerd.sock",
 					Type: &hostPathSocket,
 				},
 			},
@@ -427,7 +427,7 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 			ReadOnly:  true,
 		})
 		volumes = append(volumes, corev1.Volume{
-			Name: "containerd-sock-path ",
+			Name: "containerd-sock-path",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: "/var/run/containerd/containerd.sock",
