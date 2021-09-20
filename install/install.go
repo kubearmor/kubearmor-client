@@ -19,6 +19,7 @@ func K8sInstaller(c *k8s.Client) error {
 	if env == "none" {
 		return errors.New("unsupported environment")
 	}
+	fmt.Printf("Auto Detected Environment : %s\n", env)
 	fmt.Print("Service Account ...\n")
 	if _, err := c.K8sClientset.CoreV1().ServiceAccounts("kube-system").Create(context.Background(), serviceAccount, metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
