@@ -12,10 +12,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var version string
+var GitSummary string
+var BuildDate string
 
 func PrintVersion(c *k8s.Client) error {
-	fmt.Printf("karmor version %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("karmor version %s %s/%s BuildDate=%s\n", GitSummary, runtime.GOOS, runtime.GOARCH, BuildDate)
 	kubearmorVersion, err := getKubeArmorVersion(c)
 	if err != nil {
 		return nil
