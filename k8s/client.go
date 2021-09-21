@@ -5,6 +5,7 @@ package k8s
 
 import (
 	"github.com/rs/zerolog/log"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 
@@ -14,9 +15,10 @@ import (
 )
 
 type Client struct {
-	K8sClientset kubernetes.Interface
-	KSPClientset ksp.SecurityV1Interface
-	RawConfig    clientcmdapi.Config
+	K8sClientset    kubernetes.Interface
+	KSPClientset    ksp.SecurityV1Interface
+	APIextClientset apiextensionsclientset.Interface
+	RawConfig       clientcmdapi.Config
 }
 
 func ConnectK8sClient() (*Client, error) {
@@ -51,9 +53,16 @@ func ConnectK8sClient() (*Client, error) {
 		return nil, err
 	}
 
+	extClientset, err := apiextensionsclientset.NewForConfig(config)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return nil, err
+	}
+
 	return &Client{
-		K8sClientset: clientset,
-		KSPClientset: kspClientset,
-		RawConfig:    rawConfig,
+		K8sClientset:    clientset,
+		KSPClientset:    kspClientset,
+		APIextClientset: extClientset,
+		RawConfig:       rawConfig,
 	}, nil
 }

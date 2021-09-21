@@ -20,6 +20,20 @@ func K8sInstaller(c *k8s.Client) error {
 		return errors.New("unsupported environment or cluster not configured correctly")
 	}
 	fmt.Printf("Auto Detected Environment : %s\n", env)
+	fmt.Printf("CRD %s ...\n", kspName)
+	if _, err := CreateCustomResourceDefinition(c, kspName); err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return err
+		}
+		fmt.Printf("CRD %s already exists ...\n", kspName)
+	}
+	fmt.Printf("CRD %s ...\n", hspName)
+	if _, err := CreateCustomResourceDefinition(c, hspName); err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return err
+		}
+		fmt.Printf("CRD %s already exists ...\n", hspName)
+	}
 	fmt.Print("Service Account ...\n")
 	if _, err := c.K8sClientset.CoreV1().ServiceAccounts("kube-system").Create(context.Background(), serviceAccount, metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
@@ -149,6 +163,20 @@ func K8sUninstaller(c *k8s.Client) error {
 			return err
 		}
 		fmt.Print("KubeArmor Host Policy Manager Deployment not found ...\n")
+	}
+	fmt.Printf("CRD %s ...\n", kspName)
+	if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		fmt.Printf("CRD %s not found ...\n", kspName)
+	}
+	fmt.Printf("CRD %s ...\n", hspName)
+	if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		fmt.Printf("CRD %s not found ...\n", hspName)
 	}
 	return nil
 }
