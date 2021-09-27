@@ -1,0 +1,14 @@
+project_name: karmor
+
+builds:
+  - binary: karmor
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags: -w -s -X github.com/kubearmor/kubearmor-client/version.BuildDate={{.Date}} -X github.com/kubearmor/kubearmor-client/version.GitSummary={{.Version}}
+    env:
+      - CGO_ENABLED=0
