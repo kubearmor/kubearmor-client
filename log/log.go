@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/kubearmor/kubearmor-log-client/core"
+	"github.com/rs/zerolog/log"
 )
 
 type Options struct {
@@ -83,20 +84,36 @@ func StartObserver(o Options) error {
 
 	if o.MsgPath != "none" {
 		// watch messages
-		go logClient.WatchMessages(o.MsgPath, o.JSON)
+		go func() {
+			err := logClient.WatchMessages(o.MsgPath, o.JSON)
+			if err != nil {
+				log.Error().Msg(err.Error())
+			}
+		}()
 		fmt.Println("Started to watch messages")
 	}
 
 	if o.LogPath != "none" {
 		if o.LogFilter == "all" || o.LogFilter == "policy" {
 			// watch alerts
-			go logClient.WatchAlerts(o.LogPath, o.JSON)
+			go func() {
+				err := logClient.WatchAlerts(o.LogPath, o.JSON)
+				if err != nil {
+					log.Error().Msg(err.Error())
+				}
+			}()
+
 			fmt.Println("Started to watch alerts")
 		}
 
 		if o.LogFilter == "all" || o.LogFilter == "system" {
 			// watch logs
-			go logClient.WatchLogs(o.LogPath, o.JSON)
+			go func() {
+				err := logClient.WatchLogs(o.LogPath, o.JSON)
+				if err != nil {
+					log.Error().Msg(err.Error())
+				}
+			}()
 			fmt.Println("Started to watch logs")
 		}
 	}
