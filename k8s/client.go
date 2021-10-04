@@ -8,22 +8,30 @@ import (
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 
+	kspAPI "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/client/clientset/versioned/typed/security.kubearmor.com/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to auth with cloud providers
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+// Client Structure
 type Client struct {
 	K8sClientset    kubernetes.Interface
 	KSPClientset    ksp.SecurityV1Interface
 	APIextClientset apiextensionsclientset.Interface
 	RawConfig       clientcmdapi.Config
+	Config          *rest.Config
 }
 
+// ConnectK8sClient Function
 func ConnectK8sClient() (*Client, error) {
 	var kubeconfig string
 	var contextName string
+
+	_ = kspAPI.AddToScheme(scheme.Scheme)
 
 	restClientGetter := genericclioptions.ConfigFlags{
 		Context:    &contextName,
@@ -64,5 +72,6 @@ func ConnectK8sClient() (*Client, error) {
 		KSPClientset:    kspClientset,
 		APIextClientset: extClientset,
 		RawConfig:       rawConfig,
+		Config:          config,
 	}, nil
 }

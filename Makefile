@@ -1,25 +1,32 @@
-CURDIR=$(shell pwd)
-INSTALLDIR=$(shell go env GOPATH)/bin/
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2021 Authors of KubeArmor
 
-ifeq (,$(shell which govvv))
-$(shell go install github.com/ahmetb/govvv@latest)
+CURDIR     := $(shell pwd)
+INSTALLDIR := $(shell go env GOPATH)/bin/
+
+ifeq (, $(shell which govvv))
+$(shell go get github.com/ahmetb/govvv@latest)
 endif
 
-PKG := $(shell go list ./version)
+PKG      := $(shell go list ./version)
 GIT_INFO := $(shell govvv -flags -pkg $(PKG))
 
 .PHONY: build
 build:
-	cd $(CURDIR)
-	go mod tidy
-	CGO_ENABLED=0 go build \
-	-ldflags "-w -s ${GIT_INFO}" \
-	-o karmor
+	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "-w -s ${GIT_INFO}" -o karmor
 
 .PHONY: install
 install: build
 	install -m 0755 karmor $(DESTDIR)$(INSTALLDIR)
-	
+
+.PHONY: clean
+clean:
+	cd $(CURDIR); rm -f karmor
+
+.PHONY: protobuf
+vm-protobuf:
+	cd $(CURDIR)/vm/protobuf; protoc --proto_path=. --go_opt=paths=source_relative --go_out=plugins=grpc:. vm.proto
+
 .PHONY: gofmt
 gofmt:
 	cd $(CURDIR); gofmt -s -d $(shell find . -type f -name '*.go' -print)
