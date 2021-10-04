@@ -3,9 +3,11 @@ package sysdump
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
@@ -55,6 +57,32 @@ func Collect(c *k8s.Client) error {
 		}
 		if err := writeYaml("ksp.yaml", v); err != nil {
 			return err
+		}
+	}
+
+	// KubeArmor Logs
+	{
+		pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+			LabelSelector: "kubearmor-app=kubearmor",
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, p := range pods.Items {
+			v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
+			s, err := v.Stream(context.Background())
+			if err != nil {
+				return err
+			}
+			defer s.Close()
+			var b bytes.Buffer
+			if _, err = io.Copy(&b, s); err != nil {
+				return err
+			}
+			if err := writeToFile("ka-pod-"+p.Name+"-log.txt", b.String()); err != nil {
+				return err
+			}
 		}
 	}
 
