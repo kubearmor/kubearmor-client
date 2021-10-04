@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 		client, err = k8s.ConnectK8sClient()
 		// fmt.Printf("%v", client.K8sClientset)
 		if err != nil {
-			log.Error().Msgf("unable to create Kubernetes clients: %w", err.Error())
+			log.Error().Msgf("unable to create Kubernetes clients: %s", err.Error())
 			return err
 		}
 		return nil
