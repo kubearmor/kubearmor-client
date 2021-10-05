@@ -3,8 +3,10 @@ package sysdump
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"path"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
 	corev1 "k8s.io/api/core/v1"
@@ -12,9 +14,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/mholt/archiver/v3"
 )
 
 func Collect(c *k8s.Client) error {
+
+	d, err := os.MkdirTemp("", "karmor-sysdump")
+	if err != nil {
+		return err
+	}
 
 	// k8s Server Version
 	{
@@ -22,7 +31,7 @@ func Collect(c *k8s.Client) error {
 		if err != nil {
 			return err
 		}
-		if err := writeToFile("version.txt", v.String()); err != nil {
+		if err := writeToFile(path.Join(d, "version.txt"), v.String()); err != nil {
 			return err
 		}
 	}
@@ -33,7 +42,7 @@ func Collect(c *k8s.Client) error {
 		if err != nil {
 			return err
 		}
-		if err := writeYaml("node-info.yaml", v); err != nil {
+		if err := writeYaml(path.Join(d, "node-info.yaml"), v); err != nil {
 			return err
 		}
 	}
@@ -44,7 +53,7 @@ func Collect(c *k8s.Client) error {
 		if err != nil {
 			return err
 		}
-		if err := writeYaml("kubearmor-daemonset.yaml", v); err != nil {
+		if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
 			return err
 		}
 	}
@@ -55,7 +64,7 @@ func Collect(c *k8s.Client) error {
 		if err != nil {
 			return err
 		}
-		if err := writeYaml("ksp.yaml", v); err != nil {
+		if err := writeYaml(path.Join(d, "ksp.yaml"), v); err != nil {
 			return err
 		}
 	}
@@ -80,10 +89,18 @@ func Collect(c *k8s.Client) error {
 			if _, err = io.Copy(&b, s); err != nil {
 				return err
 			}
-			if err := writeToFile("ka-pod-"+p.Name+"-log.txt", b.String()); err != nil {
+			if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), b.String()); err != nil {
 				return err
 			}
 		}
+	}
+
+	if err := archiver.Archive([]string{d}, "karmor-sysdump.zip"); err != nil {
+		return fmt.Errorf("failed to create zip file: %w", err)
+	}
+
+	if err := os.RemoveAll(d); err != nil {
+		return err
 	}
 
 	return nil
