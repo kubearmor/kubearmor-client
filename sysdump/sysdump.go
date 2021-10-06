@@ -147,13 +147,18 @@ func Collect(c *k8s.Client) error {
 	// 		return err
 	// 	}
 	// }
-	if err := archiver.Archive([]string{d}, "karmor-sysdump.zip"); err != nil {
+
+	sysdumpFile := "karmor-sysdump-" + time.Now().Format(time.UnixDate) + ".zip"
+
+	if err := archiver.Archive([]string{d}, sysdumpFile); err != nil {
 		return fmt.Errorf("failed to create zip file: %w", err)
 	}
 
 	if err := os.RemoveAll(d); err != nil {
 		return err
 	}
+
+	fmt.Printf("Sysdump at %s\n", sysdumpFile)
 
 	return nil
 }
