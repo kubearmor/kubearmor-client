@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path"
+	"strings"
+	"time"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
 	corev1 "k8s.io/api/core/v1"
@@ -95,6 +98,55 @@ func Collect(c *k8s.Client) error {
 		}
 	}
 
+	// Boot Config
+	{
+		cmd := exec.Command("cp", "/boot/config-"+getKernelVersion(), path.Join(d, "boot-config.txt"))
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	// LSM File
+	{
+		cmd := exec.Command("cp", "/sys/kernel/security/lsm", path.Join(d, "lsm.txt"))
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	// AppArmor Gzip
+	{
+		cmd := exec.Command("tar", "--ignore-failed-read", "-zcvf", path.Join(d, "apparmor.tar.gz"), "/etc/apparmor.d/")
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	// dmesg
+	{
+		cmd := exec.Command("bash", "-c", "dmesg > "+path.Join(d, "dmesg.log"))
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	// // bpftool prog list
+	// {
+	// 	cmd := exec.Command("bpftool", "prog", "list")
+	// 	var out bytes.Buffer
+	// 	cmd.Stdout = &out
+	// 	err = cmd.Run()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if err := writeToFile(out.String(), path.Join(d, "bpftool-pro")); err != nil {
+	// 		return err
+	// 	}
+	// }
 	if err := archiver.Archive([]string{d}, "karmor-sysdump.zip"); err != nil {
 		return fmt.Errorf("failed to create zip file: %w", err)
 	}
@@ -121,4 +173,17 @@ func writeYaml(p string, o runtime.Object) error {
 		return err
 	}
 	return writeToFile(p, b.String())
+}
+
+func getKernelVersion() string {
+	cmd := exec.Command("uname", "-r")
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+	kernel := out.String()
+	kernel = strings.Replace(kernel, "\n", "", -1)
+	kernel = strings.Replace(kernel, "\r\n", "", -1)
+	return kernel
 }
