@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
@@ -17,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/remotecommand"
 
 	"github.com/mholt/archiver/v3"
 )
@@ -98,55 +97,12 @@ func Collect(c *k8s.Client) error {
 		}
 	}
 
-	// Boot Config
-	{
-		cmd := exec.Command("cp", "/boot/config-"+getKernelVersion(), path.Join(d, "boot-config.txt"))
-		err = cmd.Run()
-		if err != nil {
-			return err
-		}
-	}
-
-	// LSM File
-	{
-		cmd := exec.Command("cp", "/sys/kernel/security/lsm", path.Join(d, "lsm.txt"))
-		err = cmd.Run()
-		if err != nil {
-			return err
-		}
-	}
-
 	// AppArmor Gzip
 	{
-		cmd := exec.Command("tar", "--ignore-failed-read", "-zcvf", path.Join(d, "apparmor.tar.gz"), "/etc/apparmor.d/")
-		err = cmd.Run()
-		if err != nil {
+		if err := copyFromPod("/etc/apparmor.d/", path.Join(d, "apparmor.tar.gz"), c); err != nil {
 			return err
 		}
 	}
-
-	// dmesg
-	{
-		cmd := exec.Command("bash", "-c", "dmesg > "+path.Join(d, "dmesg.log"))
-		err = cmd.Run()
-		if err != nil {
-			return err
-		}
-	}
-
-	// // bpftool prog list
-	// {
-	// 	cmd := exec.Command("bpftool", "prog", "list")
-	// 	var out bytes.Buffer
-	// 	cmd.Stdout = &out
-	// 	err = cmd.Run()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if err := writeToFile(out.String(), path.Join(d, "bpftool-pro")); err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	sysdumpFile := "karmor-sysdump-" + time.Now().Format(time.UnixDate) + ".zip"
 
@@ -164,7 +120,7 @@ func Collect(c *k8s.Client) error {
 }
 
 func writeToFile(p, v string) error {
-	return os.WriteFile(p, []byte(v), 0666)
+	return os.WriteFile(p, []byte(v), 0600)
 }
 
 func writeYaml(p string, o runtime.Object) error {
@@ -180,15 +136,48 @@ func writeYaml(p string, o runtime.Object) error {
 	return writeToFile(p, b.String())
 }
 
-func getKernelVersion() string {
-	cmd := exec.Command("uname", "-r")
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	_ = cmd.Run()
-	kernel := out.String()
-	kernel = strings.Replace(kernel, "\n", "", -1)
-	kernel = strings.Replace(kernel, "\r\n", "", -1)
-	return kernel
+func copyFromPod(srcPath string, destPath string, c *k8s.Client) error {
+	pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor",
+	})
+	if err != nil {
+		return err
+	}
+	reader, outStream := io.Pipe()
+	cmdArr := []string{"tar", "cf", "-", srcPath}
+	req := c.K8sClientset.CoreV1().RESTClient().
+		Get().
+		Namespace("kube-system").
+		Resource("pods").
+		Name(pods.Items[0].Name).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Container: pods.Items[0].Spec.Containers[0].Name,
+			Command:   cmdArr,
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
+	if err != nil {
+		return err
+	}
+	go func() {
+		defer outStream.Close()
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:  os.Stdin,
+			Stdout: outStream,
+			Stderr: os.Stderr,
+			Tty:    false,
+		})
+	}()
+	buf, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(destPath, buf, 0600); err != nil {
+		return err
+	}
+	return nil
 }
