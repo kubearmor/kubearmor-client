@@ -9,6 +9,8 @@ import (
 	"path"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/kubearmor/kubearmor-client/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,13 +24,15 @@ import (
 
 func Collect(c *k8s.Client) error {
 
+	var errs errgroup.Group
+
 	d, err := os.MkdirTemp("", "karmor-sysdump")
 	if err != nil {
 		return err
 	}
 
 	// k8s Server Version
-	{
+	errs.Go(func() error {
 		v, err := c.K8sClientset.Discovery().ServerVersion()
 		if err != nil {
 			return err
@@ -36,10 +40,11 @@ func Collect(c *k8s.Client) error {
 		if err := writeToFile(path.Join(d, "version.txt"), v.String()); err != nil {
 			return err
 		}
-	}
+		return nil
+	})
 
 	// Node Info
-	{
+	errs.Go(func() error {
 		v, err := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
@@ -47,10 +52,11 @@ func Collect(c *k8s.Client) error {
 		if err := writeYaml(path.Join(d, "node-info.yaml"), v); err != nil {
 			return err
 		}
-	}
+		return nil
+	})
 
 	// KubeArmor DaemonSet
-	{
+	errs.Go(func() error {
 		v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -58,10 +64,11 @@ func Collect(c *k8s.Client) error {
 		if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
 			return err
 		}
-	}
+		return nil
+	})
 
 	// KubeArmor Security Policies
-	{
+	errs.Go(func() error {
 		v, err := c.KSPClientset.KubeArmorPolicies("").List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
@@ -69,10 +76,11 @@ func Collect(c *k8s.Client) error {
 		if err := writeYaml(path.Join(d, "ksp.yaml"), v); err != nil {
 			return err
 		}
-	}
+		return nil
+	})
 
 	// KubeArmor Logs
-	{
+	errs.Go(func() error {
 		pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
 			LabelSelector: "kubearmor-app=kubearmor",
 		})
@@ -95,10 +103,11 @@ func Collect(c *k8s.Client) error {
 				return err
 			}
 		}
-	}
+		return nil
+	})
 
 	// Annotated Pods Description
-	{
+	errs.Go(func() error {
 		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
@@ -114,13 +123,26 @@ func Collect(c *k8s.Client) error {
 				}
 			}
 		}
-	}
+		return nil
+	})
 
 	// AppArmor Gzip
-	{
-		if err := copyFromPod("/etc/apparmor.d/", path.Join(d, "apparmor.tar.gz"), c); err != nil {
+	errs.Go(func() error {
+		if err := copyFromPod("/etc/apparmor.d", path.Join(d, "apparmor.tar.gz"), c); err != nil {
 			return err
 		}
+		return nil
+	})
+
+	dumpError := errs.Wait()
+
+	emptyDump, err := IsDirEmpty(d)
+	if err != nil {
+		return err
+	}
+
+	if emptyDump {
+		return dumpError
 	}
 
 	sysdumpFile := "karmor-sysdump-" + time.Now().Format(time.UnixDate) + ".zip"
@@ -134,6 +156,10 @@ func Collect(c *k8s.Client) error {
 	}
 
 	fmt.Printf("Sysdump at %s\n", sysdumpFile)
+
+	if dumpError != nil {
+		return dumpError
+	}
 
 	return nil
 }
@@ -199,4 +225,18 @@ func copyFromPod(srcPath string, destPath string, c *k8s.Client) error {
 		return err
 	}
 	return nil
+}
+
+func IsDirEmpty(name string) (bool, error) {
+	files, err := os.ReadDir(name)
+
+	if err != nil {
+		return false, err
+	}
+
+	if len(files) != 0 {
+		return false, nil
+	}
+
+	return true, nil
 }

@@ -12,6 +12,7 @@ require (
 	github.com/rs/zerolog v1.24.0
 	github.com/spf13/cobra v1.2.1
 	golang.org/x/mod v0.4.2
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1
 	k8s.io/apimachinery v0.22.1
