@@ -97,6 +97,25 @@ func Collect(c *k8s.Client) error {
 		}
 	}
 
+	// Annotated Pods Description
+	{
+		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, p := range pods.Items {
+			if p.Annotations["kubearmor-policy"] == "enabled" {
+				v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				if err := writeYaml(path.Join(d, "pod-"+p.Name+".yaml"), v); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	// AppArmor Gzip
 	{
 		if err := copyFromPod("/etc/apparmor.d/", path.Join(d, "apparmor.tar.gz"), c); err != nil {
