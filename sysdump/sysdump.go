@@ -79,7 +79,7 @@ func Collect(c *k8s.Client) error {
 		return nil
 	})
 
-	// KubeArmor Logs
+	// KubeArmor Pod
 	errs.Go(func() error {
 		pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
 			LabelSelector: "kubearmor-app=kubearmor",
@@ -89,17 +89,37 @@ func Collect(c *k8s.Client) error {
 		}
 
 		for _, p := range pods.Items {
+
+			// KubeArmor Logs
 			v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
 			s, err := v.Stream(context.Background())
 			if err != nil {
 				return err
 			}
 			defer s.Close()
-			var b bytes.Buffer
-			if _, err = io.Copy(&b, s); err != nil {
+			var logs bytes.Buffer
+			if _, err = io.Copy(&logs, s); err != nil {
 				return err
 			}
-			if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), b.String()); err != nil {
+			if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), logs.String()); err != nil {
+				return err
+			}
+
+			// KubeArmor Describe
+			pod, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if err := writeYaml(path.Join(d, "ka-pod-"+p.Name+".yaml"), pod); err != nil {
+				return err
+			}
+
+			// KubeArmor Event
+			e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, pod)
+			if err != nil {
+				return err
+			}
+			if err := writeYaml(path.Join(d, "ka-pod-events-"+p.Name+".yaml"), e); err != nil {
 				return err
 			}
 		}
@@ -118,7 +138,14 @@ func Collect(c *k8s.Client) error {
 				if err != nil {
 					return err
 				}
-				if err := writeYaml(path.Join(d, "pod-"+p.Name+".yaml"), v); err != nil {
+				if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
+					return err
+				}
+				e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
+				if err != nil {
+					return err
+				}
+				if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
 					return err
 				}
 			}
