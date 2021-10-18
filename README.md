@@ -31,6 +31,7 @@ Available Commands:
   help        Help about any command
   install     Install KubeArmor in a Kubernetes Cluster
   log         Observe Logs from KubeArmor
+  sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
 
