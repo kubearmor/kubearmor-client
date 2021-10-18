@@ -378,6 +378,10 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 
 	// Don't Mount AppArmor in Minikube
 	if env != "minikube" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "etc-apparmor-d-path",
+			MountPath: "/etc/apparmor.d",
+		})
 		volumes = append(volumes, corev1.Volume{
 			Name: "etc-apparmor-d-path",
 			VolumeSource: corev1.VolumeSource{
