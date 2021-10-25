@@ -1,0 +1,116 @@
+package vm
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net"
+	"os"
+
+	"github.com/kubearmor/kubearmor-client/k8s"
+	pb "github.com/kubearmor/kubearmor-client/protobuf"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type VmOptions struct {
+	VMName string
+	File   string
+}
+
+var (
+	serviceAccountName = "kvmsoperator"
+	pbClient           pb.HandleCliClient
+)
+
+func initGrpcClient(ip string) error {
+	// Connect to gRPC server
+	grpcClientConn, err := grpc.DialContext(context.Background(), net.JoinHostPort(ip, "32770"), grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	pbClient = pb.NewHandleCliClient(grpcClientConn)
+	if pbClient == nil {
+		return errors.New("invalid grpc client handle")
+	}
+	return nil
+}
+
+func writeScriptDataToFile(options VmOptions, scriptData string) error {
+
+	var filename string
+
+	if options.File == "none" {
+		filename = options.VMName + ".sh"
+	} else {
+		filename = options.File
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString(scriptData)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nVM installation script copied to %s\n", filename)
+	return nil
+}
+
+func getClusterIP(c *k8s.Client) (string, error) {
+
+	var clusterIP string
+
+	svcList, err := c.K8sClientset.CoreV1().Services("kube-system").List(context.Background(), metav1.ListOptions{
+		FieldSelector: "metadata.name=" + serviceAccountName})
+	if err != nil {
+		return "", err
+	}
+
+	for _, svc := range svcList.Items {
+		clusterIP = svc.Spec.ClusterIP
+		break
+	}
+
+	return clusterIP, err
+}
+
+func FileDownload(c *k8s.Client, options VmOptions) error {
+
+	// Check if kvmsoperator is up and running
+	if _, err := c.K8sClientset.CoreV1().ServiceAccounts("kube-system").Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
+		return err
+	}
+
+	clusterIP, err := getClusterIP(c)
+	if err != nil || clusterIP == "" {
+		return err
+	}
+
+	if options.VMName == "" {
+		return errors.New("provide a valid vm name")
+	}
+
+	err = initGrpcClient(clusterIP)
+	if err != nil {
+		log.Error().Msgf("unable to connect to grpc server: %s", err.Error())
+		return err
+	}
+
+	response, err := pbClient.HandleCliRequest(context.Background(), &pb.CliRequest{KvmName: options.VMName})
+	if err != nil {
+		return err
+	} else {
+		if response.Status == 0 {
+			err = writeScriptDataToFile(options, response.ScriptData)
+		} else {
+			return errors.New(response.StatusMsg)
+		}
+	}
+
+	return err
+}
