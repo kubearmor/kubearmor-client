@@ -372,7 +372,7 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 	}
 
 	// Don't enable host policy in minikube and microk8s
-	if env != "minikube" && env != "microk8s" {
+	if env != "minikube" && env != "microk8s" && env != "eks" {
 		args = append(args, "-enableKubeArmorHostPolicy")
 	}
 
@@ -394,7 +394,7 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 	}
 
 	// Mount Socket accourding to Container Runtime Environment
-	if env == "docker" || env == "minikube" {
+	if env == "docker" || env == "minikube" || env == "eks" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      "docker-sock-path", // docker (read-only)
 			MountPath: "/var/run/docker.sock",
