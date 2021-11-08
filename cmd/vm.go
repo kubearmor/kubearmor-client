@@ -29,6 +29,7 @@ var vmCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(vmCmd)
+	vmCmd.Flags().StringVarP(&vmOptions.IP, "ip", "i", "none", "External IP of kvmsoperator")
 	vmCmd.Flags().StringVarP(&vmOptions.VMName, "vmname", "n", "", "Name of configured vm")
-	vmCmd.Flags().StringVarP(&vmOptions.File, "file", "p", "none", "Filename with path to store the configured vm installation script, {filename|none}")
+	vmCmd.Flags().StringVarP(&vmOptions.File, "file", "f", "none", "Filename with path to store the configured vm installation script, {filename|none}")
 }

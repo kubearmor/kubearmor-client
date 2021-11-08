@@ -15,6 +15,7 @@ import (
 )
 
 type VmOptions struct {
+	IP     string
 	VMName string
 	File   string
 }
@@ -57,11 +58,11 @@ func writeScriptDataToFile(options VmOptions, scriptData string) error {
 		return err
 	}
 
-	fmt.Printf("\nVM installation script copied to %s\n", filename)
+	fmt.Printf("VM installation script copied to %s\n", filename)
 	return nil
 }
 
-func getClusterIP(c *k8s.Client) (string, error) {
+func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 
 	var clusterIP string
 
@@ -76,6 +77,10 @@ func getClusterIP(c *k8s.Client) (string, error) {
 		break
 	}
 
+	if options.IP != "none" {
+		return options.IP, err
+	}
+
 	return clusterIP, err
 }
 
@@ -86,7 +91,7 @@ func FileDownload(c *k8s.Client, options VmOptions) error {
 		return err
 	}
 
-	clusterIP, err := getClusterIP(c)
+	clusterIP, err := getClusterIP(c, options)
 	if err != nil || clusterIP == "" {
 		return err
 	}
