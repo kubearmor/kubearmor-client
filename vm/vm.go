@@ -3,7 +3,6 @@ package vm
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 
@@ -15,9 +14,11 @@ import (
 )
 
 type VmOptions struct {
-	IP     string
-	VMName string
-	File   string
+	IP        string
+	Port      string
+	VMName    string
+	File      string
+	Namespace string
 }
 
 var (
@@ -58,7 +59,7 @@ func writeScriptDataToFile(options VmOptions, scriptData string) error {
 		return err
 	}
 
-	fmt.Printf("VM installation script copied to %s\n", filename)
+	log.Printf("VM installation script copied to %s\n", filename)
 	return nil
 }
 
@@ -66,7 +67,7 @@ func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 
 	var clusterIP string
 
-	svcList, err := c.K8sClientset.CoreV1().Services("kube-system").List(context.Background(), metav1.ListOptions{
+	svcList, err := c.K8sClientset.CoreV1().Services("all").List(context.Background(), metav1.ListOptions{
 		FieldSelector: "metadata.name=" + serviceAccountName})
 	if err != nil {
 		return "", err
@@ -84,20 +85,45 @@ func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 	return clusterIP, err
 }
 
+func validateInputParameters(options VmOptions) bool {
+
+	if options.Namespace == "none" {
+		log.Error().Msgf("provide a valid kvmsoperator service namespace")
+		return false
+	}
+
+	if options.IP == "none" {
+		log.Error().Msgf("provide a valid kvmsoperator service IP")
+		return false
+	}
+
+	if options.Port == "none" {
+		log.Error().Msgf("provide a valid kvmsoperator service port")
+		return false
+	}
+
+	if options.VMName == "none" {
+		log.Error().Msgf("provide a valid vm name")
+		return false
+	}
+
+	return true
+}
+
 func FileDownload(c *k8s.Client, options VmOptions) error {
 
+	if !validateInputParameters(options) {
+		return errors.New("check input parameters")
+	}
+
 	// Check if kvmsoperator is up and running
-	if _, err := c.K8sClientset.CoreV1().ServiceAccounts("kube-system").Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().ServiceAccounts(options.Namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
 		return err
 	}
 
 	clusterIP, err := getClusterIP(c, options)
 	if err != nil || clusterIP == "" {
 		return err
-	}
-
-	if options.VMName == "" {
-		return errors.New("provide a valid vm name")
 	}
 
 	err = initGrpcClient(clusterIP)
