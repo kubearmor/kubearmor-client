@@ -217,6 +217,11 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
 
+	if strings.Contains(containerRuntime, "k3s") {
+		env = "k3s"
+		return env
+	}
+
 	s := strings.Split(containerRuntime, "://")
 	runtime := s[0]
 	version := "v" + s[1]
