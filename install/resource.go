@@ -13,15 +13,11 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-var serviceAccountName = "kubearmor"
-
 var serviceAccount = &corev1.ServiceAccount{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: serviceAccountName,
 	},
 }
-
-var clusterRoleBindingName = "kubearmor"
 
 var clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 	ObjectMeta: metav1.ObjectMeta{
@@ -35,13 +31,11 @@ var clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 	Subjects: []rbacv1.Subject{
 		{
 			Kind:      "ServiceAccount",
-			Name:      "kubearmor",
+			Name:      kubearmor,
 			Namespace: "kube-system",
 		},
 	},
 }
-
-var relayServiceName = "kubearmor"
 
 var relayService = &corev1.Service{
 	ObjectMeta: metav1.ObjectMeta{
@@ -64,8 +58,6 @@ var relayDeploymentLabels = map[string]string{
 	"kubearmor-app": "kubearmor-relay",
 }
 
-var relayDeploymentName = "kubearmor-relay"
-
 var relayDeployment = &appsv1.Deployment{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:   relayDeploymentName,
@@ -84,7 +76,7 @@ var relayDeployment = &appsv1.Deployment{
 				Labels: relayDeploymentLabels,
 			},
 			Spec: corev1.PodSpec{
-				ServiceAccountName: "kubearmor",
+				ServiceAccountName: kubearmor,
 				NodeSelector: map[string]string{
 					"kubernetes.io/os": "linux",
 				},
@@ -111,8 +103,6 @@ var policyManagerDeploymentLabels = map[string]string{
 	"kubearmor-app": "kubearmor-policy-manager",
 }
 
-var policyManagerServiceName = "kubearmor-policy-manager-metrics-service"
-
 var policyManagerService = &corev1.Service{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:   policyManagerServiceName,
@@ -129,8 +119,6 @@ var policyManagerService = &corev1.Service{
 		},
 	},
 }
-
-var policyManagerDeploymentName = "kubearmor-policy-manager"
 
 var policyManagerDeployment = &appsv1.Deployment{
 	ObjectMeta: metav1.ObjectMeta{
@@ -150,7 +138,7 @@ var policyManagerDeployment = &appsv1.Deployment{
 				Labels: policyManagerDeploymentLabels,
 			},
 			Spec: corev1.PodSpec{
-				ServiceAccountName: "kubearmor",
+				ServiceAccountName: kubearmor,
 				Containers: []corev1.Container{
 					{
 						Name:  "kube-rbac-proxy",
@@ -198,8 +186,6 @@ var hostPolicyManagerDeploymentLabels = map[string]string{
 	"kubearmor-app": "kubearmor-host-policy-manager",
 }
 
-var hostPolicyManagerServiceName = "kubearmor-host-policy-manager-metrics-service"
-
 var hostPolicyManagerService = &corev1.Service{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:   hostPolicyManagerServiceName,
@@ -216,8 +202,6 @@ var hostPolicyManagerService = &corev1.Service{
 		},
 	},
 }
-
-var hostPolicyManagerDeploymentName = "kubearmor-host-policy-manager"
 
 var hostPolicyManagerDeployment = &appsv1.Deployment{
 	ObjectMeta: metav1.ObjectMeta{
@@ -237,7 +221,7 @@ var hostPolicyManagerDeployment = &appsv1.Deployment{
 				Labels: hostPolicyManagerDeploymentLabels,
 			},
 			Spec: corev1.PodSpec{
-				ServiceAccountName: "kubearmor",
+				ServiceAccountName: kubearmor,
 				Containers: []corev1.Container{
 					{
 						Name:  "kube-rbac-proxy",
@@ -284,9 +268,10 @@ var hostPolicyManagerDeployment = &appsv1.Deployment{
 func generateDaemonSet(env string) *appsv1.DaemonSet {
 
 	var label = map[string]string{
-		"kubearmor-app": "kubearmor",
+		"kubearmor-app": kubearmor,
 	}
 	var privileged = bool(true)
+	var terminationGracePeriodSeconds = int64(30)
 	var args = []string{
 		"-gRPC=32767",
 		"-logPath=/tmp/kubearmor.log",
@@ -316,12 +301,6 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 			ReadOnly:  true,
 		},
 	}
-	var terminationGracePeriodSeconds = int64(30)
-
-	var hostPathDirectory = corev1.HostPathDirectory
-	var hostPathDirectoryOrCreate = corev1.HostPathDirectoryOrCreate
-	var hostPathFile = corev1.HostPathFile
-	var hostPathSocket = corev1.HostPathSocket
 
 	var volumes = []corev1.Volume{
 		{
@@ -371,79 +350,14 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 		},
 	}
 
-	// Don't enable host policy in minikube and microk8s
-	if env != "minikube" && env != "microk8s" {
-		args = append(args, "-enableKubeArmorHostPolicy")
-	}
+	args = append(args, defaultConfigs[env].Args...)
 
-	// Don't Mount AppArmor in Minikube
-	if env != "minikube" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "etc-apparmor-d-path",
-			MountPath: "/etc/apparmor.d",
-		})
-		volumes = append(volumes, corev1.Volume{
-			Name: "etc-apparmor-d-path",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/apparmor.d",
-					Type: &hostPathDirectoryOrCreate,
-				},
-			},
-		})
-	}
-
-	// Mount Socket accourding to Container Runtime Environment
-	if env == "docker" || env == "minikube" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "docker-sock-path", // docker (read-only)
-			MountPath: "/var/run/docker.sock",
-			ReadOnly:  true,
-		})
-		volumes = append(volumes, corev1.Volume{
-			Name: "docker-sock-path",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/run/docker.sock",
-					Type: &hostPathSocket,
-				},
-			},
-		})
-	} else if env == "microk8s" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "containerd-sock-path", // containerd
-			MountPath: "/var/run/containerd/containerd.sock",
-			ReadOnly:  true,
-		})
-		volumes = append(volumes, corev1.Volume{
-			Name: "containerd-sock-path",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/snap/microk8s/common/run/containerd.sock",
-					Type: &hostPathSocket,
-				},
-			},
-		})
-	} else {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "containerd-sock-path", // containerd
-			MountPath: "/var/run/containerd/containerd.sock",
-			ReadOnly:  true,
-		})
-		volumes = append(volumes, corev1.Volume{
-			Name: "containerd-sock-path",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/run/containerd/containerd.sock",
-					Type: &hostPathSocket,
-				},
-			},
-		})
-	}
+	volumeMounts = append(volumeMounts, defaultConfigs[env].VolumeMounts...)
+	volumes = append(volumes, defaultConfigs[env].Volumes...)
 
 	var daemonSet = &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "kubearmor",
+			Name:   kubearmor,
 			Labels: label,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -458,7 +372,7 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: "kubearmor",
+					ServiceAccountName: kubearmor,
 					NodeSelector: map[string]string{
 						"kubernetes.io/os": "linux",
 					},
@@ -473,7 +387,7 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 					DNSPolicy:     "ClusterFirstWithHostNet",
 					Containers: []corev1.Container{
 						{
-							Name:  "kubearmor",
+							Name:  kubearmor,
 							Image: "kubearmor/kubearmor:latest",
 							//imagePullPolicy is Always since image has latest tag
 							SecurityContext: &corev1.SecurityContext{

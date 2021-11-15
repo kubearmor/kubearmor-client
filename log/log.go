@@ -72,7 +72,7 @@ func StartObserver(o Options) error {
 	// create a client
 	logClient := core.NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter)
 	if logClient == nil {
-		return errors.New("failed to connect to the gRPC server")
+		return errors.New("failed to connect to the gRPC server\nPossible troubleshooting:\n- Check if Kubearmor is running\n- Create a portforward to KubeArmor relay service using\n\t\033[1mkubectl -n kube-system port-forward service/kubearmor --address 0.0.0.0 --address :: 32767:32767\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
 	}
 	fmt.Printf("Created a gRPC client (%s)\n", gRPC)
 

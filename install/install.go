@@ -193,6 +193,7 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		return env
 	}
 	clusterName := clusterContext.Cluster
+	cluster := c.RawConfig.Clusters[clusterName]
 
 	// Detecting Environment based on cluster name and context
 	if clusterName == "minikube" || contextName == "minikube" {
@@ -210,10 +211,20 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		return env
 	}
 
+	if strings.HasSuffix(clusterName, ".eksctl.io") || strings.HasSuffix(cluster.Server, "eks.amazonaws.com") {
+		env = "eks"
+		return env
+	}
+
 	// Environment is Self Managed K8s, checking container runtime and it's version
 
 	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
+
+	if strings.Contains(containerRuntime, "k3s") {
+		env = "k3s"
+		return env
+	}
 
 	s := strings.Split(containerRuntime, "://")
 	runtime := s[0]
