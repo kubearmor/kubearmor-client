@@ -39,7 +39,7 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+      - name: Run Revive Action by pulling pre-built imag
+        uses: morphy2k/revive-action@v2
         with:
-          args: --timeout 3m0s
+          path: "./..."
