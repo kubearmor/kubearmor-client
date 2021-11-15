@@ -29,9 +29,11 @@ var vmCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(vmCmd)
-	vmCmd.Flags().StringVarP(&vmOptions.IP, "ip", "i", "none", "External IP of kvmsoperator")
-	vmCmd.Flags().StringVarP(&vmOptions.Port, "port", "p", "none", "Port of kvmsoperator")
-	vmCmd.Flags().StringVarP(&vmOptions.Namespace, "ns", "n", "none", "Namespace of kvmsoperator")
-	vmCmd.Flags().StringVarP(&vmOptions.VMName, "vmfile", "v", "none", "Name of configured vm")
-	vmCmd.Flags().StringVarP(&vmOptions.File, "file", "f", "none", "Filename with path to store the configured vm installation script, {filename|none}")
+	vmCmd.Flags().StringVarP(&vmOptions.Port, "port", "p", "32770", "Port of kvmsoperator")
+	vmCmd.Flags().StringVarP(&vmOptions.Namespace, "ns", "n", "kube-system", "Namespace of kvmsoperator")
+	vmCmd.Flags().StringVarP(&vmOptions.VMName, "kvm", "v", "", "Name of configured vm")
+	vmCmd.Flags().StringVarP(&vmOptions.File, "file", "f", "none", "Filename with path to store the configured vm installation script")
+
+	// Marking this flag as markedFlag and mandatory
+	vmCmd.MarkFlagRequired("kvm")
 }

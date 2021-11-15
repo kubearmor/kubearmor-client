@@ -3,18 +3,18 @@ package vm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
-	pb "github.com/kubearmor/kubearmor-client/protobuf"
+	pb "github.com/kubearmor/kubearmor-client/vm/protobuf"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type VmOptions struct {
-	IP        string
 	Port      string
 	VMName    string
 	File      string
@@ -26,9 +26,9 @@ var (
 	pbClient           pb.HandleCliClient
 )
 
-func initGrpcClient(ip string) error {
+func initGrpcClient(ip string, port string) error {
 	// Connect to gRPC server
-	grpcClientConn, err := grpc.DialContext(context.Background(), net.JoinHostPort(ip, "32770"), grpc.WithInsecure())
+	grpcClientConn, err := grpc.DialContext(context.Background(), net.JoinHostPort(ip, port), grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
@@ -59,62 +59,28 @@ func writeScriptDataToFile(options VmOptions, scriptData string) error {
 		return err
 	}
 
-	log.Printf("VM installation script copied to %s\n", filename)
+	fmt.Printf("VM installation script copied to %s\n", filename)
 	return nil
 }
 
 func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 
-	var clusterIP string
+	var externalIP string
 
-	svcList, err := c.K8sClientset.CoreV1().Services("all").List(context.Background(), metav1.ListOptions{
-		FieldSelector: "metadata.name=" + serviceAccountName})
+	svcInfo, err := c.K8sClientset.CoreV1().Services(options.Namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
 
-	for _, svc := range svcList.Items {
-		clusterIP = svc.Spec.ClusterIP
+	for _, lbIngress := range svcInfo.Status.LoadBalancer.Ingress {
+		externalIP = lbIngress.IP
 		break
 	}
 
-	if options.IP != "none" {
-		return options.IP, err
-	}
-
-	return clusterIP, err
-}
-
-func validateInputParameters(options VmOptions) bool {
-
-	if options.Namespace == "none" {
-		log.Error().Msgf("provide a valid kvmsoperator service namespace")
-		return false
-	}
-
-	if options.IP == "none" {
-		log.Error().Msgf("provide a valid kvmsoperator service IP")
-		return false
-	}
-
-	if options.Port == "none" {
-		log.Error().Msgf("provide a valid kvmsoperator service port")
-		return false
-	}
-
-	if options.VMName == "none" {
-		log.Error().Msgf("provide a valid vm name")
-		return false
-	}
-
-	return true
+	return externalIP, err
 }
 
 func FileDownload(c *k8s.Client, options VmOptions) error {
-
-	if !validateInputParameters(options) {
-		return errors.New("check input parameters")
-	}
 
 	// Check if kvmsoperator is up and running
 	if _, err := c.K8sClientset.CoreV1().ServiceAccounts(options.Namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
@@ -126,7 +92,7 @@ func FileDownload(c *k8s.Client, options VmOptions) error {
 		return err
 	}
 
-	err = initGrpcClient(clusterIP)
+	err = initGrpcClient(clusterIP, options.Port)
 	if err != nil {
 		log.Error().Msgf("unable to connect to grpc server: %s", err.Error())
 		return err
@@ -135,12 +101,12 @@ func FileDownload(c *k8s.Client, options VmOptions) error {
 	response, err := pbClient.HandleCliRequest(context.Background(), &pb.CliRequest{KvmName: options.VMName})
 	if err != nil {
 		return err
+	}
+
+	if response.Status == 0 {
+		err = writeScriptDataToFile(options, response.ScriptData)
 	} else {
-		if response.Status == 0 {
-			err = writeScriptDataToFile(options, response.ScriptData)
-		} else {
-			return errors.New(response.StatusMsg)
-		}
+		return errors.New(response.StatusMsg)
 	}
 
 	return err
