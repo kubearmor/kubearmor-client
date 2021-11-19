@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type VmOptions struct {
+type Options struct {
 	Port   string
 	VMName string
 	File   string
