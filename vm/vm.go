@@ -14,16 +14,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type VmOptions struct {
-	Port      string
-	VMName    string
-	File      string
-	Namespace string
+type Options struct {
+	Port   string
+	VMName string
+	File   string
 }
 
 var (
-	serviceAccountName = "kvmsoperator"
+	serviceAccountName = "kvmservice"
 	pbClient           pb.HandleCliClient
+	namespace          string
 )
 
 func initGrpcClient(ip string, port string) error {
@@ -67,7 +67,7 @@ func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 
 	var externalIP string
 
-	svcInfo, err := c.K8sClientset.CoreV1().Services(options.Namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{})
+	svcInfo, err := c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -82,9 +82,19 @@ func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 
 func FileDownload(c *k8s.Client, options VmOptions) error {
 
-	// Check if kvmsoperator is up and running
-	if _, err := c.K8sClientset.CoreV1().ServiceAccounts(options.Namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
+	// Get the list of namespaces in kubernetes context
+	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
 		return err
+	}
+
+	for _, ns := range namespaces.Items {
+		// Fetch the namespace of kvmservice
+		if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
+			continue
+		}
+		namespace = ns.Name
+		break
 	}
 
 	clusterIP, err := getClusterIP(c, options)
