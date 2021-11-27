@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
 )
@@ -34,5 +36,8 @@ func init() {
 	vmCmd.Flags().StringVarP(&vmOptions.File, "file", "f", "none", "Filename with path to store the configured vm installation script")
 
 	// Marking this flag as markedFlag and mandatory
-	vmCmd.MarkFlagRequired("kvm")
+	err := vmCmd.MarkFlagRequired("kvm")
+	if err != nil {
+		_ = fmt.Errorf("kvm option not supplied")
+	}
 }
