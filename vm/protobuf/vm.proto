@@ -1,9 +1,9 @@
 
 syntax = "proto3";
 
-package protobuf;
+package clihandler;
 
-option go_package="github.com/kubearmor-client/vm/protobuf";
+option go_package="github.com/kubearmor-client/vm/clihandler";
 
 message CliRequest {
     string KvmName = 1;

@@ -40,7 +40,7 @@ func initGrpcClient(ip string, port string) error {
 	return nil
 }
 
-func writeScriptDataToFile(options VmOptions, scriptData string) error {
+func writeScriptDataToFile(options Options, scriptData string) error {
 
 	var filename string
 
@@ -63,7 +63,7 @@ func writeScriptDataToFile(options VmOptions, scriptData string) error {
 	return nil
 }
 
-func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
+func getClusterIP(c *k8s.Client, options Options) (string, error) {
 
 	var externalIP string
 
@@ -80,7 +80,7 @@ func getClusterIP(c *k8s.Client, options VmOptions) (string, error) {
 	return externalIP, err
 }
 
-func FileDownload(c *k8s.Client, options VmOptions) error {
+func FileDownload(c *k8s.Client, options Options) error {
 
 	// Get the list of namespaces in kubernetes context
 	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
