@@ -47,6 +47,7 @@ Available Commands:
   sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
+  vm          Download VM install script from kvmservice
 
 Flags:
   -h, --help   help for karmor
