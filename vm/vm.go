@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Options for karmor vm
 type Options struct {
 	Port   string
 	VMName string
@@ -80,6 +81,7 @@ func getClusterIP(c *k8s.Client, options Options) (string, error) {
 	return externalIP, err
 }
 
+// FileDownload handler for karmor vm --file
 func FileDownload(c *k8s.Client, options Options) error {
 
 	// Get the list of namespaces in kubernetes context

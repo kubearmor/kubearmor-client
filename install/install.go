@@ -14,10 +14,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Options for karmor install
 type Options struct {
-	Namespace string
+	Namespace      string
+	KubearmorImage string
 }
 
+// K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
 	env := autoDetectEnvironment(c)
 	if env == "none" {
@@ -66,8 +69,8 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Relay Deployment already exists ...\n")
 	}
-	fmt.Print("KubeArmor DaemonSet ...\n")
-	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), generateDaemonSet(env), metav1.CreateOptions{}); err != nil {
+	fmt.Printf("KubeArmor DaemonSet %s...\n", o.KubearmorImage)
+	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), generateDaemonSet(env, o), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
@@ -104,6 +107,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	return nil
 }
 
+// K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	fmt.Print("Service Account ...\n")
 	if err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Delete(context.Background(), serviceAccountName, metav1.DeleteOptions{}); err != nil {

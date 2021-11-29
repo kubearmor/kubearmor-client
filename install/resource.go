@@ -265,7 +265,7 @@ var hostPolicyManagerDeployment = &appsv1.Deployment{
 	},
 }
 
-func generateDaemonSet(env string) *appsv1.DaemonSet {
+func generateDaemonSet(env string, o Options) *appsv1.DaemonSet {
 
 	var label = map[string]string{
 		"kubearmor-app": kubearmor,
@@ -388,7 +388,7 @@ func generateDaemonSet(env string) *appsv1.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:  kubearmor,
-							Image: "kubearmor/kubearmor:latest",
+							Image: o.KubearmorImage, // "kubearmor/kubearmor:latest",
 							//imagePullPolicy is Always since image has latest tag
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
