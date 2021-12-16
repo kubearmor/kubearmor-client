@@ -112,6 +112,8 @@ github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfc
 github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
+github.com/daemon1024/KubeArmor/protobuf v0.0.0-20211216122055-cfd556a829ef h1:GOHH7apApd+hFpa5ZtCYSO8+ydtU80bxUy4843BRNao=
+github.com/daemon1024/KubeArmor/protobuf v0.0.0-20211216122055-cfd556a829ef/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -333,8 +335,6 @@ github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20211028102308-7c7
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20211028102308-7c7d59ec12b4/go.mod h1:5r/mNlA5W9ltGM+ZChq+giuI8ZQYC8dApJW5e6e+yjc=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4 h1:0iETBNbFxXK+zalxL70Zk9lR5dU7WMYF9fDM7L9BhIQ=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4/go.mod h1:/oe9pJ7mmIdcr2TqLTNxAYxXxZBC6N0/Z3toqkEOPbo=
-github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211028102308-7c7d59ec12b4 h1:iqA1c9lHIk2p3wNjG/kzXc2BNabrJohpqaK1/aev4cM=
-github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211028102308-7c7d59ec12b4/go.mod h1:gEHsyqeWxx53VXQhmbcGjLGnJeytGdC92IJCuZKUECA=
 github.com/kubearmor/kubearmor-log-client/common v0.0.0-20210706110248-699fa8535e5c h1:zX59JlPiNGTGm8I9i69+gSzFJYbeeSySAQQGSNzCUz8=
 github.com/kubearmor/kubearmor-log-client/common v0.0.0-20210706110248-699fa8535e5c/go.mod h1:DEOnUq2qhp0U7AV+llF5d9zhdQP/vFvLzfF21QZ7MfU=
 github.com/kubearmor/kubearmor-log-client/core v0.0.0-20210706110248-699fa8535e5c h1:jz0ntYase0cNQs5Jspy3DCUjje8OuTBwW52Ros9SZV0=
@@ -917,8 +917,9 @@ google.golang.org/protobuf v1.23.1-0.20200526195155-81db48ad09cc/go.mod h1:EGpAD
 google.golang.org/protobuf v1.24.0/go.mod h1:r/3tXBNzIEhYS9I1OUVjXDlt8tc493IdKGjtUeSXeh4=
 google.golang.org/protobuf v1.25.0/go.mod h1:9JNX74DMeImyA3h4bdi1ymwjUzf21/xIlbajtzgsN7c=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
-google.golang.org/protobuf v1.26.0 h1:bxAC2xTBsZGibn2RTntX0oH50xLsqy1OxA9tTL3p/lk=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
+google.golang.org/protobuf v1.27.1 h1:SnqbnDw1V7RiZcXPx5MEeqPv2s79L9i7BJUlG/+RurQ=
+google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

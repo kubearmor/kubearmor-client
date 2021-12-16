@@ -2,6 +2,8 @@ module github.com/kubearmor/kubearmor-client
 
 go 1.16
 
+replace github.com/kubearmor/KubeArmor/protobuf => github.com/daemon1024/KubeArmor/protobuf v0.0.0-20211216122055-cfd556a829ef
+
 require (
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20211028102308-7c7d59ec12b4
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4
@@ -14,7 +16,7 @@ require (
 	golang.org/x/mod v0.5.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.38.0
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.22.3
 	k8s.io/apiextensions-apiserver v0.22.3
 	k8s.io/apimachinery v0.22.3

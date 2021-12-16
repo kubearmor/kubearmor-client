@@ -12,7 +12,6 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
-	policyOptions vm.PolicyOptions
 )
 
 // vmCmd represents the vm command
@@ -20,46 +19,6 @@ var vmCmd = &cobra.Command{
 	Use:   "vm",
 	Short: "VM commands for kvmservice",
 	Long:  `VM commands for kvmservice`,
-}
-
-// vmPolicyCmd represents the vm command for policy enforcement
-var vmPolicyCmd = &cobra.Command{
-	Use:   "policy",
-	Short: "policy handling for vm nonk8s control plane",
-	Long:  `policy handling for vm nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
-}
-
-// vmPolicyAddCmd represents the vm add policy command for policy enforcement
-var vmPolicyAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "add policy for vm k8s/nonk8s control plane",
-	Long:  `add policy for vm k8s/nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
-}
-
-// vmPolicyupdateCmd represents the vm update policy command for policy enforcement
-var vmPolicyupdateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "update policy for vm k8s/nonk8s control plane",
-	Long:  `update policy for vm k8s/nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
-}
-
-// vmPolicyDeleteCmd represents the vm delete policy command for policy enforcement
-var vmPolicyDeleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "delete policy for vm k8s/nonk8s control plane",
-	Long:  `delete policy for vm k8s/nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
 }
 
 // vmAddCmd represents the vm command for vm onboarding
@@ -119,18 +78,10 @@ func init() {
 	vmCmd.AddCommand(vmScriptCmd)
 	vmCmd.AddCommand(vmLabelCmd)
 
-	// Subcommand for policy command
-	vmPolicyCmd.AddCommand(vmPolicyAddCmd)
-	vmPolicyCmd.AddCommand(vmPolicyupdateCmd)
-	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
-
 	// Options for vm script download
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.Port, "port", "p", "32770", "Port of kvmservice")
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.VMName, "kvm", "v", "", "Name of configured vm")
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.File, "file", "f", "none", "Filename with path to store the configured vm installation script")
-
-	// Options for vm policy enforcement
-	vmPolicyCmd.Flags().StringVarP(&policyOptions.File, "file", "f", "none", "Policy file")
 
 	// Marking this flag as markedFlag and mandatory
 	err := vmScriptCmd.MarkFlagRequired("kvm")
