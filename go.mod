@@ -5,9 +5,10 @@ go 1.16
 replace github.com/kubearmor/KubeArmor/protobuf => github.com/daemon1024/KubeArmor/protobuf v0.0.0-20211216122055-cfd556a829ef
 
 require (
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211214043053-9d191282a73a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20211028102308-7c7d59ec12b4
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211028102308-7c7d59ec12b4 // indirect
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211028102308-7c7d59ec12b4
 	github.com/kubearmor/kubearmor-log-client/common v0.0.0-20210706110248-699fa8535e5c // indirect
 	github.com/kubearmor/kubearmor-log-client/core v0.0.0-20210706110248-699fa8535e5c
 	github.com/mholt/archiver/v3 v3.5.1-0.20211001174206-d35d4ce7c5b2
@@ -22,4 +23,5 @@ require (
 	k8s.io/apimachinery v0.22.3
 	k8s.io/cli-runtime v0.22.3
 	k8s.io/client-go v0.22.3
+	sigs.k8s.io/yaml v1.2.0
 )

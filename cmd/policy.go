@@ -34,6 +34,9 @@ var vmPolicyAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := vm.PolicyHandling("ADDED", args[0], policyOptions); err != nil {
+			return err
+		}
 		return nil
 	},
 }
@@ -50,6 +53,9 @@ var vmPolicyDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := vm.PolicyHandling("DELETED", args[0], policyOptions); err != nil {
+			return err
+		}
 		return nil
 	},
 }
