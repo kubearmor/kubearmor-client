@@ -15,11 +15,8 @@ var policyOptions vm.PolicyOptions
 // vmPolicyCmd represents the vm command for policy enforcement
 var vmPolicyCmd = &cobra.Command{
 	Use:   "policy",
-	Short: "policy handling for vm nonk8s control plane",
-	Long:  `policy handling for vm nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("must specify add/delete policy")
-	},
+	Short: "policy handling for vm/nonk8s control plane",
+	Long:  `policy handling for vm/nonk8s control plane`,
 }
 
 // vmPolicyAddCmd represents the vm add policy command for policy enforcement
