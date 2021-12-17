@@ -74,7 +74,6 @@ func init() {
 	// All subcommands
 	vmCmd.AddCommand(vmAddCmd)
 	vmCmd.AddCommand(vmDelCmd)
-	vmCmd.AddCommand(vmPolicyCmd)
 	vmCmd.AddCommand(vmScriptCmd)
 	vmCmd.AddCommand(vmLabelCmd)
 
