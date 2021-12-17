@@ -14,8 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Options for karmor vm
-type Options struct {
+// Options for karmor vm getscript
+type ScriptOptions struct {
 	Port   string
 	VMName string
 	File   string
@@ -41,7 +41,7 @@ func initGrpcClient(ip string, port string) error {
 	return nil
 }
 
-func writeScriptDataToFile(options Options, scriptData string) error {
+func writeScriptDataToFile(options ScriptOptions, scriptData string) error {
 
 	var filename string
 
@@ -64,7 +64,7 @@ func writeScriptDataToFile(options Options, scriptData string) error {
 	return nil
 }
 
-func getClusterIP(c *k8s.Client, options Options) (string, error) {
+func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
 
 	var externalIP string
 
@@ -81,8 +81,8 @@ func getClusterIP(c *k8s.Client, options Options) (string, error) {
 	return externalIP, err
 }
 
-// FileDownload handler for karmor vm --file
-func FileDownload(c *k8s.Client, options Options) error {
+// Function to handle script download for vm option
+func GetScript(c *k8s.Client, options ScriptOptions) error {
 
 	// Get the list of namespaces in kubernetes context
 	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
