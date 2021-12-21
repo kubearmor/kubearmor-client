@@ -4,8 +4,9 @@ go 1.16
 
 require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20211028102308-7c7d59ec12b4
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220207083627-cf610d60582c
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211217093440-d99a1cb5f908
 	github.com/kubearmor/kubearmor-log-client/common v0.0.0-20210706110248-699fa8535e5c // indirect
 	github.com/kubearmor/kubearmor-log-client/core v0.0.0-20210706110248-699fa8535e5c
@@ -21,5 +22,5 @@ require (
 	k8s.io/apimachinery v0.22.3
 	k8s.io/cli-runtime v0.22.3
 	k8s.io/client-go v0.22.3
-	sigs.k8s.io/yaml v1.2.0
+	sigs.k8s.io/yaml v1.3.0
 )
