@@ -1,74 +1,135 @@
 package vm
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"time"
 
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
-	pb "github.com/kubearmor/KubeArmor/protobuf"
-
 	"sigs.k8s.io/yaml"
-
-	"google.golang.org/grpc"
 )
 
-//PolicyOptions are optional configuration for kArmor vm policy
-type PolicyOptions struct {
-	GRPC string
+type PolicyOption struct {
+	PolicyFile string
 }
 
-//PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC Server
-func PolicyHandling(t string, path string, o PolicyOptions) error {
-	gRPC := ""
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
-			gRPC = val
-		} else {
-			gRPC = "localhost:32767"
+func postPolicyEventToControlPlane(policyEvent tp.K8sKubeArmorHostPolicyEvent) error {
+	var err error
+
+	requestBody, err := json.Marshal(policyEvent)
+	if err != nil {
+		log.Fatal(err.Error())
+		return err
+	}
+
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	request, err := http.NewRequest("POST", "http://127.0.0.1:8080/policy", bytes.NewBuffer(requestBody))
+	request.Header.Set("Content-type", "application/json")
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err.Error())
+		return err
+	}
+
+	fmt.Println(string(respBody))
+
+	return err
+}
+
+func parsePolicyYamlFile(file string) (tp.K8sKubeArmorHostPolicy, error) {
+
+	policy := tp.K8sKubeArmorHostPolicy{}
+	var err error
+
+	policyYaml, err := ioutil.ReadFile(file)
+	if err != nil {
+		return policy, err
+	}
+
+	err = yaml.Unmarshal(policyYaml, &policy)
+	if err != nil {
+		return policy, err
+	}
+
+	return policy, err
+}
+
+func PolicyAdd(file string) error {
+
+	policy := tp.K8sKubeArmorHostPolicy{}
+	policyEvent := tp.K8sKubeArmorHostPolicyEvent{}
+
+	policy, err := parsePolicyYamlFile(file)
+	if err == nil {
+		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
+			Type:   "ADDED",
+			Object: policy,
+		}
+
+		err = postPolicyEventToControlPlane(policyEvent)
+		if err != nil {
+			return err
 		}
 	}
 
-	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	var policy tp.K8sKubeArmorHostPolicy
-	policyFile, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(policyFile, &policy)
-	if err != nil {
-		return err
-	}
+func PolicyUpdate(file string) error {
 
-	policyEvent := tp.K8sKubeArmorHostPolicyEvent{
-		Type:   t,
-		Object: policy,
-	}
+	policy := tp.K8sKubeArmorHostPolicy{}
+	policyEvent := tp.K8sKubeArmorHostPolicyEvent{}
 
-	policyEventData, err := json.Marshal(policyEvent)
-	if err != nil {
-		return err
-	}
+	policy, err := parsePolicyYamlFile(file)
+	if err == nil {
+		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
+			Type:   "MODIFIED",
+			Object: policy,
+		}
 
-	client := pb.NewPolicyServiceClient(conn)
-
-	req := pb.Policy{
-		Policy: policyEventData,
-	}
-	if resp, err := client.HostPolicy(context.Background(), &req); err == nil {
-		if resp.Status == 1 {
-			fmt.Print("Success")
-		} else {
-			return fmt.Errorf("failed to send policy")
+		err = postPolicyEventToControlPlane(policyEvent)
+		if err != nil {
+			return err
 		}
 	}
-	return nil
+
+	return err
+}
+
+func PolicyDelete(file string) error {
+	policy := tp.K8sKubeArmorHostPolicy{}
+	policyEvent := tp.K8sKubeArmorHostPolicyEvent{}
+
+	policy, err := parsePolicyYamlFile(file)
+	if err == nil {
+		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
+			Type:   "DELETED",
+			Object: policy,
+		}
+
+		err = postPolicyEventToControlPlane(policyEvent)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
 }

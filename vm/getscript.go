@@ -19,6 +19,7 @@ type ScriptOptions struct {
 	Port   string
 	VMName string
 	File   string
+	NonK8s bool
 }
 
 var (
@@ -84,24 +85,33 @@ func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
 // Function to handle script download for vm option
 func GetScript(c *k8s.Client, options ScriptOptions) error {
 
-	// Get the list of namespaces in kubernetes context
-	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
+	var err error
+	var clusterIP string
 
-	for _, ns := range namespaces.Items {
-		// Fetch the namespace of kvmservice
-		if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
-			continue
+	if options.NonK8s {
+
+		clusterIP = "localhost"
+
+	} else {
+		// Get the list of namespaces in kubernetes context
+		namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
 		}
-		namespace = ns.Name
-		break
-	}
 
-	clusterIP, err := getClusterIP(c, options)
-	if err != nil || clusterIP == "" {
-		return err
+		for _, ns := range namespaces.Items {
+			// Fetch the namespace of kvmservice
+			if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
+				continue
+			}
+			namespace = ns.Name
+			break
+		}
+
+		clusterIP, err := getClusterIP(c, options)
+		if err != nil || clusterIP == "" {
+			return err
+		}
 	}
 
 	err = initGrpcClient(clusterIP, options.Port)

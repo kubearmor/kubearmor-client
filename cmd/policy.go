@@ -6,24 +6,24 @@ package cmd
 import (
 	"errors"
 
-	"github.com/kubearmor/kubearmor-client/vm"
+	"github.com/kubearmor/kubearmor-client/policy"
 	"github.com/spf13/cobra"
 )
 
-var policyOptions vm.PolicyOptions
+var policyOptions policy.PolicyOptions
 
-// vmPolicyCmd represents the vm command for policy enforcement
-var vmPolicyCmd = &cobra.Command{
+// policyCmd represents command for policy enforcement
+var policyCmd = &cobra.Command{
 	Use:   "policy",
-	Short: "policy handling for vm/nonk8s control plane",
-	Long:  `policy handling for vm/nonk8s control plane`,
+	Short: "Policy handling for kubearmor standalone",
+	Long:  `Policy handling for kubearmor standalone`,
 }
 
-// vmPolicyAddCmd represents the vm add policy command for policy enforcement
-var vmPolicyAddCmd = &cobra.Command{
+// policyAddCmd represents the add policy command for policy enforcement
+var policyAddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add policy for vm k8s/nonk8s control plane",
-	Long:  `add policy for vm k8s/nonk8s control plane`,
+	Short: "add policy for standlaone kubearmor host policy",
+	Long:  `add policy for standlaone kubearmor host policy`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires a path to valid policy YAML as argument")
@@ -31,18 +31,18 @@ var vmPolicyAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.PolicyHandling("ADDED", args[0], policyOptions); err != nil {
+		if err := policy.PolicyHandling("ADDED", args[0], policyOptions); err != nil {
 			return err
 		}
 		return nil
 	},
 }
 
-// vmPolicyDeleteCmd represents the vm delete policy command for policy enforcement
-var vmPolicyDeleteCmd = &cobra.Command{
+// policyDeleteCmd represents the delete policy command for policy enforcement
+var policyDeleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete policy for vm k8s/nonk8s control plane",
-	Long:  `delete policy for vm k8s/nonk8s control plane`,
+	Short: "delete policy for standlaone kubearmor host policy",
+	Long:  `delete policy for standlaone kubearmor host policy`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires a path to valid policy YAML as argument")
@@ -50,7 +50,7 @@ var vmPolicyDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.PolicyHandling("DELETED", args[0], policyOptions); err != nil {
+		if err := policy.PolicyHandling("DELETED", args[0], policyOptions); err != nil {
 			return err
 		}
 		return nil
@@ -62,12 +62,12 @@ var vmPolicyDeleteCmd = &cobra.Command{
 // ========== //
 
 func init() {
-	vmCmd.AddCommand(vmPolicyCmd)
+	rootCmd.AddCommand(policyCmd)
 
 	// Subcommand for policy command
-	vmPolicyCmd.AddCommand(vmPolicyAddCmd)
-	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
+	policyCmd.AddCommand(policyAddCmd)
+	policyCmd.AddCommand(policyDeleteCmd)
 
 	// gRPC endpoint flag to communicate with KubeArmor. Available across subcommands.
-	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "gRPC server information")
+	policyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "gRPC server information")
 }
