@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
@@ -54,12 +55,12 @@ func postPolicyEventToControlPlane(policyEvent tp.K8sKubeArmorHostPolicyEvent) e
 	return err
 }
 
-func parsePolicyYamlFile(file string) (tp.K8sKubeArmorHostPolicy, error) {
+func parsePolicyYamlFile(path string) (tp.K8sKubeArmorHostPolicy, error) {
 
 	policy := tp.K8sKubeArmorHostPolicy{}
 	var err error
 
-	policyYaml, err := ioutil.ReadFile(file)
+	policyYaml, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return policy, err
 	}
@@ -72,12 +73,12 @@ func parsePolicyYamlFile(file string) (tp.K8sKubeArmorHostPolicy, error) {
 	return policy, err
 }
 
-func PolicyAdd(file string) error {
+func PolicyAdd(path string) error {
 
 	policy := tp.K8sKubeArmorHostPolicy{}
 	policyEvent := tp.K8sKubeArmorHostPolicyEvent{}
 
-	policy, err := parsePolicyYamlFile(file)
+	policy, err := parsePolicyYamlFile(filepath.Clean(path))
 	if err == nil {
 		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
 			Type:   "ADDED",
@@ -93,12 +94,12 @@ func PolicyAdd(file string) error {
 	return err
 }
 
-func PolicyUpdate(file string) error {
+func PolicyUpdate(path string) error {
 
 	policy := tp.K8sKubeArmorHostPolicy{}
 	policyEvent := tp.K8sKubeArmorHostPolicyEvent{}
 
-	policy, err := parsePolicyYamlFile(file)
+	policy, err := parsePolicyYamlFile(filepath.Clean(path))
 	if err == nil {
 		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
 			Type:   "MODIFIED",
@@ -114,11 +115,11 @@ func PolicyUpdate(file string) error {
 	return err
 }
 
-func PolicyDelete(file string) error {
+func PolicyDelete(path string) error {
 	policy := tp.K8sKubeArmorHostPolicy{}
 	policyEvent := tp.K8sKubeArmorHostPolicyEvent{}
 
-	policy, err := parsePolicyYamlFile(file)
+	policy, err := parsePolicyYamlFile(filepath.Clean(path))
 	if err == nil {
 		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
 			Type:   "DELETED",

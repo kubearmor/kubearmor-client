@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"path/filepath"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -80,34 +80,30 @@ func postVmEventToControlPlane(vmEvent KubeArmorExternalWorkloadPolicyEvent) err
 	return err
 }
 
-func parseVmYamlFile(file string) (KubeArmorExternalWorkloadPolicy, error) {
+func parseVmYamlFile(path string) (KubeArmorExternalWorkloadPolicy, error) {
 
 	vm := KubeArmorExternalWorkloadPolicy{}
 	var err error
 
-	_, err = os.Stat(file)
-	if err == nil {
+	vmYaml, err := ioutil.ReadFile(filepath.Clean(path))
+	if err != nil {
+		log.Fatal(err.Error())
+		return vm, err
+	}
 
-		vmYaml, err := ioutil.ReadFile(file)
-		if err != nil {
-			log.Fatal(err.Error())
-			return vm, err
-		}
-
-		err = yaml.Unmarshal(vmYaml, &vm)
-		if err != nil {
-			log.Fatal(err.Error())
-			return vm, err
-		}
+	err = yaml.Unmarshal(vmYaml, &vm)
+	if err != nil {
+		log.Fatal(err.Error())
+		return vm, err
 	}
 	return vm, err
 }
 
-func VmAdd(file string) error {
+func VmAdd(path string) error {
 
 	vmEvent := KubeArmorExternalWorkloadPolicyEvent{}
 
-	vm, err := parseVmYamlFile(file)
+	vm, err := parseVmYamlFile(filepath.Clean(path))
 	if err == nil {
 		vmEvent = KubeArmorExternalWorkloadPolicyEvent{
 			Type:   "ADDED",
@@ -123,11 +119,11 @@ func VmAdd(file string) error {
 	return err
 }
 
-func VmUpdate(file string) error {
+func VmUpdate(path string) error {
 
 	vmEvent := KubeArmorExternalWorkloadPolicyEvent{}
 
-	vm, err := parseVmYamlFile(file)
+	vm, err := parseVmYamlFile(filepath.Clean(path))
 	if err == nil {
 		vmEvent = KubeArmorExternalWorkloadPolicyEvent{
 			Type:   "MODIFIED",
@@ -143,11 +139,11 @@ func VmUpdate(file string) error {
 	return err
 }
 
-func VmDelete(file string) error {
+func VmDelete(path string) error {
 
 	vmEvent := KubeArmorExternalWorkloadPolicyEvent{}
 
-	vm, err := parseVmYamlFile(file)
+	vm, err := parseVmYamlFile(filepath.Clean(path))
 	if err == nil {
 		vmEvent = KubeArmorExternalWorkloadPolicyEvent{
 			Type:   "DELETED",
@@ -160,5 +156,34 @@ func VmDelete(file string) error {
 		}
 	}
 
+	return err
+}
+
+func VmList() error {
+
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	request, err := http.NewRequest("POST", "http://127.0.0.1:8080/vmlist", nil)
+	request.Header.Set("Content-type", "application/json")
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err.Error())
+		return err
+	}
+
+	fmt.Printf("Configured list of VMs for nonk8s control plane is : %v\n", string(respBody))
 	return err
 }

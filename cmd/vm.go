@@ -48,6 +48,19 @@ var vmDelCmd = &cobra.Command{
 	},
 }
 
+// vmDelCmd represents the vm command for vm onboarding
+var vmListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "display the list of configured VMs in non-k8s control plane",
+	Long:  `display the list of configured VMs in non-k8s control plane`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := vm.VmList(); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
 // vmLabelCmd represents the vm command for policy enforcement
 var vmPolicyCmd = &cobra.Command{
 	Use:   "policy",
@@ -125,6 +138,24 @@ func populateVmPolicySubCommands() {
 	vmPolicyAddCmd.Flags().StringVarP(&policyOption.PolicyFile, "file", "f", "none", "Filename with path for policy yaml")
 	vmPolicyUpdateCmd.Flags().StringVarP(&policyOption.PolicyFile, "file", "f", "none", "Filename with path for policy yaml")
 	vmPolicyDeleteCmd.Flags().StringVarP(&policyOption.PolicyFile, "file", "f", "none", "Filename with path for policy yaml")
+
+	// Marking this flag as markedFlag and mandatory
+	err := vmPolicyAddCmd.MarkFlagRequired("file")
+	if err != nil {
+		_ = fmt.Errorf("file path not provided")
+	}
+
+	// Marking this flag as markedFlag and mandatory
+	err = vmPolicyUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		_ = fmt.Errorf("file path not provided")
+	}
+
+	// Marking this flag as markedFlag and mandatory
+	err = vmPolicyDeleteCmd.MarkFlagRequired("file")
+	if err != nil {
+		_ = fmt.Errorf("file path not provided")
+	}
 }
 
 func populateGetScriptCommand() {
@@ -144,9 +175,22 @@ func populateGetScriptCommand() {
 func populateVmOnboardingCommands() {
 	vmCmd.AddCommand(vmAddCmd)
 	vmCmd.AddCommand(vmDelCmd)
+	vmCmd.AddCommand(vmListCmd)
 
 	vmAddCmd.Flags().StringVarP(&policyOption.PolicyFile, "file", "f", "none", "Filename with path for policy yaml")
 	vmDelCmd.Flags().StringVarP(&policyOption.PolicyFile, "file", "f", "none", "Filename with path for policy yaml")
+
+	// Marking this flag as markedFlag and mandatory
+	err := vmAddCmd.MarkFlagRequired("file")
+	if err != nil {
+		_ = fmt.Errorf("file path not provided")
+	}
+
+	// Marking this flag as markedFlag and mandatory
+	err = vmDelCmd.MarkFlagRequired("file")
+	if err != nil {
+		_ = fmt.Errorf("file path not provided")
+	}
 }
 
 // ========== //
