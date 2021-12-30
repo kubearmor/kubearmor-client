@@ -3,6 +3,7 @@ module github.com/kubearmor/kubearmor-client
 go 1.16
 
 require (
+	github.com/kubearmor/KVMService/src/types v0.0.0-20211201110825-6637c384c9d7
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20211028102308-7c7d59ec12b4
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4
