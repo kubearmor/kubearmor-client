@@ -22,7 +22,26 @@ var vmOnboardAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("ADDED", args[0]); err != nil {
+		if err := vm.Onboarding("ADDED", args[0], HttpPort); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
+// vmOnboardUpdateCmd represents the command for vm update
+var vmOnboardUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "update existing vm options on nonk8s control plane",
+	Long:  `update existing vm options on nonk8s control plane`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("requires a path to valid vm YAML as argument")
+		}
+		return nil
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := vm.Onboarding("MODIFIED", args[0], HttpPort); err != nil {
 			return err
 		}
 		return nil
@@ -41,7 +60,20 @@ var vmOnboardDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("DELETED", args[0]); err != nil {
+		if err := vm.Onboarding("DELETED", args[0], HttpPort); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
+// vmListCmd represents the command for vm offboarding
+var vmListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list configured vms from nonk8s control plane",
+	Long:  `list configured vms from nonk8s control plane`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := vm.VmList(HttpPort); err != nil {
 			return err
 		}
 		return nil
@@ -54,5 +86,7 @@ var vmOnboardDeleteCmd = &cobra.Command{
 
 func init() {
 	vmCmd.AddCommand(vmOnboardAddCmd)
+	vmCmd.AddCommand(vmOnboardUpdateCmd)
 	vmCmd.AddCommand(vmOnboardDeleteCmd)
+	vmCmd.AddCommand(vmListCmd)
 }

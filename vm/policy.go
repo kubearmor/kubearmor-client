@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,7 +24,7 @@ type PolicyOptions struct {
 	GRPC string
 }
 
-func sendPolicyOverGrpc(o PolicyOptions, policyEventData []byte) error {
+func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
 
 	gRPC := ""
 	if o.GRPC != "" {
@@ -59,7 +59,7 @@ func sendPolicyOverGrpc(o PolicyOptions, policyEventData []byte) error {
 	return nil
 }
 
-func sendPolicyOverHttp(policyEventData []byte) error {
+func sendPolicyOverHTTP(policyEventData []byte) error {
 
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
@@ -78,7 +78,7 @@ func sendPolicyOverHttp(policyEventData []byte) error {
 	}
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -110,9 +110,9 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 		return err
 	}
 
-	if err = sendPolicyOverHttp(policyEventData); err != nil {
+	if err = sendPolicyOverHTTP(policyEventData); err != nil {
 		// HTTP connection is not active, hence trying to send policy over gRPC
-		if err = sendPolicyOverGrpc(o, policyEventData); err != nil {
+		if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
 			// Failed to send policy over gRPC
 			return err
 		}
