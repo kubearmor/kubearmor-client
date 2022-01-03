@@ -14,6 +14,7 @@ var (
 	scriptOptions vm.ScriptOptions
 	HttpIP        string
 	HttpPort      string
+	HttpAddress   string
 )
 
 // vmCmd represents the vm command
@@ -60,4 +61,7 @@ func init() {
 	// options for vm generic commands related to HTTP Request
 	vmCmd.Flags().StringVar(&HttpIP, "http-ip", "http://127.0.0.1", "IP of non-k8s control plane")
 	vmCmd.Flags().StringVar(&HttpPort, "http-port", "8080", "IP and port of http request")
+
+	// Create http address
+	HttpAddress = HttpIP + ":" + HttpPort
 }

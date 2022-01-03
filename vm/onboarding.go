@@ -13,14 +13,14 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func postHttpRequest(byteData []byte, vmAction string, httpPort string) error {
+func postHttpRequest(buffer *bytes.Buffer, vmAction string, address string) error {
 
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
 
-	request, err := http.NewRequest("POST", httpPort+"/"+vmAction, bytes.NewBuffer(byteData))
+	request, err := http.NewRequest("POST", address+"/"+vmAction, buffer)
 	request.Header.Set("Content-type", "application/json")
 	if err != nil {
 		return err
@@ -35,8 +35,8 @@ func postHttpRequest(byteData []byte, vmAction string, httpPort string) error {
 	return err
 }
 
-func VmList(httpPort string) error {
-	if err := postHttpRequest(nil, "vmlist", httpPort); err != nil {
+func VmList(address string) error {
+	if err := postHttpRequest(nil, "vmlist", address); err != nil {
 		fmt.Println("Failed to send http request")
 		return err
 	}
@@ -45,7 +45,7 @@ func VmList(httpPort string) error {
 	return nil
 }
 
-func Onboarding(eventType string, path string, httpPort string) error {
+func Onboarding(eventType string, path string, address string) error {
 	var vm tp.K8sKubeArmorExternalWorkloadPolicy
 
 	vmFile, err := os.ReadFile(filepath.Clean(path))
@@ -68,7 +68,9 @@ func Onboarding(eventType string, path string, httpPort string) error {
 		return err
 	}
 
-	if err = postHttpRequest(vmEventData, "vm", httpPort); err != nil {
+	vmEventBuffer := bytes.NewBuffer(vmEventData)
+
+	if err = postHttpRequest(vmEventBuffer, "vm", address); err != nil {
 		return err
 	}
 

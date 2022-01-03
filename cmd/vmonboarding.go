@@ -22,7 +22,7 @@ var vmOnboardAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("ADDED", args[0], HttpPort); err != nil {
+		if err := vm.Onboarding("ADDED", args[0], HttpAddress); err != nil {
 			return err
 		}
 		return nil
@@ -41,7 +41,7 @@ var vmOnboardUpdateCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("MODIFIED", args[0], HttpPort); err != nil {
+		if err := vm.Onboarding("MODIFIED", args[0], HttpAddress); err != nil {
 			return err
 		}
 		return nil
@@ -60,7 +60,7 @@ var vmOnboardDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("DELETED", args[0], HttpPort); err != nil {
+		if err := vm.Onboarding("DELETED", args[0], HttpAddress); err != nil {
 			return err
 		}
 		return nil
@@ -73,7 +73,7 @@ var vmListCmd = &cobra.Command{
 	Short: "list configured vms from nonk8s control plane",
 	Long:  `list configured vms from nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.VmList(HttpPort); err != nil {
+		if err := vm.VmList(HttpAddress); err != nil {
 			return err
 		}
 		return nil

@@ -59,14 +59,14 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
 	return nil
 }
 
-func sendPolicyOverHTTP(policyEventData []byte) error {
+func sendPolicyOverHTTP(address string, policyEventData []byte) error {
 
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
 
-	request, err := http.NewRequest("POST", "http://127.0.0.1:8080/policy", bytes.NewBuffer(policyEventData))
+	request, err := http.NewRequest("POST", address+"/policy", bytes.NewBuffer(policyEventData))
 	request.Header.Set("Content-type", "application/json")
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func sendPolicyOverHTTP(policyEventData []byte) error {
 }
 
 //PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server
-func PolicyHandling(t string, path string, o PolicyOptions) error {
+func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string) error {
 
 	var policy tp.K8sKubeArmorHostPolicy
 	policyFile, err := os.ReadFile(filepath.Clean(path))
@@ -110,7 +110,7 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 		return err
 	}
 
-	if err = sendPolicyOverHTTP(policyEventData); err != nil {
+	if err = sendPolicyOverHTTP(httpAddress, policyEventData); err != nil {
 		// HTTP connection is not active, hence trying to send policy over gRPC
 		if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
 			// Failed to send policy over gRPC
