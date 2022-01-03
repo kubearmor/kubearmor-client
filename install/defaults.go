@@ -126,7 +126,7 @@ var defaultConfigs = map[string]DaemonSetConfig{
 				Name: "docker-sock-path",
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/docker/docker.sock",
+						Path: "/var/run/docker.sock",
 						Type: &hostPathSocket,
 					},
 				},
@@ -145,7 +145,10 @@ var defaultConfigs = map[string]DaemonSetConfig{
 	"minikube": {
 		Args: []string{},
 		VolumeMounts: []corev1.VolumeMount{
-
+			{
+				Name:      "etc-apparmor-d-path",
+				MountPath: "/etc/apparmor.d",
+			},
 			{
 				Name:      "docker-sock-path", // docker
 				MountPath: "/var/run/docker.sock",
@@ -159,10 +162,19 @@ var defaultConfigs = map[string]DaemonSetConfig{
 		},
 		Volumes: []corev1.Volume{
 			{
+				Name: "etc-apparmor-d-path",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/etc/apparmor.d",
+						Type: &hostPathDirectoryOrCreate,
+					},
+				},
+			},
+			{
 				Name: "docker-sock-path",
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/docker/docker.sock",
+						Path: "/var/run/docker.sock",
 						Type: &hostPathSocket,
 					},
 				},
