@@ -58,7 +58,6 @@ func init() {
 	}
 
 	// options for vm generic commands related to HTTP Request
-	vmCmd.Flags().StringVarP(&HttpIP, "http-ip", "i", "http://127.0.0.1", "IP of non-k8s control plane(127.0.0.1|IP)")
-	vmCmd.Flags().StringVarP(&HttpPort, "http-port", "h", "8080", "IP and port of http request")
-
+	vmCmd.Flags().StringVar(&HttpIP, "http-ip", "http://127.0.0.1", "IP of non-k8s control plane")
+	vmCmd.Flags().StringVar(&HttpPort, "http-port", "8080", "IP and port of http request")
 }
