@@ -48,12 +48,9 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
 		Policy: policyEventData,
 	}
 
-	if resp, err := client.HostPolicy(context.Background(), &req); err == nil {
-		if resp.Status == 1 {
-			fmt.Print("Success")
-		} else {
-			return fmt.Errorf("failed to send policy")
-		}
+	resp, err := client.HostPolicy(context.Background(), &req)
+	if err != nil || resp.Status != 1 {
+		return fmt.Errorf("failed to send policy")
 	}
 
 	return nil
