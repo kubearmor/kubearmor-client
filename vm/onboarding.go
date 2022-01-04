@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,35 +14,47 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func postHttpRequest(buffer *bytes.Buffer, vmAction string, address string) error {
+func postHttpRequest(eventData []byte, vmAction string, address string) (string, error) {
 
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
 
-	request, err := http.NewRequest("POST", address+"/"+vmAction, buffer)
+	request, err := http.NewRequest("POST", address+"/"+vmAction, bytes.NewBuffer(eventData))
 	request.Header.Set("Content-type", "application/json")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	resp, err := client.Do(request)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	return err
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(respBody), err
 }
 
 func VmList(address string) error {
-	if err := postHttpRequest(nil, "vmlist", address); err != nil {
-		fmt.Println("Failed to send http request")
+
+	vmlist, err := postHttpRequest(nil, "vmlist", address)
+	if err != nil {
+		fmt.Println("Failed to get vm list")
 		return err
 	}
 
-	fmt.Println("Success")
+	if vmlist == "" {
+		fmt.Println("No VMs configured")
+	} else {
+		fmt.Printf("List of configured vms are : \n%s\n", vmlist)
+	}
+
 	return nil
 }
 
@@ -68,9 +81,7 @@ func Onboarding(eventType string, path string, address string) error {
 		return err
 	}
 
-	vmEventBuffer := bytes.NewBuffer(vmEventData)
-
-	if err = postHttpRequest(vmEventBuffer, "vm", address); err != nil {
+	if _, err = postHttpRequest(vmEventData, "vm", address); err != nil {
 		return err
 	}
 
