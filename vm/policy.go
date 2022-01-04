@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -53,6 +52,7 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
 		return fmt.Errorf("failed to send policy")
 	}
 
+	fmt.Println("Success")
 	return nil
 }
 
@@ -66,21 +66,16 @@ func sendPolicyOverHTTP(address string, policyEventData []byte) error {
 	request, err := http.NewRequest("POST", address+"/policy", bytes.NewBuffer(policyEventData))
 	request.Header.Set("Content-type", "application/json")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to send policy")
 	}
 
 	resp, err := client.Do(request)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to send policy")
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Response from non-k8s control plane : [%s]", string(respBody))
+	fmt.Println("Success")
 	return nil
 }
 
