@@ -82,16 +82,23 @@ func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
 }
 
 // Function to handle script download for vm option
-func GetScript(c *k8s.Client, options ScriptOptions) error {
+func GetScript(c *k8s.Client, options ScriptOptions, httpIP string, isNonK8sEnv bool) error {
 
-	var clusterIP string
+	var (
+		clusterIP string
+		err       error
+	)
 
-	// Get the list of namespaces in kubernetes context
-	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
+	if isNonK8sEnv {
 		// Consider as kubectl is not configured
-		clusterIP = "127.0.0.1"
+		clusterIP = httpIP
 	} else {
+		// Get the list of namespaces in kubernetes context
+		namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+
 		for _, ns := range namespaces.Items {
 			// Fetch the namespace of kvmservice
 			if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {

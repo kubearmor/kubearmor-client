@@ -31,7 +31,11 @@ var vmPolicyAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.PolicyHandling("ADDED", args[0], policyOptions, HttpAddress); err != nil {
+		// Create http address
+		httpAddress := "http://" + HttpIP + ":" + HttpPort
+		isNonK8sEnv := IsNonK8sEnv
+
+		if err := vm.PolicyHandling("ADDED", args[0], policyOptions, httpAddress, isNonK8sEnv); err != nil {
 			return err
 		}
 		return nil
@@ -50,7 +54,10 @@ var vmPolicyDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.PolicyHandling("DELETED", args[0], policyOptions, HttpAddress); err != nil {
+		httpAddress := "http://" + HttpIP + ":" + HttpPort
+		isNonK8sEnv := IsNonK8sEnv
+
+		if err := vm.PolicyHandling("DELETED", args[0], policyOptions, httpAddress, isNonK8sEnv); err != nil {
 			return err
 		}
 		return nil
