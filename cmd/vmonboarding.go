@@ -31,26 +31,6 @@ var vmOnboardAddCmd = &cobra.Command{
 	},
 }
 
-// vmOnboardUpdateCmd represents the command for vm update
-var vmOnboardUpdateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "update existing vm options on nonk8s control plane",
-	Long:  `update existing vm options on nonk8s control plane`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("requires a path to valid vm YAML as argument")
-		}
-		return nil
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-		if err := vm.Onboarding("MODIFIED", args[0], httpAddress); err != nil {
-			return err
-		}
-		return nil
-	},
-}
-
 // vmOnboardDeleteCmd represents the command for vm offboarding
 var vmOnboardDeleteCmd = &cobra.Command{
 	Use:   "delete",
@@ -91,7 +71,6 @@ var vmListCmd = &cobra.Command{
 
 func init() {
 	vmCmd.AddCommand(vmOnboardAddCmd)
-	vmCmd.AddCommand(vmOnboardUpdateCmd)
 	vmCmd.AddCommand(vmOnboardDeleteCmd)
 	vmCmd.AddCommand(vmListCmd)
 }
