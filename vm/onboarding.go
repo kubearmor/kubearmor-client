@@ -52,7 +52,7 @@ func VmList(address string) error {
 	if vmlist == "" {
 		fmt.Println("No VMs configured")
 	} else {
-		fmt.Printf("List of configured vms are : \n%s\n", vmlist)
+		fmt.Printf("List of configured vms are : %s\n", vmlist)
 	}
 
 	return nil

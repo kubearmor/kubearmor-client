@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -24,6 +25,8 @@ type KubeArmorVirtualMachineLabel struct {
 
 //LabelHandling Function recives path to YAML file with the type of event and HTTP Server
 func LabelHandling(t string, o LabelOptions, address string, isNonK8sEnv bool) error {
+
+	var respBody []byte
 
 	if isNonK8sEnv {
 
@@ -68,8 +71,21 @@ func LabelHandling(t string, o LabelOptions, address string, isNonK8sEnv bool) e
 			return fmt.Errorf("failed to manage labels")
 		}
 		defer resp.Body.Close()
+
+		respBody, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to send label")
+		}
 	}
 
-	fmt.Println("Success")
+	if t == "LIST" {
+		if string(respBody) == "" {
+			return fmt.Errorf("failed to get label list")
+		} else {
+			fmt.Printf("The label list for %s is %s\n", o.VmName, string(respBody))
+		}
+	} else {
+		fmt.Println("Success")
+	}
 	return nil
 }
