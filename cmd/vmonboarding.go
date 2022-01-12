@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"errors"
+	"net"
 
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
@@ -22,8 +23,7 @@ var vmOnboardAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 		if err := vm.Onboarding("ADDED", args[0], httpAddress); err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ var vmOnboardDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 		if err := vm.Onboarding("DELETED", args[0], httpAddress); err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ var vmListCmd = &cobra.Command{
 	Short: "list configured vms from nonk8s control plane",
 	Long:  `list configured vms from nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 		if err := vm.VmList(httpAddress); err != nil {
 			return err
 		}

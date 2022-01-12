@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"errors"
+	"net"
 
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
@@ -32,10 +33,9 @@ var vmPolicyAddCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-		isNonK8sEnv := IsNonK8sEnv
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.PolicyHandling("ADDED", args[0], policyOptions, httpAddress, isNonK8sEnv); err != nil {
+		if err := vm.PolicyHandling("ADDED", args[0], policyOptions, httpAddress, IsNonK8sEnv); err != nil {
 			return err
 		}
 		return nil
@@ -54,10 +54,9 @@ var vmPolicyDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-		isNonK8sEnv := IsNonK8sEnv
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.PolicyHandling("DELETED", args[0], policyOptions, httpAddress, isNonK8sEnv); err != nil {
+		if err := vm.PolicyHandling("DELETED", args[0], policyOptions, httpAddress, IsNonK8sEnv); err != nil {
 			return err
 		}
 		return nil

@@ -31,9 +31,8 @@ var vmScriptCmd = &cobra.Command{
 	Long:  `download vm installation script for nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ip := HttpIP
-		isNonK8sEnv := IsNonK8sEnv
 
-		if err := vm.GetScript(client, scriptOptions, ip, isNonK8sEnv); err != nil {
+		if err := vm.GetScript(client, scriptOptions, ip, IsNonK8sEnv); err != nil {
 			return err
 		}
 		return nil

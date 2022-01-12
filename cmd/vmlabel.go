@@ -4,13 +4,14 @@
 package cmd
 
 import (
+	"net"
+
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
 )
 
 var (
 	labelOptions vm.LabelOptions
-	label        string
 )
 
 // vmLabelCmd represents the vm command for label management
@@ -27,10 +28,9 @@ var vmLabelAddCmd = &cobra.Command{
 	Long:  `add label for vm k8s/nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-		isNonK8sEnv := IsNonK8sEnv
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.LabelHandling("ADD", labelOptions, httpAddress, isNonK8sEnv); err != nil {
+		if err := vm.LabelHandling("ADD", labelOptions, httpAddress, IsNonK8sEnv); err != nil {
 			return err
 		}
 		return nil
@@ -44,10 +44,9 @@ var vmLabelDeleteCmd = &cobra.Command{
 	Long:  `delete label for vm k8s/nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-		isNonK8sEnv := IsNonK8sEnv
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.LabelHandling("DELETE", labelOptions, httpAddress, isNonK8sEnv); err != nil {
+		if err := vm.LabelHandling("DELETE", labelOptions, httpAddress, IsNonK8sEnv); err != nil {
 			return err
 		}
 		return nil
@@ -61,10 +60,9 @@ var vmLabelListCmd = &cobra.Command{
 	Long:  `list labels for vm in k8s/nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + HttpIP + ":" + HttpPort
-		isNonK8sEnv := IsNonK8sEnv
+		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.LabelHandling("LIST", labelOptions, httpAddress, isNonK8sEnv); err != nil {
+		if err := vm.LabelHandling("LIST", labelOptions, httpAddress, IsNonK8sEnv); err != nil {
 			return err
 		}
 		return nil
