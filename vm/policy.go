@@ -63,7 +63,7 @@ func sendPolicyOverHTTP(address string, policyEventData []byte) error {
 		Timeout: timeout,
 	}
 
-	request, err := http.NewRequest("POST", address+"/policy", bytes.NewBuffer(policyEventData))
+	request, err := http.NewRequest("POST", address+"/policy/kubearmor", bytes.NewBuffer(policyEventData))
 	request.Header.Set("Content-type", "application/json")
 	if err != nil {
 		return fmt.Errorf("failed to send policy")
