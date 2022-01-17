@@ -58,8 +58,8 @@ func init() {
 	}
 
 	// options for vm generic commands related to HTTP Request
-	vmCmd.PersistentFlags().StringVar(&HttpIP, "http-ip", "127.0.0.1", "IP of non-k8s control plane")
-	vmCmd.PersistentFlags().StringVar(&HttpPort, "http-port", "8080", "IP and port of http request")
+	vmCmd.PersistentFlags().StringVar(&HttpIP, "http-ip", "127.0.0.1", "IP of kvm-service")
+	vmCmd.PersistentFlags().StringVar(&HttpPort, "http-port", "8000", "Port of kvm-service")
 	vmCmd.PersistentFlags().BoolVar(&IsNonK8sEnv, "non-k8s", false, "Enable if non-k8s environment/control-plane")
 
 	// All subcommands
