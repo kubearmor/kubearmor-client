@@ -53,7 +53,6 @@ Available VM SubCommands:
   getscript   download vm installation script for nonk8s control plane
   policy      policy handling for vm nonk8s control plane
 
-
 Flags:
   -h, --help   help for karmor
 

@@ -87,5 +87,4 @@ func init() {
 	if err != nil {
 		_ = fmt.Errorf("kvm option not supplied")
 	}
-
 }
