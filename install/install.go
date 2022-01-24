@@ -27,6 +27,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		return errors.New("unsupported environment or cluster not configured correctly")
 	}
 	fmt.Printf("Auto Detected Environment : %s\n", env)
+
 	fmt.Printf("CRD %s ...\n", kspName)
 	if _, err := CreateCustomResourceDefinition(c, kspName); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
@@ -34,6 +35,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Printf("CRD %s already exists ...\n", kspName)
 	}
+
 	fmt.Printf("CRD %s ...\n", hspName)
 	if _, err := CreateCustomResourceDefinition(c, hspName); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
@@ -41,69 +43,79 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Printf("CRD %s already exists ...\n", hspName)
 	}
+
 	fmt.Print("Service Account ...\n")
-	if _, err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Create(context.Background(), serviceAccount, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Create(context.Background(), GetServiceAccount(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("Service Account already exists ...\n")
 	}
+
 	fmt.Print("Cluster Role Bindings ...\n")
-	if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), clusterRoleBinding, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), GetClusterRoleBinding(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("Cluster Role Bindings already exists ...\n")
 	}
+
 	fmt.Print("KubeArmor Relay Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), relayService, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), GetRelayService(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor Relay Service already exists ...\n")
 	}
+
 	fmt.Print("KubeArmor Relay Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), relayDeployment, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), GetRelayDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor Relay Deployment already exists ...\n")
 	}
+
 	fmt.Printf("KubeArmor DaemonSet %s...\n", o.KubearmorImage)
-	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), generateDaemonSet(env, o), metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), GenerateDaemonSet(env, o), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor DaemonSet already exists ...\n")
 	}
+
 	fmt.Print("KubeArmor Policy Manager Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), policyManagerService, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), GetPolicyManagerService(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor Policy Manager Service already exists ...\n")
 	}
+
 	fmt.Print("KubeArmor Policy Manager Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), policyManagerDeployment, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), GetPolicyManagerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor Policy Manager Deployment already exists ...\n")
 	}
+
 	fmt.Print("KubeArmor Host Policy Manager Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), hostPolicyManagerService, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), GetHostPolicyManagerService(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor Host Policy Manager Service already exists ...\n")
 	}
+
 	fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), hostPolicyManagerDeployment, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), GetHostPolicyManagerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 		fmt.Print("KubeArmor Host Policy Manager Deployment already exists ...\n")
 	}
+
 	return nil
 }
 
@@ -116,6 +128,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("Service Account not found ...\n")
 	}
+
 	fmt.Print("Cluster Role Bindings ...\n")
 	if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), clusterRoleBindingName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -123,6 +136,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("Cluster Role Bindings not found ...\n")
 	}
+
 	fmt.Print("KubeArmor Relay Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), relayServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -130,6 +144,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Relay Service not found ...\n")
 	}
+
 	fmt.Print("KubeArmor Relay Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), relayDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -137,6 +152,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Relay Deployment not found ...\n")
 	}
+
 	fmt.Print("KubeArmor DaemonSet ...\n")
 	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), "kubearmor", metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -144,6 +160,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor DaemonSet not found ...\n")
 	}
+
 	fmt.Print("KubeArmor Policy Manager Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), policyManagerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -151,6 +168,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Policy Manager Service not found ...\n")
 	}
+
 	fmt.Print("KubeArmor Policy Manager Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), policyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -158,6 +176,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Policy Manager Deployment not found ...\n")
 	}
+
 	fmt.Print("KubeArmor Host Policy Manager Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), hostPolicyManagerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -165,6 +184,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Host Policy Manager Service not found ...\n")
 	}
+
 	fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), hostPolicyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -172,6 +192,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Print("KubeArmor Host Policy Manager Deployment not found ...\n")
 	}
+
 	fmt.Printf("CRD %s ...\n", kspName)
 	if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -179,6 +200,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Printf("CRD %s not found ...\n", kspName)
 	}
+
 	fmt.Printf("CRD %s ...\n", hspName)
 	if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -186,16 +208,19 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		}
 		fmt.Printf("CRD %s not found ...\n", hspName)
 	}
+
 	return nil
 }
 
 func autoDetectEnvironment(c *k8s.Client) (name string) {
-	var env = "none"
+	env := "none"
+
 	contextName := c.RawConfig.CurrentContext
 	clusterContext, exists := c.RawConfig.Contexts[contextName]
 	if !exists {
 		return env
 	}
+
 	clusterName := clusterContext.Cluster
 	cluster := c.RawConfig.Clusters[clusterName]
 
@@ -233,6 +258,7 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 	s := strings.Split(containerRuntime, "://")
 	runtime := s[0]
 	version := "v" + s[1]
+
 	if runtime == "docker" && semver.Compare(version, "v18.9") >= 0 {
 		env = "docker"
 		return env
@@ -241,5 +267,6 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		env = "generic"
 		return env
 	}
+
 	return env
 }
