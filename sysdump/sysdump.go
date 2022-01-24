@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 Authors of KubeArmor
+
 package sysdump
 
 import (
@@ -22,8 +25,8 @@ import (
 	"github.com/mholt/archiver/v3"
 )
 
+// Collect Function
 func Collect(c *k8s.Client) error {
-
 	var errs errgroup.Group
 
 	d, err := os.MkdirTemp("", "karmor-sysdump")
@@ -89,7 +92,6 @@ func Collect(c *k8s.Client) error {
 		}
 
 		for _, p := range pods.Items {
-
 			// KubeArmor Logs
 			v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
 			s, err := v.Stream(context.Background())
@@ -254,6 +256,7 @@ func copyFromPod(srcPath string, destPath string, c *k8s.Client) error {
 	return nil
 }
 
+// IsDirEmpty Function
 func IsDirEmpty(name string) (bool, error) {
 	files, err := os.ReadDir(name)
 

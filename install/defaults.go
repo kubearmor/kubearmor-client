@@ -6,6 +6,7 @@ package install
 import corev1 "k8s.io/api/core/v1"
 
 var kubearmor = "kubearmor"
+var port int32 = 32767
 
 var serviceAccountName = kubearmor
 var clusterRoleBindingName = kubearmor
@@ -16,6 +17,7 @@ var policyManagerDeploymentName = "kubearmor-policy-manager"
 var hostPolicyManagerServiceName = "kubearmor-host-policy-manager-metrics-service"
 var hostPolicyManagerDeploymentName = "kubearmor-host-policy-manager"
 
+// DaemonSetConfig Structure
 type DaemonSetConfig struct {
 	Args         []string
 	VolumeMounts []corev1.VolumeMount
@@ -27,6 +29,7 @@ var hostPathDirectoryOrCreate = corev1.HostPathDirectoryOrCreate
 var hostPathFile = corev1.HostPathFile
 var hostPathSocket = corev1.HostPathSocket
 
+// Environment Specific Daemonset Configuration
 var defaultConfigs = map[string]DaemonSetConfig{
 	"generic": {
 		Args: []string{
@@ -191,7 +194,9 @@ var defaultConfigs = map[string]DaemonSetConfig{
 		},
 	},
 	"microk8s": {
-		Args: []string{},
+		Args: []string{
+			"-enableKubeArmorHostPolicy",
+		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      "etc-apparmor-d-path",
