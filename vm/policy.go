@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 Authors of KubeArmor
+
 package vm
 
 import (
@@ -15,14 +18,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-//PolicyOptions are optional configuration for kArmor vm policy
+// PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
 	GRPC string
 }
 
-//PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC Server
+// PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC Server
 func PolicyHandling(t string, path string, o PolicyOptions) error {
 	gRPC := ""
+
 	if o.GRPC != "" {
 		gRPC = o.GRPC
 	} else {
@@ -38,7 +42,8 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 		return err
 	}
 
-	var policy tp.K8sKubeArmorHostPolicy
+	policy := tp.K8sKubeArmorHostPolicy{}
+
 	policyFile, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return err
@@ -63,6 +68,7 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 	req := pb.Policy{
 		Policy: policyEventData,
 	}
+
 	if resp, err := client.HostPolicy(context.Background(), &req); err == nil {
 		if resp.Status == 1 {
 			fmt.Print("Success")
@@ -70,5 +76,6 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 			return fmt.Errorf("failed to send policy")
 		}
 	}
+
 	return nil
 }

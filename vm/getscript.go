@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 Authors of KubeArmor
+
 package vm
 
 import (
@@ -6,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
 	pb "github.com/kubearmor/kubearmor-client/vm/protobuf"
@@ -14,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Options for karmor vm getscript
+// ScriptOptions for karmor vm getscript
 type ScriptOptions struct {
 	Port   string
 	VMName string
@@ -27,8 +31,7 @@ var (
 	namespace          string
 )
 
-func initGrpcClient(ip string, port string) error {
-	// Connect to gRPC server
+func initGRPCClient(ip string, port string) error {
 	grpcClientConn, err := grpc.DialContext(context.Background(), net.JoinHostPort(ip, port), grpc.WithInsecure())
 	if err != nil {
 		return err
@@ -38,12 +41,12 @@ func initGrpcClient(ip string, port string) error {
 	if pbClient == nil {
 		return errors.New("invalid grpc client handle")
 	}
+
 	return nil
 }
 
 func writeScriptDataToFile(options ScriptOptions, scriptData string) error {
-
-	var filename string
+	filename := ""
 
 	if options.File == "none" {
 		filename = options.VMName + ".sh"
@@ -51,22 +54,23 @@ func writeScriptDataToFile(options ScriptOptions, scriptData string) error {
 		filename = options.File
 	}
 
-	file, err := os.Create(filename)
+	file, err := os.Create(filepath.Clean(filename))
 	if err != nil {
 		return err
 	}
+
 	_, err = file.WriteString(scriptData)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("VM installation script copied to %s\n", filename)
+
 	return nil
 }
 
 func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
-
-	var externalIP string
+	externalIP := ""
 
 	svcInfo, err := c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{})
 	if err != nil {
@@ -81,17 +85,14 @@ func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
 	return externalIP, err
 }
 
-// Function to handle script download for vm option
+// GetScript Function to handle script download for vm option
 func GetScript(c *k8s.Client, options ScriptOptions) error {
-
-	// Get the list of namespaces in kubernetes context
 	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
 	for _, ns := range namespaces.Items {
-		// Fetch the namespace of kvmservice
 		if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
 			continue
 		}
@@ -104,7 +105,7 @@ func GetScript(c *k8s.Client, options ScriptOptions) error {
 		return err
 	}
 
-	err = initGrpcClient(clusterIP, options.Port)
+	err = initGRPCClient(clusterIP, options.Port)
 	if err != nil {
 		log.Error().Msgf("unable to connect to grpc server: %s", err.Error())
 		return err
