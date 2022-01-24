@@ -11,10 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Options Structure
 type Options struct {
 	Namespace string
 }
 
+// Resources Function
 func Resources(c *k8s.Client, o Options) error {
 	kspInterface := c.KSPClientset.KubeArmorPolicies(o.Namespace)
 	policies, err := kspInterface.List(context.Background(), metav1.ListOptions{})

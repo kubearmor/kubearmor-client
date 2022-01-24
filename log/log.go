@@ -16,6 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Options Structure
 type Options struct {
 	GRPC      string
 	MsgPath   string
@@ -26,10 +27,6 @@ type Options struct {
 
 // StopChan Channel
 var StopChan chan struct{}
-
-// ==================== //
-// == Signal Handler == //
-// ==================== //
 
 // GetOSSigChannel Function
 func GetOSSigChannel() chan os.Signal {
@@ -45,6 +42,7 @@ func GetOSSigChannel() chan os.Signal {
 	return c
 }
 
+// StartObserver Function
 func StartObserver(o Options) error {
 	gRPC := ""
 	if o.GRPC != "" {
@@ -132,6 +130,5 @@ func StartObserver(o Options) error {
 	}
 	fmt.Println("Destroyed the gRPC client")
 
-	// == //
 	return nil
 }
