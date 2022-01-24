@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2021 Authors of KubeArmor
 
-ifeq (, $(shell which govvv))
-	$(shell go install github.com/ahmetb/govvv@latest)
-endif
-
 CURDIR     := $(shell pwd)
 INSTALLDIR := $(shell go env GOPATH)/bin/
-GIT_INFO   := $(shell govvv -flags -pkg $(shell go list ./version))
+
+ifeq (, $(shell which govvv))
+$(shell go get github.com/ahmetb/govvv@latest)
+endif
+
+PKG      := $(shell go list ./version)
+GIT_INFO := $(shell govvv -flags -pkg $(PKG))
 
 .PHONY: build
 build:
@@ -16,7 +18,11 @@ build:
 .PHONY: install
 install: build
 	install -m 0755 karmor $(DESTDIR)$(INSTALLDIR)
-	
+
+.PHONY: clean
+clean:
+	cd $(CURDIR); rm -f karmor
+
 .PHONY: protobuf
 vm-protobuf:
 	cd $(CURDIR)/vm/protobuf; protoc --proto_path=. --go_opt=paths=source_relative --go_out=plugins=grpc:. vm.proto
