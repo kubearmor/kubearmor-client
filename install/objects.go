@@ -381,7 +381,7 @@ func GenerateDaemonSet(env string, o Options) *appsv1.DaemonSet {
 		},
 		{
 			Name:      "sys-kernel-security-path", //LSM (read-only)
-			MountPath: "/sys/kernel/debug",
+			MountPath: "/sys/kernel/security",
 		},
 		{
 			Name:      "sys-kernel-debug-path", //BPF (read-only)
