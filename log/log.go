@@ -12,8 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kubearmor/kubearmor-log-client/core"
-	"github.com/rs/zerolog/log"
+	"github.com/kubearmor/kubearmor-log-client/client"
 )
 
 // Options Structure
@@ -45,6 +44,7 @@ func GetOSSigChannel() chan os.Signal {
 // StartObserver Function
 func StartObserver(o Options) error {
 	gRPC := ""
+
 	if o.GRPC != "" {
 		gRPC = o.GRPC
 	} else {
@@ -68,7 +68,7 @@ func StartObserver(o Options) error {
 	}
 
 	// create a client
-	logClient := core.NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter)
+	logClient := client.NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter)
 	if logClient == nil {
 		return errors.New("failed to connect to the gRPC server\nPossible troubleshooting:\n- Check if Kubearmor is running\n- Create a portforward to KubeArmor relay service using\n\t\033[1mkubectl -n kube-system port-forward service/kubearmor --address 0.0.0.0 --address :: 32767:32767\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
 	}
@@ -82,36 +82,20 @@ func StartObserver(o Options) error {
 
 	if o.MsgPath != "none" {
 		// watch messages
-		go func() {
-			err := logClient.WatchMessages(o.MsgPath, o.JSON)
-			if err != nil {
-				log.Error().Msg(err.Error())
-			}
-		}()
+		go logClient.WatchMessages(o.MsgPath, o.JSON)
 		fmt.Println("Started to watch messages")
 	}
 
 	if o.LogPath != "none" {
 		if o.LogFilter == "all" || o.LogFilter == "policy" {
 			// watch alerts
-			go func() {
-				err := logClient.WatchAlerts(o.LogPath, o.JSON)
-				if err != nil {
-					log.Error().Msg(err.Error())
-				}
-			}()
-
+			go logClient.WatchAlerts(o.LogPath, o.JSON)
 			fmt.Println("Started to watch alerts")
 		}
 
 		if o.LogFilter == "all" || o.LogFilter == "system" {
 			// watch logs
-			go func() {
-				err := logClient.WatchLogs(o.LogPath, o.JSON)
-				if err != nil {
-					log.Error().Msg(err.Error())
-				}
-			}()
+			go logClient.WatchLogs(o.LogPath, o.JSON)
 			fmt.Println("Started to watch logs")
 		}
 	}
