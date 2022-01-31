@@ -538,10 +538,6 @@ github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59e
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20211028102308-7c7d59ec12b4/go.mod h1:/oe9pJ7mmIdcr2TqLTNxAYxXxZBC6N0/Z3toqkEOPbo=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211217093440-d99a1cb5f908 h1:6NDlhBpTTkq6fLajcMHkHM0ynKRAXXnNKedMNtsVxSY=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211217093440-d99a1cb5f908/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
-github.com/kubearmor/kubearmor-log-client/common v0.0.0-20210706110248-699fa8535e5c h1:zX59JlPiNGTGm8I9i69+gSzFJYbeeSySAQQGSNzCUz8=
-github.com/kubearmor/kubearmor-log-client/common v0.0.0-20210706110248-699fa8535e5c/go.mod h1:DEOnUq2qhp0U7AV+llF5d9zhdQP/vFvLzfF21QZ7MfU=
-github.com/kubearmor/kubearmor-log-client/core v0.0.0-20210706110248-699fa8535e5c h1:jz0ntYase0cNQs5Jspy3DCUjje8OuTBwW52Ros9SZV0=
-github.com/kubearmor/kubearmor-log-client/core v0.0.0-20210706110248-699fa8535e5c/go.mod h1:tHZoZ5J6rboagTMbo1uuW1UJ1GJRulUkdOzFVkQ05HU=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhnIaL+V+BEER86oLrvS+kWobKpbJuye0=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
