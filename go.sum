@@ -539,8 +539,9 @@ github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b/go.mod h1:5r/mNlA5W9ltGM+ZChq+giuI8ZQYC8dApJW5e6e+yjc=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b h1:ahrSshc25jPU2Ajgkb7o9xg4uZI+Pkaan1IkA0DIPy0=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b/go.mod h1:/oe9pJ7mmIdcr2TqLTNxAYxXxZBC6N0/Z3toqkEOPbo=
-github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211217093440-d99a1cb5f908 h1:6NDlhBpTTkq6fLajcMHkHM0ynKRAXXnNKedMNtsVxSY=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211217093440-d99a1cb5f908/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220208060003-24f471a61bec h1:59Yc8/IpuNnz9DRMr8Ev5d35asYUIpfzA9+4nWnbkqs=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220208060003-24f471a61bec/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhnIaL+V+BEER86oLrvS+kWobKpbJuye0=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
