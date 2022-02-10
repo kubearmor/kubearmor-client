@@ -27,5 +27,5 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 
 	installCmd.Flags().StringVarP(&installOptions.Namespace, "namespace", "n", "kube-system", "Namespace for resources")
-	installCmd.Flags().StringVarP(&installOptions.KubearmorImage, "image", "i", "kubearmor/kubearmor:latest", "Kubearmor daemonset image to use")
+	installCmd.Flags().StringVarP(&installOptions.KubearmorImage, "image", "i", "kubearmor/kubearmor:stable", "Kubearmor daemonset image to use")
 }
