@@ -17,6 +17,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+// Client Structure
 type Client struct {
 	K8sClientset    kubernetes.Interface
 	KSPClientset    ksp.SecurityV1Interface
@@ -25,9 +26,11 @@ type Client struct {
 	Config          *rest.Config
 }
 
+// ConnectK8sClient Function
 func ConnectK8sClient() (*Client, error) {
 	var kubeconfig string
 	var contextName string
+
 	_ = kspAPI.AddToScheme(scheme.Scheme)
 
 	restClientGetter := genericclioptions.ConfigFlags{

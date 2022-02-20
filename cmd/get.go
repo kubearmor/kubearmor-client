@@ -25,5 +25,6 @@ var getCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(getCmd)
+
 	getCmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace for resources")
 }
