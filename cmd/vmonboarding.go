@@ -58,7 +58,7 @@ var vmListCmd = &cobra.Command{
 	Long:  `list configured VMs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
-		if err := vm.VmList(httpAddress); err != nil {
+		if err := vm.List(httpAddress); err != nil {
 			return err
 		}
 		return nil

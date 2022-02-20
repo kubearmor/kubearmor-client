@@ -103,12 +103,12 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 	}
 
 	if isNonK8sEnv {
-		// Non-K8s control plane, hence send policy over HTTP
+		// Non-K8s control plane with kvmservice, hence send policy over HTTP
 		if err = sendPolicyOverHTTP(httpAddress, policyEventData); err != nil {
 			return err
 		}
 	} else {
-		// K8sEnv, hence send policy over gRPC
+		// Systemd mode, hence send policy over gRPC
 		if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
 			return err
 		}

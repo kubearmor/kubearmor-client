@@ -41,7 +41,7 @@ func postHttpRequest(eventData []byte, vmAction string, address string) (string,
 	return string(respBody), err
 }
 
-func VmList(address string) error {
+func List(address string) error {
 
 	vmlist, err := postHttpRequest(nil, "vmlist", address)
 	if err != nil {
