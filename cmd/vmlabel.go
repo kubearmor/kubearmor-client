@@ -28,7 +28,7 @@ var vmLabelAddCmd = &cobra.Command{
 	Long:  `add label for kvms control plane vm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 
 		if err := vm.LabelHandling("ADD", labelOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err
@@ -44,7 +44,7 @@ var vmLabelDeleteCmd = &cobra.Command{
 	Long:  `delete label for kvms control plane vm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 
 		if err := vm.LabelHandling("DELETE", labelOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err
@@ -60,7 +60,7 @@ var vmLabelListCmd = &cobra.Command{
 	Long:  `list labels for vm in k8s/nonk8s control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 
 		if err := vm.LabelHandling("LIST", labelOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err

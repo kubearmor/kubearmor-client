@@ -12,11 +12,11 @@ import (
 
 //LabelOptions are optional configuration for kArmor vm policy
 type LabelOptions struct {
-	VmName   string
-	VmLabels string
+	VMName   string
+	VMLabels string
 }
 
-// Label struct for KVMS control plane
+// KubeArmorVirtualMachineLabel - Label struct for KVMS control plane
 type KubeArmorVirtualMachineLabel struct {
 	Type   string              `json:"type"`
 	Name   string              `json:"name"`
@@ -32,14 +32,14 @@ func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) err
 
 		labelEvent := KubeArmorVirtualMachineLabel{
 			Type: t,
-			Name: o.VmName,
+			Name: o.VMName,
 		}
 
 		if t == "LIST" {
 			// List all labels for mentioned VM
 			labelEvent.Labels = nil
 		} else {
-			labelArr := strings.Split(o.VmLabels, ",")
+			labelArr := strings.Split(o.VMLabels, ",")
 
 			for _, labelList := range labelArr {
 				label := make(map[string]string)
@@ -82,10 +82,11 @@ func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) err
 		if string(respBody) == "" {
 			return fmt.Errorf("failed to get label list")
 		} else {
-			fmt.Printf("The label list for %s is %s\n", o.VmName, string(respBody))
+			fmt.Printf("The label list for %s is %s\n", o.VMName, string(respBody))
+			return nil
 		}
-	} else {
-		fmt.Println("Success")
 	}
+
+	fmt.Println("Success")
 	return nil
 }

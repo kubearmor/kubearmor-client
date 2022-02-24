@@ -85,7 +85,7 @@ func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
 	return externalIP, err
 }
 
-// Function to handle script download for vm option
+// GetScript - Function to handle script download for vm option
 func GetScript(c *k8s.Client, options ScriptOptions, httpIP string, isNonK8sEnv bool) error {
 
 	var (

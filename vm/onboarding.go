@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func postHttpRequest(eventData []byte, vmAction string, address string) (string, error) {
+func postHTTPRequest(eventData []byte, vmAction string, address string) (string, error) {
 
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
@@ -41,9 +41,10 @@ func postHttpRequest(eventData []byte, vmAction string, address string) (string,
 	return string(respBody), err
 }
 
+// List - Lists all configured VMs
 func List(address string) error {
 
-	vmlist, err := postHttpRequest(nil, "vmlist", address)
+	vmlist, err := postHTTPRequest(nil, "vmlist", address)
 	if err != nil {
 		fmt.Println("Failed to get vm list")
 		return err
@@ -81,7 +82,7 @@ func Onboarding(eventType string, path string, address string) error {
 		return err
 	}
 
-	if _, err = postHttpRequest(vmEventData, "vm", address); err != nil {
+	if _, err = postHTTPRequest(vmEventData, "vm", address); err != nil {
 		return err
 	}
 

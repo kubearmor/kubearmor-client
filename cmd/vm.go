@@ -12,9 +12,10 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
-	HttpIP        string
-	HttpPort      string
-	IsKvmsEnv     bool
+	// IP and Port of the http request
+	HTTPIP    string
+	HTTPPort  string
+	IsKvmsEnv bool
 )
 
 // vmCmd represents the vm command
@@ -30,7 +31,7 @@ var vmScriptCmd = &cobra.Command{
 	Short: "download vm installation script for kvms control plane",
 	Long:  `download vm installation script for kvms control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ip := HttpIP
+		ip := HTTPIP
 
 		if err := vm.GetScript(client, scriptOptions, ip, IsKvmsEnv); err != nil {
 			return err
@@ -58,8 +59,8 @@ func init() {
 	}
 
 	// options for vm generic commands related to HTTP Request
-	vmCmd.PersistentFlags().StringVar(&HttpIP, "http-ip", "127.0.0.1", "IP of kvm-service")
-	vmCmd.PersistentFlags().StringVar(&HttpPort, "http-port", "8000", "Port of kvm-service")
+	vmCmd.PersistentFlags().StringVar(&HTTPIP, "http-ip", "127.0.0.1", "IP of kvm-service")
+	vmCmd.PersistentFlags().StringVar(&HTTPPort, "http-port", "8000", "Port of kvm-service")
 	vmCmd.PersistentFlags().BoolVar(&IsKvmsEnv, "kvms", false, "Enable if kvms environment/control-plane")
 
 	// All subcommands
