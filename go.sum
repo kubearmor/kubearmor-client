@@ -137,6 +137,7 @@ github.com/cilium/ebpf v0.0.0-20200110133405-4032b1d8aae3/go.mod h1:MA5e5Lr8slmE
 github.com/cilium/ebpf v0.0.0-20200702112145-1c8d4c9ef775/go.mod h1:7cR51M8ViRLIdUjrmSXlK9pkrsDlLHbO8jiB8X8JnOc=
 github.com/cilium/ebpf v0.2.0/go.mod h1:To2CFviqOWL/M0gIMsvSMlqe7em/l1ALkX1PyjrX2Qs=
 github.com/cilium/ebpf v0.4.0/go.mod h1:4tRaxcgiL706VnOzHOdBlY8IEAIdxINsQBcU4xJJXRs=
+github.com/clarketm/json v1.17.1 h1:U1IxjqJkJ7bRK4L6dyphmoO840P6bdhPdbbLySourqI=
 github.com/clarketm/json v1.17.1/go.mod h1:ynr2LRfb0fQU34l07csRNBTcivjySLLiY1YzQqKVfdo=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
@@ -535,6 +536,8 @@ github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125 h1:q
 github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125/go.mod h1:ZZrTsySTAAKmHDdACPo2k42z5IDbabBHXpfKc6b5ToM=
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20220207083627-cf610d60582c h1:OsZkrxq+dlwfiX9AQ0pHFdvuhlnjYC4uoIXHp0UUYSk=
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20220207083627-cf610d60582c/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
+github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4 h1:eRnyJk3RQhlBCRNqX2C4Y4fkJUyyLbM4vrF4X4UdkAs=
+github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b h1:MLFskG7QbtwllRsY/ERY3eb62ATYOZQmS6ywP05joiA=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b/go.mod h1:5r/mNlA5W9ltGM+ZChq+giuI8ZQYC8dApJW5e6e+yjc=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b h1:ahrSshc25jPU2Ajgkb7o9xg4uZI+Pkaan1IkA0DIPy0=

@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220207083627-cf610d60582c
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220208060003-24f471a61bec
