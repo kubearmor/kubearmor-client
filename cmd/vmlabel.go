@@ -17,20 +17,20 @@ var (
 // vmLabelCmd represents the vm command for label management
 var vmLabelCmd = &cobra.Command{
 	Use:   "label",
-	Short: "label handling for vm/nonk8s control plane",
-	Long:  `label handling for vm/nonk8s control plane`,
+	Short: "label handling for kvms control plane vm",
+	Long:  `label handling for kvms control plane vm`,
 }
 
 // vmLabelAddCmd represents the vm add label command for label management
 var vmLabelAddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add label for vm k8s/nonk8s control plane",
-	Long:  `add label for vm k8s/nonk8s control plane`,
+	Short: "add label for kvms control plane vm",
+	Long:  `add label for kvms control plane vm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
 		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.LabelHandling("ADD", labelOptions, httpAddress, IsNonK8sEnv); err != nil {
+		if err := vm.LabelHandling("ADD", labelOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err
 		}
 		return nil
@@ -40,13 +40,13 @@ var vmLabelAddCmd = &cobra.Command{
 // vmLabelDeleteCmd represents the vm add label command for label management
 var vmLabelDeleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete label for vm k8s/nonk8s control plane",
-	Long:  `delete label for vm k8s/nonk8s control plane`,
+	Short: "delete label for kvms control plane vm",
+	Long:  `delete label for kvms control plane vm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
 		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.LabelHandling("DELETE", labelOptions, httpAddress, IsNonK8sEnv); err != nil {
+		if err := vm.LabelHandling("DELETE", labelOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err
 		}
 		return nil
@@ -62,7 +62,7 @@ var vmLabelListCmd = &cobra.Command{
 		// Create http address
 		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
 
-		if err := vm.LabelHandling("LIST", labelOptions, httpAddress, IsNonK8sEnv); err != nil {
+		if err := vm.LabelHandling("LIST", labelOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err
 		}
 		return nil

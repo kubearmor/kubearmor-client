@@ -16,7 +16,7 @@ type LabelOptions struct {
 	VmLabels string
 }
 
-// Label struct for non-k8s control plane
+// Label struct for KVMS control plane
 type KubeArmorVirtualMachineLabel struct {
 	Type   string              `json:"type"`
 	Name   string              `json:"name"`
@@ -24,11 +24,11 @@ type KubeArmorVirtualMachineLabel struct {
 }
 
 //LabelHandling Function recives path to YAML file with the type of event and HTTP Server
-func LabelHandling(t string, o LabelOptions, address string, isNonK8sEnv bool) error {
+func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) error {
 
 	var respBody []byte
 
-	if isNonK8sEnv {
+	if isKvmsEnv {
 
 		labelEvent := KubeArmorVirtualMachineLabel{
 			Type: t,

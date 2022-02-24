@@ -83,7 +83,7 @@ func sendPolicyOverHTTP(address string, policyEventData []byte) error {
 }
 
 //PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server
-func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, isNonK8sEnv bool) error {
+func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, isKvmsEnv bool) error {
 
 	var policy tp.K8sKubeArmorHostPolicy
 
@@ -106,7 +106,7 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 		return err
 	}
 
-	if isNonK8sEnv {
+	if isKvmsEnv {
 		// Non-K8s control plane with kvmservice, hence send policy over HTTP
 		if err = sendPolicyOverHTTP(httpAddress, policyEventData); err != nil {
 			return err

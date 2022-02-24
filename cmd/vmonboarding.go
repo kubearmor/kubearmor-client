@@ -14,8 +14,8 @@ import (
 // vmOnboardAddCmd represents the command for vm onboarding
 var vmOnboardAddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "onboard new VM onto non-k8s control plane",
-	Long:  `onboard new VM onto non-k8s control plane`,
+	Short: "onboard new VM onto kvms control plane vm",
+	Long:  `onboard new VM onto kvms control plane vm`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires a path to valid vm YAML as argument")
@@ -34,8 +34,8 @@ var vmOnboardAddCmd = &cobra.Command{
 // vmOnboardDeleteCmd represents the command for vm offboarding
 var vmOnboardDeleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "offboard existing VM from non-k8s control plane",
-	Long:  `offboard existing VM from non-k8s control plane`,
+	Short: "offboard existing VM from kvms control plane vm",
+	Long:  `offboard existing VM from kvms control plane vm`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires a path to valid vm YAML as argument")
