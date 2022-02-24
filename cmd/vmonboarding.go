@@ -23,7 +23,7 @@ var vmOnboardAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 		if err := vm.Onboarding("ADDED", args[0], httpAddress); err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ var vmOnboardDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 		if err := vm.Onboarding("DELETED", args[0], httpAddress); err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ var vmListCmd = &cobra.Command{
 	Short: "list configured VMs",
 	Long:  `list configured VMs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 		if err := vm.List(httpAddress); err != nil {
 			return err
 		}

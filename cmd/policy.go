@@ -33,7 +33,7 @@ var vmPolicyAddCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http address
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 
 		if err := vm.PolicyHandling("ADDED", args[0], policyOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err
@@ -54,7 +54,7 @@ var vmPolicyDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		httpAddress := "http://" + net.JoinHostPort(HttpIP, HttpPort)
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
 
 		if err := vm.PolicyHandling("DELETED", args[0], policyOptions, httpAddress, IsKvmsEnv); err != nil {
 			return err

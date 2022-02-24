@@ -76,8 +76,8 @@ var vmLabelListCmd = &cobra.Command{
 func init() {
 	vmCmd.AddCommand(vmLabelCmd)
 
-	vmLabelCmd.PersistentFlags().StringVar(&labelOptions.VmName, "vm", "", "VM name")
-	vmLabelCmd.PersistentFlags().StringVar(&labelOptions.VmLabels, "label", "", "list of labels")
+	vmLabelCmd.PersistentFlags().StringVar(&labelOptions.VMName, "vm", "", "VM name")
+	vmLabelCmd.PersistentFlags().StringVar(&labelOptions.VMLabels, "label", "", "list of labels")
 
 	// Subcommand for policy command
 	vmLabelCmd.AddCommand(vmLabelAddCmd)
