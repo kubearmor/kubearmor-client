@@ -12,8 +12,9 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
-	// IP and Port of the http request
-	HTTPIP    string
+	// HTTPIP : IP of the http request
+	HTTPIP string
+	// HTTPPort : Port of the http request
 	HTTPPort  string
 	IsKvmsEnv bool
 )
