@@ -12,11 +12,9 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
-	// HTTPIP : IP of the http request
-	HTTPIP string
-	// HTTPPort : Port of the http request
-	HTTPPort  string
-	IsKvmsEnv bool
+	HTTPIP        string // HTTPIP : IP of the http request
+	HTTPPort      string // HTTPPort : Port of the http request
+	IsKvmsEnv     bool
 )
 
 // vmCmd represents the vm command
