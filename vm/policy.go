@@ -4,11 +4,14 @@
 package vm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
@@ -23,8 +26,7 @@ type PolicyOptions struct {
 	GRPC string
 }
 
-// PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC Server
-func PolicyHandling(t string, path string, o PolicyOptions) error {
+func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
 	gRPC := ""
 
 	if o.GRPC != "" {
@@ -42,7 +44,48 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 		return err
 	}
 
-	policy := tp.K8sKubeArmorHostPolicy{}
+	client := pb.NewPolicyServiceClient(conn)
+
+	req := pb.Policy{
+		Policy: policyEventData,
+	}
+
+	resp, err := client.HostPolicy(context.Background(), &req)
+	if err != nil || resp.Status != 1 {
+		return fmt.Errorf("failed to send policy")
+	}
+
+	fmt.Println("Success")
+	return nil
+}
+
+func sendPolicyOverHTTP(address string, policyEventData []byte) error {
+
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	request, err := http.NewRequest("POST", address+"/policy/kubearmor", bytes.NewBuffer(policyEventData))
+	request.Header.Set("Content-type", "application/json")
+	if err != nil {
+		return fmt.Errorf("failed to send policy")
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return fmt.Errorf("failed to send policy")
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("Success")
+	return nil
+}
+
+//PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server
+func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, isKvmsEnv bool) error {
+
+	var policy tp.K8sKubeArmorHostPolicy
 
 	policyFile, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
@@ -63,17 +106,16 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 		return err
 	}
 
-	client := pb.NewPolicyServiceClient(conn)
+	if isKvmsEnv {
+		// Non-K8s control plane with kvmservice, hence send policy over HTTP
+		if err = sendPolicyOverHTTP(httpAddress, policyEventData); err != nil {
+			return err
+		}
+	} else {
+		// Systemd mode, hence send policy over gRPC
+		if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
+			return err
 
-	req := pb.Policy{
-		Policy: policyEventData,
-	}
-
-	if resp, err := client.HostPolicy(context.Background(), &req); err == nil {
-		if resp.Status == 1 {
-			fmt.Print("Success")
-		} else {
-			return fmt.Errorf("failed to send policy")
 		}
 	}
 

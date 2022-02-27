@@ -85,24 +85,37 @@ func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
 	return externalIP, err
 }
 
-// GetScript Function to handle script download for vm option
-func GetScript(c *k8s.Client, options ScriptOptions) error {
-	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
+// GetScript - Function to handle script download for vm option
+func GetScript(c *k8s.Client, options ScriptOptions, httpIP string, isNonK8sEnv bool) error {
 
-	for _, ns := range namespaces.Items {
-		if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
-			continue
+	var (
+		clusterIP string
+		err       error
+	)
+
+	if isNonK8sEnv {
+		// Consider as kubectl is not configured
+		clusterIP = httpIP
+	} else {
+		// Get the list of namespaces in kubernetes context
+		namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
 		}
-		namespace = ns.Name
-		break
-	}
 
-	clusterIP, err := getClusterIP(c, options)
-	if err != nil || clusterIP == "" {
-		return err
+		for _, ns := range namespaces.Items {
+			// Fetch the namespace of kvmservice
+			if _, err := c.K8sClientset.CoreV1().ServiceAccounts(ns.Name).Get(context.Background(), serviceAccountName, metav1.GetOptions{}); err != nil {
+				continue
+			}
+			namespace = ns.Name
+			break
+		}
+
+		clusterIP, err := getClusterIP(c, options)
+		if err != nil || clusterIP == "" {
+			return err
+		}
 	}
 
 	err = initGRPCClient(clusterIP, options.Port)

@@ -12,6 +12,9 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
+	HTTPIP        string // HTTPIP : IP of the http request
+	HTTPPort      string // HTTPPort : Port of the http request
+	IsKvmsEnv     bool
 )
 
 // vmCmd represents the vm command
@@ -21,45 +24,17 @@ var vmCmd = &cobra.Command{
 	Long:  `VM commands for kvmservice`,
 }
 
-// vmAddCmd represents the vm command for vm onboarding
-var vmAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "add/onboard a new vm for nonk8s control plane",
-	Long:  `add/onboard a new vm for nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
-}
-
-// vmDelCmd represents the vm command for vm onboarding
-var vmDelCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "delete/offboard a vm from nonk8s control plane",
-	Long:  `delete/offboard a vm from nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
-}
-
 // vmScriptCmd represents the vm command for script download
 var vmScriptCmd = &cobra.Command{
 	Use:   "getscript",
-	Short: "download vm installation script for nonk8s control plane",
-	Long:  `download vm installation script for nonk8s control plane`,
+	Short: "download vm installation script for kvms control plane",
+	Long:  `download vm installation script for kvms control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.GetScript(client, scriptOptions); err != nil {
+		ip := HTTPIP
+
+		if err := vm.GetScript(client, scriptOptions, ip, IsKvmsEnv); err != nil {
 			return err
 		}
-		return nil
-	},
-}
-
-// vmLabelCmd represents the vm command for script download
-var vmLabelCmd = &cobra.Command{
-	Use:   "label",
-	Short: "manage vm labels for nonk8s control plane",
-	Long:  `manage vm labels for nonk8s control plane`,
-	RunE: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},
 }
@@ -71,12 +46,6 @@ var vmLabelCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(vmCmd)
 
-	// All subcommands
-	vmCmd.AddCommand(vmAddCmd)
-	vmCmd.AddCommand(vmDelCmd)
-	vmCmd.AddCommand(vmScriptCmd)
-	vmCmd.AddCommand(vmLabelCmd)
-
 	// Options for vm script download
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.Port, "port", "p", "32770", "Port of kvmservice")
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.VMName, "kvm", "v", "", "Name of configured vm")
@@ -87,4 +56,12 @@ func init() {
 	if err != nil {
 		_ = fmt.Errorf("kvm option not supplied")
 	}
+
+	// options for vm generic commands related to HTTP Request
+	vmCmd.PersistentFlags().StringVar(&HTTPIP, "http-ip", "127.0.0.1", "IP of kvm-service")
+	vmCmd.PersistentFlags().StringVar(&HTTPPort, "http-port", "8000", "Port of kvm-service")
+	vmCmd.PersistentFlags().BoolVar(&IsKvmsEnv, "kvms", false, "Enable if kvms environment/control-plane")
+
+	// All subcommands
+	vmCmd.AddCommand(vmScriptCmd)
 }
