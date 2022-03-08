@@ -9,7 +9,7 @@ require (
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220208060003-24f471a61bec
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220308043646-0a9827178a4a
 	github.com/mholt/archiver/v3 v3.5.1-0.20211001174206-d35d4ce7c5b2
 	github.com/rs/zerolog v1.25.0
 	github.com/spf13/cobra v1.2.1

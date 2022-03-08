@@ -795,8 +795,8 @@ github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b h1:ahrSshc25jPU2Ajgkb7o9xg4uZI+Pkaan1IkA0DIPy0=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b/go.mod h1:/oe9pJ7mmIdcr2TqLTNxAYxXxZBC6N0/Z3toqkEOPbo=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20211217093440-d99a1cb5f908/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
-github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220208060003-24f471a61bec h1:59Yc8/IpuNnz9DRMr8Ev5d35asYUIpfzA9+4nWnbkqs=
-github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220208060003-24f471a61bec/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220308043646-0a9827178a4a h1:d30oc/foGAFt8zzICmeJpykwKsTh9I2XfdQ1NRjzQiU=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220308043646-0a9827178a4a/go.mod h1:cgV6r6BtsMLSG83kCQtLDL8wuuSaKeYO6TDgSwjwoKA=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhnIaL+V+BEER86oLrvS+kWobKpbJuye0=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-bc2310a04743/go.mod h1:qklhhLq1aX+mtWk9cPHPzaBjWImj5ULL6C7HFJtXQMM=
