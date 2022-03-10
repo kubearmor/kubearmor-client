@@ -13,6 +13,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1-0.20211001174206-d35d4ce7c5b2
 	github.com/rs/zerolog v1.25.0
 	github.com/spf13/cobra v1.2.1
+	go.mongodb.org/mongo-driver v1.8.4 // indirect
 	golang.org/x/mod v0.5.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.38.0
