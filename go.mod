@@ -6,7 +6,7 @@ require (
 	github.com/cilium/cilium v1.10.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20211201110825-6637c384c9d7
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220314145923-b2c7d82e492b
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220310090827-c0aedf29c2cb
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220310090827-c0aedf29c2cb
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220308043646-0a9827178a4a
