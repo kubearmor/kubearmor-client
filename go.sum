@@ -418,7 +418,6 @@ github.com/go-logr/logr v0.1.0/go.mod h1:ixOQHD9gLJUVQQ2ZOR7zLEifBX6tGkNJF4QyIY7
 github.com/go-logr/logr v0.2.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
 github.com/go-logr/logr v0.4.0 h1:K7/B1jt6fIBQVd4Owv2MqGQClcgf0R266+7C/QjRcLc=
 github.com/go-logr/logr v0.4.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
-github.com/go-logr/zapr v0.4.0 h1:uc1uML3hRYL9/ZZPdgHS/n8Nzo+eaYL/Efxkkamf7OM=
 github.com/go-logr/zapr v0.4.0/go.mod h1:tabnROwaDl0UNxkVeFRbY8bwB37GwRv0P8lg6aAiEnk=
 github.com/go-ole/go-ole v1.2.4 h1:nNBDSCOigTSiarFpYE9J/KtEA1IOW4CNeqT9TQDqCxI=
 github.com/go-ole/go-ole v1.2.4/go.mod h1:XCwSNxSkXRo4vlyPy93sltvi/qJq0jqQhjqQNIwKuxM=
@@ -567,7 +566,6 @@ github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef/go.mod h1:cIg4er
 github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
-github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da h1:oI5xCqsCo564l8iNU+DwB5epxmsaqB+rhGL0m5jtYqE=
 github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/mock v1.2.0/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
@@ -791,13 +789,11 @@ github.com/kubearmor/KVMService/src/types v0.0.0-20211201110825-6637c384c9d7 h1:
 github.com/kubearmor/KVMService/src/types v0.0.0-20211201110825-6637c384c9d7/go.mod h1:jH95bvc6gzdHxVdyUAx/MM9q27P9EPQUl13HkBO5mr4=
 github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125 h1:qMcf/IQY/KwhG7lf0Oggmexp8pZz1wKRqnS5JV6SIo8=
 github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20211217132903-fd373ac94125/go.mod h1:ZZrTsySTAAKmHDdACPo2k42z5IDbabBHXpfKc6b5ToM=
-github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4 h1:eRnyJk3RQhlBCRNqX2C4Y4fkJUyyLbM4vrF4X4UdkAs=
-github.com/kubearmor/KubeArmor/deployments v0.0.0-20220224064008-eb71e99aebc4/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
-github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b h1:MLFskG7QbtwllRsY/ERY3eb62ATYOZQmS6ywP05joiA=
+github.com/kubearmor/KubeArmor/deployments v0.0.0-20220314145923-b2c7d82e492b h1:h9n7A3MdnHJLO2TpI9+CHOwxk+DD13477AWO5DkiugA=
+github.com/kubearmor/KubeArmor/deployments v0.0.0-20220314145923-b2c7d82e492b/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220128051912-b9f5851b939b/go.mod h1:5r/mNlA5W9ltGM+ZChq+giuI8ZQYC8dApJW5e6e+yjc=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220310090827-c0aedf29c2cb h1:zQmEtFdMrI6JFMJeM9iactXRZi5WQ/1eQMvnXr6Tc1A=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220310090827-c0aedf29c2cb/go.mod h1:5r/mNlA5W9ltGM+ZChq+giuI8ZQYC8dApJW5e6e+yjc=
-github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b h1:ahrSshc25jPU2Ajgkb7o9xg4uZI+Pkaan1IkA0DIPy0=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220128051912-b9f5851b939b/go.mod h1:/oe9pJ7mmIdcr2TqLTNxAYxXxZBC6N0/Z3toqkEOPbo=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220310090827-c0aedf29c2cb h1:f8SppPeG9SIFIML2FA0dAq6tbL6GrhVjiMVyStBin5A=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220310090827-c0aedf29c2cb/go.mod h1:/oe9pJ7mmIdcr2TqLTNxAYxXxZBC6N0/Z3toqkEOPbo=
@@ -1254,19 +1250,16 @@ go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5/go.mod h1:nmDLcffg48OtT/PSW0H
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
-go.uber.org/atomic v1.7.0 h1:ADUqmZGgLDDfbSL9ZmPxKTybcoEYHgpYfELNoN+7hsw=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/goleak v1.1.10/go.mod h1:8a7PlsEVH3e/a/GLqe5IIrQx6GzcnRmZEufDUTk4A7A=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/multierr v1.3.0/go.mod h1:VgVr7evmIr6uPjLBxg28wmKNXyqE9akIJ5XnfpiKl+4=
-go.uber.org/multierr v1.6.0 h1:y6IPFStTAIT5Ytl7/XYmHvzXQ7S3g/IeZW9hyZ5thw4=
 go.uber.org/multierr v1.6.0/go.mod h1:cdWPpRnG4AhwMwsgIHip0KRBQjJy5kYEpYjJxpXp9iU=
 go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee/go.mod h1:vJERXedbb3MVM5f9Ejo0C68/HhF8uaILCdgjnY+goOA=
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
 go.uber.org/zap v1.13.0/go.mod h1:zwrFLgMcdUuIBviXEYEH1YKNaOBnKXsx2IPda5bBwHM=
 go.uber.org/zap v1.17.0/go.mod h1:MXVU+bhUf/A7Xi2HNOnopQOrmycQ5Ih87HtOu4q5SSo=
 go.uber.org/zap v1.18.1/go.mod h1:xg/QME4nWcxGxrpdeYfq7UvYrLh66cuVKdrbD1XF/NI=
-go.uber.org/zap v1.19.0 h1:mZQZefskPPCMIBCSEH0v2/iUqqLrYtaeqwD6FUGUnFE=
 go.uber.org/zap v1.19.0/go.mod h1:xg/QME4nWcxGxrpdeYfq7UvYrLh66cuVKdrbD1XF/NI=
 go.universe.tf/metallb v0.9.6/go.mod h1:mJnnUITBIRREP/BMjZWxa6K2Rh8QA1zJZEhuBD9pf5M=
 golang.org/x/crypto v0.0.0-20171113213409-9f005a07e0d3/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
@@ -1651,7 +1644,6 @@ golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1N
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.zx2c4.com/wireguard v0.0.0-20210427022245-097af6e1351b/go.mod h1:a057zjmoc00UN7gVkaJt2sXVK523kMJcogDTEvPIasg=
 golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210506160403-92e472f520a5/go.mod h1:+1XihzyZUBJcSc5WO9SwNA7v26puQwOEDwanaxfNXPQ=
-gomodules.xyz/jsonpatch/v2 v2.2.0 h1:4pT439QV83L+G9FkcCriY6EkpcK6r6bK+A5FBUMI7qY=
 gomodules.xyz/jsonpatch/v2 v2.2.0/go.mod h1:WXp+iVDkoLQqPudfQ9GBlwB2eZ5DKOnjQZCYdOS8GPY=
 google.golang.org/api v0.0.0-20160322025152-9bf6e6e569ff/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.3.1/go.mod h1:6wY9I6uQWHQ8EM57III9mq/AjF+i8G65rmVagqKMtkk=
@@ -1888,7 +1880,6 @@ k8s.io/component-base v0.20.4/go.mod h1:t4p9EdiagbVCJKrQ1RsA5/V4rFQNDfRlevJajlGw
 k8s.io/component-base v0.20.6/go.mod h1:6f1MPBAeI+mvuts3sIdtpjljHWBQ2cIy38oBIWMYnrM=
 k8s.io/component-base v0.21.0/go.mod h1:qvtjz6X0USWXbgmbfXR+Agik4RZ3jv2Bgr5QnZzdPYw=
 k8s.io/component-base v0.22.1/go.mod h1:0D+Bl8rrnsPN9v0dyYvkqFfBeAd4u7n77ze+p8CMiPo=
-k8s.io/component-base v0.22.3 h1:/+hryAW03u3FpJQww+GSMsArJNUbGjH66lrgxaRynLU=
 k8s.io/component-base v0.22.3/go.mod h1:kuybv1miLCMoOk3ebrqF93GbQHQx6W2287FC0YEQY6s=
 k8s.io/cri-api v0.17.3/go.mod h1:X1sbHmuXhwaHs9xxYffLqJogVsnI+f6cPRcgPel7ywM=
 k8s.io/cri-api v0.20.1/go.mod h1:2JRbKt+BFLTjtrILYVqQK5jqhI+XNdF6UiGMgczeBCI=
@@ -1931,7 +1922,6 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.7/go.mod h1:PHgbrJT
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.14/go.mod h1:LEScyzhFmoF5pso/YSeBstl57mOzx9xlU9n85RGrDQg=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.15/go.mod h1:LEScyzhFmoF5pso/YSeBstl57mOzx9xlU9n85RGrDQg=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.22/go.mod h1:LEScyzhFmoF5pso/YSeBstl57mOzx9xlU9n85RGrDQg=
-sigs.k8s.io/controller-runtime v0.10.0 h1:HgyZmMpjUOrtkaFtCnfxsR1bGRuFoAczSNbn2MoKj5U=
 sigs.k8s.io/controller-runtime v0.10.0/go.mod h1:GCdh6kqV6IY4LK0JLwX0Zm6g233RtVGdb/f0+KSfprg=
 sigs.k8s.io/controller-tools v0.3.1-0.20200716001835-4a903ddb7005/go.mod h1:G9rHdZMVlBDocIxGkK3jHLWqcTMNvveypYJwrvYKjWU=
 sigs.k8s.io/kustomize/api v0.8.11 h1:LzQzlq6Z023b+mBtc6v72N2mSHYmN8x7ssgbf/hv0H8=
