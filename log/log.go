@@ -9,17 +9,37 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 	"time"
 )
 
+type regexType *regexp.Regexp
+
+var (
+	CNamespace     regexType // CNamespace : It is the regex compiled namespace
+	CLogtype       regexType
+	COperation     regexType
+	CContainerName regexType
+	CPodName       regexType
+	CSource        regexType
+	CResource      regexType
+)
+
 // Options Structure
 type Options struct {
-	GRPC      string
-	MsgPath   string
-	LogPath   string
-	LogFilter string
-	JSON      bool
+	GRPC          string
+	MsgPath       string
+	LogPath       string
+	LogFilter     string
+	JSON          bool
+	Namespace     string
+	LogType       string
+	Operation     string
+	ContainerName string
+	PodName       string
+	Source        string
+	Resource      string
 }
 
 // StopChan Channel
@@ -37,6 +57,40 @@ func GetOSSigChannel() chan os.Signal {
 		os.Interrupt)
 
 	return c
+}
+
+func regexCompile(o Options) error {
+	var err error
+
+	CNamespace, err = regexp.Compile("(?i)" + o.Namespace)
+	if err != nil {
+		return err
+	}
+	CLogtype, err = regexp.Compile("(?i)" + o.LogType)
+	if err != nil {
+		return err
+	}
+	COperation, err = regexp.Compile("(?i)" + o.Operation)
+	if err != nil {
+		return err
+	}
+	CContainerName, err = regexp.Compile("(?i)" + o.ContainerName)
+	if err != nil {
+		return err
+	}
+	CPodName, err = regexp.Compile("(?i)" + o.PodName)
+	if err != nil {
+		return err
+	}
+	CSource, err = regexp.Compile(o.Source)
+	if err != nil {
+		return err
+	}
+	CResource, err = regexp.Compile(o.Resource)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // StartObserver Function
@@ -84,16 +138,21 @@ func StartObserver(o Options) error {
 		fmt.Println("Started to watch messages")
 	}
 
+	err := regexCompile(o)
+	if err != nil {
+		return err
+	}
+
 	if o.LogPath != "none" {
 		if o.LogFilter == "all" || o.LogFilter == "policy" {
 			// watch alerts
-			go logClient.WatchAlerts(o.LogPath, o.JSON)
+			go logClient.WatchAlerts(o)
 			fmt.Println("Started to watch alerts")
 		}
 
 		if o.LogFilter == "all" || o.LogFilter == "system" {
 			// watch logs
-			go logClient.WatchLogs(o.LogPath, o.JSON)
+			go logClient.WatchLogs(o)
 			fmt.Println("Started to watch logs")
 		}
 	}

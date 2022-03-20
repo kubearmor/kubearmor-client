@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -192,8 +193,17 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 	return nil
 }
 
+func regexMatcher(filter *regexp.Regexp, res string) bool {
+
+	match := filter.MatchString(res)
+	if !match {
+		return false
+	}
+	return true
+}
+
 // WatchAlerts Function
-func (fd *Feeder) WatchAlerts(logPath string, jsonFormat bool) error {
+func (fd *Feeder) WatchAlerts(o Options) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
@@ -204,9 +214,58 @@ func (fd *Feeder) WatchAlerts(logPath string, jsonFormat bool) error {
 			break
 		}
 
+		if o.Namespace != "" {
+			match := regexMatcher(CNamespace, res.NamespaceName)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.LogType != "" {
+			match := regexMatcher(CLogtype, res.Type)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.Operation != "" {
+			match := regexMatcher(COperation, res.Operation)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.ContainerName != "" {
+			match := regexMatcher(CContainerName, res.ContainerName)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.PodName != "" {
+			match := regexMatcher(CPodName, res.PodName)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.Source != "" {
+			match := regexMatcher(CSource, res.Source)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.Resource != "" {
+			match := regexMatcher(CResource, res.Resource)
+			if !match {
+				return nil
+			}
+		}
+
 		str := ""
 
-		if jsonFormat {
+		if o.JSON {
 			arr, _ := json.Marshal(res)
 			str = fmt.Sprintf("%s\n", string(arr))
 		} else {
@@ -257,10 +316,10 @@ func (fd *Feeder) WatchAlerts(logPath string, jsonFormat bool) error {
 			str = str + fmt.Sprintf("Result: %s\n", res.Result)
 		}
 
-		if logPath == "stdout" {
+		if o.LogPath == "stdout" {
 			fmt.Printf("%s", str)
 		} else {
-			StrToFile(str, logPath)
+			StrToFile(str, o.LogPath)
 		}
 	}
 
@@ -270,7 +329,7 @@ func (fd *Feeder) WatchAlerts(logPath string, jsonFormat bool) error {
 }
 
 // WatchLogs Function
-func (fd *Feeder) WatchLogs(logPath string, jsonFormat bool) error {
+func (fd *Feeder) WatchLogs(o Options) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
@@ -281,9 +340,58 @@ func (fd *Feeder) WatchLogs(logPath string, jsonFormat bool) error {
 			break
 		}
 
+		if o.Namespace != "" {
+			match := regexMatcher(CNamespace, res.NamespaceName)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.LogType != "" {
+			match := regexMatcher(CLogtype, res.Type)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.Operation != "" {
+			match := regexMatcher(COperation, res.Operation)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.ContainerName != "" {
+			match := regexMatcher(CContainerName, res.ContainerName)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.PodName != "" {
+			match := regexMatcher(CPodName, res.PodName)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.Source != "" {
+			match := regexMatcher(CSource, res.Source)
+			if !match {
+				return nil
+			}
+		}
+
+		if o.Resource != "" {
+			match := regexMatcher(CResource, res.Resource)
+			if !match {
+				return nil
+			}
+		}
+
 		str := ""
 
-		if jsonFormat {
+		if o.JSON {
 			arr, _ := json.Marshal(res)
 			str = fmt.Sprintf("%s\n", string(arr))
 		} else {
@@ -314,10 +422,10 @@ func (fd *Feeder) WatchLogs(logPath string, jsonFormat bool) error {
 			str = str + fmt.Sprintf("Result: %s\n", res.Result)
 		}
 
-		if logPath == "stdout" {
+		if o.LogPath == "stdout" {
 			fmt.Printf("%s", str)
 		} else {
-			StrToFile(str, logPath)
+			StrToFile(str, o.LogPath)
 		}
 	}
 
