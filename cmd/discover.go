@@ -26,5 +26,7 @@ var discoverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(discoverCmd)
 	discoverCmd.Flags().StringVar(&discoverOptions.GRPC, "gRPC", "", "gRPC server information")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Policy, "policy", "p", "", "Default: cilium and kubeArmor")
+	discoverCmd.Flags().StringVarP(&discoverOptions.Format, "format", "f", "json", "Format: json or yaml")
+	discoverCmd.Flags().StringVarP(&discoverOptions.Policy, "policy", "p", "", "Type of policies to be discovered: cilium or kubearmor")
+
 }

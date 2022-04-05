@@ -26,8 +26,14 @@ require (
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/mod v0.5.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+<<<<<<< HEAD
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
+=======
+	google.golang.org/grpc v1.38.0
+	google.golang.org/protobuf v1.27.1
+	gopkg.in/yaml.v2 v2.4.0
+>>>>>>> 79e27eb (add json and yaml type format options)
 	k8s.io/api v0.23.5
 	k8s.io/apiextensions-apiserver v0.22.3
 	k8s.io/apimachinery v0.23.5
@@ -44,7 +50,6 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
@@ -63,6 +68,7 @@ require (
 	github.com/go-openapi/analysis v0.21.1 // indirect
 	github.com/go-openapi/errors v0.20.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
+<<<<<<< HEAD
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/loads v0.21.0 // indirect
 	github.com/go-openapi/runtime v0.21.0 // indirect
@@ -72,6 +78,16 @@ require (
 	github.com/go-openapi/validate v0.20.3 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+=======
+	github.com/go-openapi/jsonreference v0.19.5 // indirect
+	github.com/go-openapi/loads v0.20.0 // indirect
+	github.com/go-openapi/runtime v0.19.26 // indirect
+	github.com/go-openapi/spec v0.20.3 // indirect
+	github.com/go-openapi/strfmt v0.20.0 // indirect
+	github.com/go-openapi/swag v0.19.14 // indirect
+	github.com/go-openapi/validate v0.20.1 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
+>>>>>>> 79e27eb (add json and yaml type format options)
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.1.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

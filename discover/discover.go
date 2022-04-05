@@ -11,16 +11,17 @@ import (
 	"log"
 	"os"
 
-	"github.com/accuknox/auto-policy-discovery/src/libs"
 	wpb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
 	"github.com/accuknox/auto-policy-discovery/src/types"
 	"google.golang.org/grpc"
+	"gopkg.in/yaml.v2"
 )
 
 // Options Structure
 type Options struct {
-	Policy string
 	GRPC   string
+	Format string
+	Policy string
 }
 
 func ConvertPolicy(o Options) error {
@@ -35,7 +36,6 @@ func ConvertPolicy(o Options) error {
 			gRPC = "localhost:9089"
 		}
 	}
-	fmt.Println("gRPC server: " + gRPC)
 
 	data := &wpb.WorkerRequest{
 		Policytype: o.Policy,
@@ -73,15 +73,18 @@ func ConvertPolicy(o Options) error {
 				ciliumpolicy = append(ciliumpolicy, policy)
 
 				str := ""
-				arr, _ := json.MarshalIndent(policy, "", "    ")
-
-				str = fmt.Sprintf("%s\n", string(arr))
-
-				log.Printf("%s", str)
-
-				//write discovered policies to file
-				libs.WriteCiliumPolicyToYamlFile("", ciliumpolicy)
-
+				if o.Format == "json" {
+					arr, _ := json.MarshalIndent(policy, "", "    ")
+					str = fmt.Sprintf("%s\n", string(arr))
+					fmt.Printf("%s", str)
+				} else if o.Format == "yaml" {
+					yamlarr, _ := yaml.Marshal(policy)
+					str = fmt.Sprintf("%s\n", string(yamlarr))
+					fmt.Printf("%s", str)
+				} else {
+					fmt.Printf("Currently supported formats are json and yaml\n")
+					break
+				}
 			}
 		}
 	} else if o.Policy == "system" {
@@ -101,13 +104,18 @@ func ConvertPolicy(o Options) error {
 				kubearmorpolicy = append(kubearmorpolicy, policy)
 
 				str := ""
-				arr, _ := json.MarshalIndent(policy, "", "    ")
-
-				str = fmt.Sprintf("%s\n", string(arr))
-
-				log.Printf("%s", str)
-				libs.WriteKubeArmorPolicyToYamlFile("kubearmor_policies", kubearmorpolicy)
-
+				if o.Format == "json" {
+					arr, _ := json.MarshalIndent(policy, "", "    ")
+					str = fmt.Sprintf("%s\n", string(arr))
+					fmt.Printf("%s", str)
+				} else if o.Format == "yaml" {
+					yamlarr, _ := yaml.Marshal(policy)
+					str = fmt.Sprintf("%s\n", string(yamlarr))
+					fmt.Printf("%s", str)
+				} else {
+					fmt.Printf("Currently supported formats are json and yaml\n")
+					break
+				}
 			}
 		}
 	}
@@ -116,13 +124,14 @@ func ConvertPolicy(o Options) error {
 }
 
 func DiscoverPolicy(o Options) error {
-
-	if o.Policy == "cilium" {
+	if o.Policy == "" {
+		fmt.Printf("Define policy type by using --policy flag\n")
+	} else if o.Policy == "cilium" {
 		o.Policy = "network"
 	} else if o.Policy == "kubearmor" {
 		o.Policy = "system"
 	} else {
-		log.Println("Policy type not recognized")
+		fmt.Println("Policy type not recognized.\nCurrently supported policies are cilium and kubearmor\n")
 	}
 
 	ConvertPolicy(o)
