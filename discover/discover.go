@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/rs/zerolog/log"
 
 	wpb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
 	"github.com/accuknox/auto-policy-discovery/src/types"
 	"google.golang.org/grpc"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 // Options Structure
@@ -24,6 +25,7 @@ type Options struct {
 	Policy string
 }
 
+// ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
 func ConvertPolicy(o Options) error {
 	gRPC := ""
 
@@ -67,7 +69,8 @@ func ConvertPolicy(o Options) error {
 
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
-					log.Fatal(err)
+					log.Error().Msg(err.Error())
+					return err
 				}
 
 				ciliumpolicy = append(ciliumpolicy, policy)
@@ -82,7 +85,7 @@ func ConvertPolicy(o Options) error {
 					str = fmt.Sprintf("%s\n", string(yamlarr))
 					fmt.Printf("%s", str)
 				} else {
-					fmt.Printf("Currently supported formats are json and yaml\n")
+					log.Printf("Currently supported formats are json and yaml\n")
 					break
 				}
 			}
@@ -98,7 +101,8 @@ func ConvertPolicy(o Options) error {
 
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
-					log.Fatal(err)
+					log.Error().Msg(err.Error())
+					return err
 				}
 
 				kubearmorpolicy = append(kubearmorpolicy, policy)
@@ -123,18 +127,18 @@ func ConvertPolicy(o Options) error {
 	return err
 }
 
-func DiscoverPolicy(o Options) error {
-	if o.Policy == "" {
-		fmt.Printf("Define policy type by using --policy flag\n")
-	} else if o.Policy == "cilium" {
+// Policy discovers Cilium or KubeArmor policies
+func Policy(o Options) error {
+	if o.Policy == "cilium" {
 		o.Policy = "network"
 	} else if o.Policy == "kubearmor" {
 		o.Policy = "system"
 	} else {
-		fmt.Println("Policy type not recognized.\nCurrently supported policies are cilium and kubearmor\n")
+		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are cilium and kubearmor\n")
 	}
 
-	ConvertPolicy(o)
-
+	if err := ConvertPolicy(o); err != nil {
+		return err
+	}
 	return nil
 }
