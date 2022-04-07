@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright 2021 Authors of KubeArmor
+# Copyright 2022 Authors of KubeArmor
 
 CURDIR     := $(shell pwd)
 INSTALLDIR := $(shell go env GOPATH)/bin/
@@ -53,7 +53,7 @@ ifeq (, $(shell which gosec))
 	GOSEC_TMP_DIR=$$(mktemp -d) ;\
 	cd $$GOSEC_TMP_DIR ;\
 	go mod init tmp ;\
-	go get -u github.com/securego/gosec/v2/cmd/gosec ;\
+	go install github.com/securego/gosec/v2/cmd/gosec@latest ;\
 	rm -rf $$GOSEC_TMP_DIR ;\
 	}
 endif
