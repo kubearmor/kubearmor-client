@@ -20,9 +20,12 @@ import (
 
 // Options Structure
 type Options struct {
-	GRPC   string
-	Format string
-	Policy string
+	GRPC        string
+	Format      string
+	Policy      string
+	Namespace   string
+	Clustername string
+	Labels      string
 }
 
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
@@ -40,7 +43,10 @@ func ConvertPolicy(o Options) error {
 	}
 
 	data := &wpb.WorkerRequest{
-		Policytype: o.Policy,
+		Policytype:  o.Policy,
+		Namespace:   o.Namespace,
+		Clustername: o.Clustername,
+		Labels:      o.Labels,
 	}
 
 	// create a client

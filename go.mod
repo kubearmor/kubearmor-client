@@ -3,8 +3,6 @@ module github.com/kubearmor/kubearmor-client
 go 1.18
 
 replace (
-	github.com/kubearmor/kubearmor-client => ./
-	github.com/kubearmor/kubearmor-client/insight => ./insight
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	k8s.io/api => k8s.io/api v0.22.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.3
