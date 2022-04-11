@@ -13,7 +13,7 @@ replace (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220322162637-bfb72ecbf61b
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220407062502-7a17738e4ebc
 	github.com/cilium/cilium v1.10.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220228115540-2211247620dd
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220321102834-0971f727bd8a
