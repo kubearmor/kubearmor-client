@@ -29,7 +29,7 @@ func Resources(c *k8s.Client, o Options) error {
 			fmt.Printf("%v \n", policy.Name)
 		}
 	} else {
-		fmt.Printf("No Resource found in %s namespace", o.Namespace)
+		fmt.Printf("No Resource found in %s namespace\n", o.Namespace)
 	}
 	return nil
 }
