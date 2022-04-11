@@ -48,7 +48,7 @@ func ConvertPolicy(o Options) error {
 		Namespace:   o.Namespace,
 		Clustername: o.Clustername,
 		Labels:      o.Labels,
-		FromSource:  o.FromSource,
+		Fromsource:  o.Fromsource,
 	}
 
 	// create a client
