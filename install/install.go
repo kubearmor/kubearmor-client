@@ -88,38 +88,6 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		fmt.Print("KubeArmor DaemonSet already exists ...\n")
 	}
 
-	fmt.Print("KubeArmor Policy Manager Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), deployments.GetPolicyManagerService(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
-		}
-		fmt.Print("KubeArmor Policy Manager Service already exists ...\n")
-	}
-
-	fmt.Print("KubeArmor Policy Manager Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), deployments.GetPolicyManagerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
-		}
-		fmt.Print("KubeArmor Policy Manager Deployment already exists ...\n")
-	}
-
-	fmt.Print("KubeArmor Host Policy Manager Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), deployments.GetHostPolicyManagerService(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
-		}
-		fmt.Print("KubeArmor Host Policy Manager Service already exists ...\n")
-	}
-
-	fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), deployments.GetHostPolicyManagerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
-		}
-		fmt.Print("KubeArmor Host Policy Manager Deployment already exists ...\n")
-	}
-
 	return nil
 }
 
@@ -163,38 +131,6 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 			return err
 		}
 		fmt.Print("KubeArmor DaemonSet not found ...\n")
-	}
-
-	fmt.Print("KubeArmor Policy Manager Service ...\n")
-	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), policyManagerServiceName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("KubeArmor Policy Manager Service not found ...\n")
-	}
-
-	fmt.Print("KubeArmor Policy Manager Deployment ...\n")
-	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), policyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("KubeArmor Policy Manager Deployment not found ...\n")
-	}
-
-	fmt.Print("KubeArmor Host Policy Manager Service ...\n")
-	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), hostPolicyManagerServiceName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("KubeArmor Host Policy Manager Service not found ...\n")
-	}
-
-	fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
-	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), hostPolicyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("KubeArmor Host Policy Manager Deployment not found ...\n")
 	}
 
 	fmt.Printf("CRD %s ...\n", kspName)

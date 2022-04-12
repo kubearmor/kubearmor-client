@@ -10,7 +10,3 @@ var serviceAccountName = kubearmor
 var clusterRoleBindingName = kubearmor
 var relayServiceName = kubearmor
 var relayDeploymentName = "kubearmor-relay"
-var policyManagerServiceName = "kubearmor-policy-manager-metrics-service"
-var policyManagerDeploymentName = "kubearmor-policy-manager"
-var hostPolicyManagerServiceName = "kubearmor-host-policy-manager-metrics-service"
-var hostPolicyManagerDeploymentName = "kubearmor-host-policy-manager"
