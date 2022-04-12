@@ -26,6 +26,7 @@ type Options struct {
 	Namespace   string
 	Clustername string
 	Labels      string
+	Fromsource  string
 }
 
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
@@ -47,6 +48,7 @@ func ConvertPolicy(o Options) error {
 		Namespace:   o.Namespace,
 		Clustername: o.Clustername,
 		Labels:      o.Labels,
+		Fromsource:  o.Fromsource,
 	}
 
 	// create a client
