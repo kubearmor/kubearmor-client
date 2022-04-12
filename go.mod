@@ -11,7 +11,7 @@ replace (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220407062502-7a17738e4ebc
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220412023742-5df1489d264b
 	github.com/cilium/cilium v1.10.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220228115540-2211247620dd
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220321102834-0971f727bd8a
@@ -42,6 +42,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
@@ -50,6 +51,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/confluentinc/confluent-kafka-go v1.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
@@ -67,6 +69,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.0 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-openapi/validate v0.20.3 // indirect
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.1.0 // indirect
@@ -112,6 +115,7 @@ require (
 	github.com/prometheus/client_model v0.2.1-0.20210607210712-147c58e9608a // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.21.10 // indirect
@@ -139,6 +143,7 @@ require (
 	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.64.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
