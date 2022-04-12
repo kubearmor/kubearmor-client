@@ -39,4 +39,5 @@ func init() {
 	logCmd.Flags().StringVar(&logOptions.PodName, "pod", "", "name of the pod ")
 	logCmd.Flags().StringVar(&logOptions.Resource, "resource", "", "command used by the user")
 	logCmd.Flags().StringVar(&logOptions.Source, "source", "", "binary used by the system ")
+	logCmd.Flags().Uint32Var(&logOptions.Limit, "limit", 0, "number of logs you want to see")
 }

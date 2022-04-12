@@ -40,6 +40,7 @@ type Options struct {
 	PodName       string
 	Source        string
 	Resource      string
+	Limit         uint32
 }
 
 // StopChan Channel
@@ -120,7 +121,7 @@ func StartObserver(o Options) error {
 	}
 
 	// create a client
-	logClient := NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter)
+	logClient := NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter, o.Limit)
 	if logClient == nil {
 		return errors.New("failed to connect to the gRPC server\nPossible troubleshooting:\n- Check if Kubearmor is running\n- Create a portforward to KubeArmor relay service using\n\t\033[1mkubectl -n kube-system port-forward service/kubearmor --address 0.0.0.0 --address :: 32767:32767\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
 	}
@@ -143,6 +144,7 @@ func StartObserver(o Options) error {
 		return err
 	}
 
+	Limitchan = make(chan bool, 2)
 	if o.LogPath != "none" {
 		if o.LogFilter == "all" || o.LogFilter == "policy" {
 			// watch alerts
@@ -157,9 +159,18 @@ func StartObserver(o Options) error {
 		}
 	}
 
-	// listen for interrupt signals
-	sigChan := GetOSSigChannel()
-	<-sigChan
+	if o.Limit != 0 {
+		if o.LogFilter == "all" {
+			<-Limitchan
+			<-Limitchan
+		} else {
+			<-Limitchan
+		}
+	} else {
+		// listen for interrupt signals
+		sigChan := GetOSSigChannel()
+		<-sigChan
+	}
 	close(StopChan)
 
 	logClient.Running = false
