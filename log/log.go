@@ -103,7 +103,12 @@ func StartObserver(o Options) error {
 		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
 			gRPC = val
 		} else {
-			gRPC = "localhost:32767"
+			fileContent, err := os.ReadFile("/opt/kubearmor/kubearmor.pid")
+			if err != nil || string(fileContent) == "" {
+				gRPC = "localhost:32767"
+			} else {
+				gRPC = fmt.Sprintf("localhost:%s", string(fileContent))
+			}
 		}
 	}
 
