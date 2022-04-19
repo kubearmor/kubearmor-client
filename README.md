@@ -35,23 +35,25 @@ make install
 ```
 CLI Utility to help manage KubeArmor
 
+KubeArmor is a container-aware runtime security enforcement system that
+restricts the behavior (such as process execution, file access, and networking
+operation) of containers at the system level.
+
 Usage:
   karmor [command]
 
 Available Commands:
-  completion  generate the autocompletion script for the specified shell
+  completion  Generate the autocompletion script for the specified shell
+  discover    Discover applicable policies
   get         Display specified resources
   help        Help about any command
+  insight     Policy insight from discovery engine
   install     Install KubeArmor in a Kubernetes Cluster
   log         Observe Logs from KubeArmor
   sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
-  vm          VM commands
-
-Available VM SubCommands:
-  getscript   download vm installation script for nonk8s control plane
-  policy      policy handling for vm nonk8s control plane
+  vm          VM commands for kvmservice
 
 Flags:
   -h, --help   help for karmor
