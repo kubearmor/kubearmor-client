@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
+	ipb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/insight"
 	"google.golang.org/grpc"
 )
 
@@ -23,6 +23,9 @@ type Options struct {
 	Clustername   string
 	Fromsource    string
 	Namespace     string
+	Source        string
+	Type          string
+	Rule          string
 }
 
 // Get insights on observability data
@@ -41,13 +44,16 @@ func StartInsight(o Options) error {
 
 	fmt.Println("gRPC server: " + gRPC)
 
-	data := &opb.Data{
+	data := &ipb.Request{
 		Request:       "observe",
+		Source:        o.Source,
 		Labels:        o.Labels,
 		ContainerName: o.Containername,
 		ClusterName:   o.Clustername,
 		FromSource:    o.Fromsource,
 		Namespace:     o.Namespace,
+		Type:          o.Type,
+		Rule:          o.Rule,
 	}
 
 	// create a client
@@ -57,10 +63,10 @@ func StartInsight(o Options) error {
 	}
 	defer conn.Close()
 
-	client := opb.NewObservabilityClient(conn)
+	client := ipb.NewInsightClient(conn)
 
 	// var response opb.Response
-	response, err := client.SysObservabilityData(context.Background(), data)
+	response, err := client.GetInsightData(context.Background(), data)
 	if err != nil {
 		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
 	}
