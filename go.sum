@@ -120,8 +120,8 @@ github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrU
 github.com/StackExchange/wmi v1.2.1 h1:VIkavFPXSjcnS+O8yTq7NI32k0R5Aj+v39y29VYDOSA=
 github.com/StackExchange/wmi v1.2.1/go.mod h1:rcmrprowKIVzvc+NUiLncP2uuArMWLCbu9SBzvHz7e8=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
-github.com/accuknox/auto-policy-discovery/src v0.0.0-20220412023742-5df1489d264b h1:r4Bw2IznyBivFgu0qrkls3vn+CowjXqtWagxp3qAHk4=
-github.com/accuknox/auto-policy-discovery/src v0.0.0-20220412023742-5df1489d264b/go.mod h1:PjyjUUBKD3cfU4a2FlUJfH3b+coUvOS8MovbZtf6xSk=
+github.com/accuknox/auto-policy-discovery/src v0.0.0-20220419113526-411a056ecebe h1:ngygWGYbUq5VqZy1ZUv5cOH11Q1Av/iIomhWlktOrug=
+github.com/accuknox/auto-policy-discovery/src v0.0.0-20220419113526-411a056ecebe/go.mod h1:PjyjUUBKD3cfU4a2FlUJfH3b+coUvOS8MovbZtf6xSk=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
