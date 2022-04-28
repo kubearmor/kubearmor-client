@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	ipb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/insight"
@@ -42,8 +41,6 @@ func StartInsight(o Options) error {
 		}
 	}
 
-	fmt.Println("gRPC server: " + gRPC)
-
 	data := &ipb.Request{
 		Request:       "observe",
 		Source:        o.Source,
@@ -75,7 +72,7 @@ func StartInsight(o Options) error {
 	arr, _ := json.MarshalIndent(response, "", "    ")
 	str = fmt.Sprintf("%s\n", string(arr))
 
-	log.Printf("%s \n", str)
+	fmt.Printf("%s \n", str)
 
 	return nil
 }
