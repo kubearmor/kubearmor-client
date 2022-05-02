@@ -90,8 +90,8 @@ func ConvertPolicy(o Options) error {
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
 					yamlarr, _ := yaml.Marshal(policy)
-					str = fmt.Sprintf("%s\n", string(yamlarr))
-					fmt.Printf("%s", str)
+					str = fmt.Sprintf("%s", string(yamlarr))
+					fmt.Printf("%s---\n", str)
 				} else {
 					log.Printf("Currently supported formats are json and yaml\n")
 					break
@@ -122,8 +122,8 @@ func ConvertPolicy(o Options) error {
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
 					yamlarr, _ := yaml.Marshal(policy)
-					str = fmt.Sprintf("%s\n", string(yamlarr))
-					fmt.Printf("%s", str)
+					str = fmt.Sprintf("%s", string(yamlarr))
+					fmt.Printf("%s---\n", str)
 				} else {
 					fmt.Printf("Currently supported formats are json and yaml\n")
 					break
