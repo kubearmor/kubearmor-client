@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/rs/zerolog/log"
 
@@ -27,6 +28,12 @@ type Options struct {
 	Clustername string
 	Labels      string
 	Fromsource  string
+}
+
+func removeEmptyVal(pol string) string {
+	re := regexp.MustCompile("(?m)[\r\n]+^.*substring.*$")
+	result := re.ReplaceAllString(pol, "")
+	return result
 }
 
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
@@ -87,10 +94,12 @@ func ConvertPolicy(o Options) error {
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
 					str = fmt.Sprintf("%s\n", string(arr))
+					str = removeEmptyVal(str)
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
 					yamlarr, _ := yaml.Marshal(policy)
 					str = fmt.Sprintf("%s", string(yamlarr))
+					str = removeEmptyVal(str)
 					fmt.Printf("%s---\n", str)
 				} else {
 					log.Printf("Currently supported formats are json and yaml\n")
@@ -119,10 +128,12 @@ func ConvertPolicy(o Options) error {
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
 					str = fmt.Sprintf("%s\n", string(arr))
+					str = removeEmptyVal(str)
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
 					yamlarr, _ := yaml.Marshal(policy)
 					str = fmt.Sprintf("%s", string(yamlarr))
+					str = removeEmptyVal(str)
 					fmt.Printf("%s---\n", str)
 				} else {
 					fmt.Printf("Currently supported formats are json and yaml\n")
