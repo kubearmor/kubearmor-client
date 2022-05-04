@@ -31,7 +31,7 @@ type Options struct {
 }
 
 func removeEmptyVal(pol string) string {
-	re := regexp.MustCompile("(?m)[\r\n]+^.*substring.*$")
+	re := regexp.MustCompile("(?m)[\r\n]+^.*{}.*$")
 	result := re.ReplaceAllString(pol, "")
 	return result
 }
