@@ -18,6 +18,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+var Limitchan chan bool
+var i uint32
+
 // ============ //
 // == Common == //
 // ============ //
@@ -64,6 +67,9 @@ type Feeder struct {
 	// server
 	server string
 
+	//limit
+	limit uint32
+
 	// connection
 	conn *grpc.ClientConn
 
@@ -84,12 +90,14 @@ type Feeder struct {
 }
 
 // NewClient Function
-func NewClient(server, msgPath, logPath, logFilter string) *Feeder {
+func NewClient(server, msgPath, logPath, logFilter string, limit uint32) *Feeder {
 	fd := &Feeder{}
 
 	fd.Running = true
 
 	fd.server = server
+
+	fd.limit = limit
 
 	conn, err := grpc.Dial(fd.server, grpc.WithInsecure())
 	if err != nil {
@@ -202,124 +210,143 @@ func regexMatcher(filter *regexp.Regexp, res string) bool {
 	return true
 }
 
+func watchAlertsHelper(res *pb.Alert, o Options) error {
+	if o.Namespace != "" {
+		match := regexMatcher(CNamespace, res.NamespaceName)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.LogType != "" {
+		match := regexMatcher(CLogtype, res.Type)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.Operation != "" {
+		match := regexMatcher(COperation, res.Operation)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.ContainerName != "" {
+		match := regexMatcher(CContainerName, res.ContainerName)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.PodName != "" {
+		match := regexMatcher(CPodName, res.PodName)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.Source != "" {
+		match := regexMatcher(CSource, res.Source)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.Resource != "" {
+		match := regexMatcher(CResource, res.Resource)
+		if !match {
+			return nil
+		}
+	}
+
+	str := ""
+
+	if o.JSON {
+		arr, _ := json.Marshal(res)
+		str = fmt.Sprintf("%s\n", string(arr))
+	} else {
+		updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
+		updatedTime = strings.Replace(updatedTime, "Z", "", -1)
+
+		str = fmt.Sprintf("== Alert / %s ==\n", updatedTime)
+
+		str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
+		str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
+
+		if res.NamespaceName != "" {
+			str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
+			str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
+			str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
+			str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
+		}
+
+		if len(res.PolicyName) > 0 {
+			str = str + fmt.Sprintf("Policy Name: %s\n", res.PolicyName)
+		}
+
+		if len(res.Severity) > 0 {
+			str = str + fmt.Sprintf("Severity: %s\n", res.Severity)
+		}
+
+		if len(res.Tags) > 0 {
+			str = str + fmt.Sprintf("Tags: %s\n", res.Tags)
+		}
+
+		if len(res.Message) > 0 {
+			str = str + fmt.Sprintf("Message: %s\n", res.Message)
+		}
+
+		str = str + fmt.Sprintf("Type: %s\n", res.Type)
+		str = str + fmt.Sprintf("Source: %s\n", res.Source)
+		str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
+		str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
+
+		if len(res.Data) > 0 {
+			str = str + fmt.Sprintf("Data: %s\n", res.Data)
+		}
+
+		if len(res.Action) > 0 {
+			str = str + fmt.Sprintf("Action: %s\n", res.Action)
+		}
+
+		str = str + fmt.Sprintf("Result: %s\n", res.Result)
+	}
+
+	if o.LogPath == "stdout" {
+		fmt.Printf("%s", str)
+	} else {
+		StrToFile(str, o.LogPath)
+	}
+	return nil
+}
+
 // WatchAlerts Function
 func (fd *Feeder) WatchAlerts(o Options) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
-	for fd.Running {
-		res, err := fd.alertStream.Recv()
-		if err != nil {
-			fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
-			break
+	if o.Limit > 0 {
+		for i = 0; i < o.Limit; i++ {
+			res, err := fd.alertStream.Recv()
+			if err != nil {
+				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
+				break
+			}
+			_ = watchAlertsHelper(res, o)
+
 		}
+		Limitchan <- true
 
-		if o.Namespace != "" {
-			match := regexMatcher(CNamespace, res.NamespaceName)
-			if !match {
-				return nil
+	} else {
+		for fd.Running {
+			res, err := fd.alertStream.Recv()
+			if err != nil {
+				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
+				break
 			}
-		}
+			_ = watchAlertsHelper(res, o)
 
-		if o.LogType != "" {
-			match := regexMatcher(CLogtype, res.Type)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.Operation != "" {
-			match := regexMatcher(COperation, res.Operation)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.ContainerName != "" {
-			match := regexMatcher(CContainerName, res.ContainerName)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.PodName != "" {
-			match := regexMatcher(CPodName, res.PodName)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.Source != "" {
-			match := regexMatcher(CSource, res.Source)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.Resource != "" {
-			match := regexMatcher(CResource, res.Resource)
-			if !match {
-				return nil
-			}
-		}
-
-		str := ""
-
-		if o.JSON {
-			arr, _ := json.Marshal(res)
-			str = fmt.Sprintf("%s\n", string(arr))
-		} else {
-			updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
-			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-
-			str = fmt.Sprintf("== Alert / %s ==\n", updatedTime)
-
-			str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-			str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
-
-			if res.NamespaceName != "" {
-				str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-				str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
-				str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
-				str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
-			}
-
-			if len(res.PolicyName) > 0 {
-				str = str + fmt.Sprintf("Policy Name: %s\n", res.PolicyName)
-			}
-
-			if len(res.Severity) > 0 {
-				str = str + fmt.Sprintf("Severity: %s\n", res.Severity)
-			}
-
-			if len(res.Tags) > 0 {
-				str = str + fmt.Sprintf("Tags: %s\n", res.Tags)
-			}
-
-			if len(res.Message) > 0 {
-				str = str + fmt.Sprintf("Message: %s\n", res.Message)
-			}
-
-			str = str + fmt.Sprintf("Type: %s\n", res.Type)
-			str = str + fmt.Sprintf("Source: %s\n", res.Source)
-			str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
-			str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
-
-			if len(res.Data) > 0 {
-				str = str + fmt.Sprintf("Data: %s\n", res.Data)
-			}
-
-			if len(res.Action) > 0 {
-				str = str + fmt.Sprintf("Action: %s\n", res.Action)
-			}
-
-			str = str + fmt.Sprintf("Result: %s\n", res.Result)
-		}
-
-		if o.LogPath == "stdout" {
-			fmt.Printf("%s", str)
-		} else {
-			StrToFile(str, o.LogPath)
 		}
 	}
 
@@ -328,104 +355,122 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 	return nil
 }
 
+func WatchLogsHelper(res *pb.Log, o Options) error {
+	if o.Namespace != "" {
+		match := regexMatcher(CNamespace, res.NamespaceName)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.LogType != "" {
+		match := regexMatcher(CLogtype, res.Type)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.Operation != "" {
+		match := regexMatcher(COperation, res.Operation)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.ContainerName != "" {
+		match := regexMatcher(CContainerName, res.ContainerName)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.PodName != "" {
+		match := regexMatcher(CPodName, res.PodName)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.Source != "" {
+		match := regexMatcher(CSource, res.Source)
+		if !match {
+			return nil
+		}
+	}
+
+	if o.Resource != "" {
+		match := regexMatcher(CResource, res.Resource)
+		if !match {
+			return nil
+		}
+	}
+
+	str := ""
+
+	if o.JSON {
+		arr, _ := json.Marshal(res)
+		str = fmt.Sprintf("%s\n", string(arr))
+	} else {
+		updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
+		updatedTime = strings.Replace(updatedTime, "Z", "", -1)
+
+		str = fmt.Sprintf("== Log / %s ==\n", updatedTime)
+
+		str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
+		str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
+
+		if res.NamespaceName != "" {
+			str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
+			str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
+			str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
+			str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
+		}
+
+		str = str + fmt.Sprintf("Type: %s\n", res.Type)
+		str = str + fmt.Sprintf("Source: %s\n", res.Source)
+		str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
+		str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
+
+		if len(res.Data) > 0 {
+			str = str + fmt.Sprintf("Data: %s\n", res.Data)
+		}
+
+		str = str + fmt.Sprintf("Result: %s\n", res.Result)
+	}
+
+	if o.LogPath == "stdout" {
+		fmt.Printf("%s", str)
+	} else {
+		StrToFile(str, o.LogPath)
+	}
+	return nil
+
+}
+
 // WatchLogs Function
 func (fd *Feeder) WatchLogs(o Options) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
-	for fd.Running {
-		res, err := fd.logStream.Recv()
-		if err != nil {
-			fmt.Printf("Failed to receive a log (%s)\n", err.Error())
-			break
-		}
-
-		if o.Namespace != "" {
-			match := regexMatcher(CNamespace, res.NamespaceName)
-			if !match {
-				return nil
+	if o.Limit > 0 {
+		for i = 0; i < o.Limit; i++ {
+			res, err := fd.logStream.Recv()
+			if err != nil {
+				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
+				break
 			}
+			_ = WatchLogsHelper(res, o)
 		}
-
-		if o.LogType != "" {
-			match := regexMatcher(CLogtype, res.Type)
-			if !match {
-				return nil
+		Limitchan <- true
+	} else {
+		for fd.Running {
+			res, err := fd.logStream.Recv()
+			if err != nil {
+				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
+				break
 			}
-		}
+			_ = WatchLogsHelper(res, o)
 
-		if o.Operation != "" {
-			match := regexMatcher(COperation, res.Operation)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.ContainerName != "" {
-			match := regexMatcher(CContainerName, res.ContainerName)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.PodName != "" {
-			match := regexMatcher(CPodName, res.PodName)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.Source != "" {
-			match := regexMatcher(CSource, res.Source)
-			if !match {
-				return nil
-			}
-		}
-
-		if o.Resource != "" {
-			match := regexMatcher(CResource, res.Resource)
-			if !match {
-				return nil
-			}
-		}
-
-		str := ""
-
-		if o.JSON {
-			arr, _ := json.Marshal(res)
-			str = fmt.Sprintf("%s\n", string(arr))
-		} else {
-			updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
-			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-
-			str = fmt.Sprintf("== Log / %s ==\n", updatedTime)
-
-			str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-			str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
-
-			if res.NamespaceName != "" {
-				str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-				str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
-				str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
-				str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
-			}
-
-			str = str + fmt.Sprintf("Type: %s\n", res.Type)
-			str = str + fmt.Sprintf("Source: %s\n", res.Source)
-			str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
-			str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
-
-			if len(res.Data) > 0 {
-				str = str + fmt.Sprintf("Data: %s\n", res.Data)
-			}
-
-			str = str + fmt.Sprintf("Result: %s\n", res.Result)
-		}
-
-		if o.LogPath == "stdout" {
-			fmt.Printf("%s", str)
-		} else {
-			StrToFile(str, o.LogPath)
 		}
 	}
 
