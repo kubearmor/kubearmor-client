@@ -5,18 +5,17 @@ package discover
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 
+	"github.com/clarketm/json"
 	"github.com/rs/zerolog/log"
+	"sigs.k8s.io/yaml"
 
 	wpb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
 	"github.com/accuknox/auto-policy-discovery/src/types"
 	"google.golang.org/grpc"
-	"sigs.k8s.io/yaml"
 )
 
 // Options Structure
@@ -28,12 +27,6 @@ type Options struct {
 	Clustername string
 	Labels      string
 	Fromsource  string
-}
-
-func removeEmptyVal(pol string) string {
-	re := regexp.MustCompile("(?m)[\r\n]+^.*{}.*$")
-	result := re.ReplaceAllString(pol, "")
-	return result
 }
 
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
@@ -94,12 +87,11 @@ func ConvertPolicy(o Options) error {
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
 					str = fmt.Sprintf("%s\n", string(arr))
-					str = removeEmptyVal(str)
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
-					yamlarr, _ := yaml.Marshal(policy)
+					arr, _ := json.Marshal(policy)
+					yamlarr, _ := yaml.JSONToYAML(arr)
 					str = fmt.Sprintf("%s", string(yamlarr))
-					str = removeEmptyVal(str)
 					fmt.Printf("%s---\n", str)
 				} else {
 					log.Printf("Currently supported formats are json and yaml\n")
@@ -128,12 +120,11 @@ func ConvertPolicy(o Options) error {
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
 					str = fmt.Sprintf("%s\n", string(arr))
-					str = removeEmptyVal(str)
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
-					yamlarr, _ := yaml.Marshal(policy)
+					arr, _ := json.Marshal(policy)
+					yamlarr, _ := yaml.JSONToYAML(arr)
 					str = fmt.Sprintf("%s", string(yamlarr))
-					str = removeEmptyVal(str)
 					fmt.Printf("%s---\n", str)
 				} else {
 					fmt.Printf("Currently supported formats are json and yaml\n")
