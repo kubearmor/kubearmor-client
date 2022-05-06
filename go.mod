@@ -19,13 +19,13 @@ require (
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220321102834-0971f727bd8a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220321102834-0971f727bd8a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220321102834-0971f727bd8a
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220418051457-bf6087fd0bc0
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220504043216-6451e04be58b
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/rs/zerolog v1.26.1
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/mod v0.5.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/grpc v1.45.0
+	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
 	k8s.io/api v0.23.5
 	k8s.io/apiextensions-apiserver v0.22.3
