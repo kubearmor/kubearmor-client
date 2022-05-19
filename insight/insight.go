@@ -16,6 +16,7 @@ import (
 
 // Options Structure
 type Options struct {
+	Request       string
 	GRPC          string
 	Labels        string
 	Containername string
@@ -42,7 +43,7 @@ func StartInsight(o Options) error {
 	}
 
 	data := &ipb.Request{
-		Request:       "observe",
+		Request:       o.Request,
 		Source:        o.Source,
 		Labels:        o.Labels,
 		ContainerName: o.Containername,

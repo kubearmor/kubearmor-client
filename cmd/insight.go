@@ -28,6 +28,7 @@ func init() {
 
 	insightCmd.Flags().StringVar(&insightOptions.GRPC, "gRPC", "", "gRPC server information")
 	insightCmd.Flags().StringVar(&insightOptions.Source, "source", "all", "The DB for insight : system|network|all")
+	insightCmd.Flags().StringVar(&insightOptions.Request, "request", "observe", "Insight/ClearDB : observe|dbclear")
 	insightCmd.Flags().StringVar(&insightOptions.Labels, "labels", "", "Labels for resources")
 	insightCmd.Flags().StringVar(&insightOptions.Containername, "containername", "", "Filter according to the Container name")
 	insightCmd.Flags().StringVar(&insightOptions.Clustername, "clustername", "", "Filter according to the Cluster name")
