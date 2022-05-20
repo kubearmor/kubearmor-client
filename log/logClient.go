@@ -271,6 +271,7 @@ func watchAlertsHelper(res *pb.Alert, o Options) error {
 
 	str := ""
 
+	dockerenabled := false
 	if o.JSON {
 		arr, _ := json.Marshal(res)
 		str = fmt.Sprintf("%s\n", string(arr))
@@ -280,15 +281,24 @@ func watchAlertsHelper(res *pb.Alert, o Options) error {
 
 		str = fmt.Sprintf("== Alert / %s ==\n", updatedTime)
 
-		str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-		str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
+		// Check if docker daemon is running
+		if _, err := os.Stat("/var/run/docker.pid"); err == nil {
+			dockerenabled = true // docker is running
+		}
+
+		if !dockerenabled {
+			str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
+			str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
+		}
 
 		if res.NamespaceName != "" {
-			str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-			str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
+			if !dockerenabled {
+				str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
+				str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
+				str = str + fmt.Sprintf("Labels: %s\n", res.Labels)
+			}
 			str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
 			str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
-			str = str + fmt.Sprintf("Labels: %s\n", res.Labels)
 		}
 
 		if len(res.PolicyName) > 0 {
@@ -423,6 +433,7 @@ func WatchLogsHelper(res *pb.Log, o Options) error {
 		}
 	}
 
+	dockerenabled := false
 	str := ""
 
 	if o.JSON {
@@ -434,15 +445,24 @@ func WatchLogsHelper(res *pb.Log, o Options) error {
 
 		str = fmt.Sprintf("== Log / %s ==\n", updatedTime)
 
-		str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-		str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
+		// Check if docker daemon is running
+		if _, err := os.Stat("/var/run/docker.pid"); err == nil {
+			dockerenabled = true // docker is running
+		}
+
+		if !dockerenabled {
+			str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
+			str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
+		}
 
 		if res.NamespaceName != "" {
-			str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-			str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
+			if !dockerenabled {
+				str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
+				str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
+				str = str + fmt.Sprintf("Labels: %s\n", res.Labels)
+			}
 			str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
 			str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
-			str = str + fmt.Sprintf("Labels: %s\n", res.Labels)
 		}
 
 		str = str + fmt.Sprintf("Type: %s\n", res.Type)
