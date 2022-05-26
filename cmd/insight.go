@@ -26,13 +26,13 @@ var insightCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(insightCmd)
 
-	insightCmd.Flags().StringVar(&insightOptions.GRPC, "gRPC", "", "gRPC server information")
-	insightCmd.Flags().StringVar(&insightOptions.Source, "source", "all", "The DB for insight : system|network|all")
+	insightCmd.Flags().StringVar(&insightOptions.GRPC, "grpc", "", "gRPC server information")
+	insightCmd.Flags().StringVar(&insightOptions.Source, "class", "all", "The DB for insight : system|network|all")
 	insightCmd.Flags().StringVar(&insightOptions.Labels, "labels", "", "Labels for resources")
 	insightCmd.Flags().StringVar(&insightOptions.Containername, "containername", "", "Filter according to the Container name")
 	insightCmd.Flags().StringVar(&insightOptions.Clustername, "clustername", "", "Filter according to the Cluster name")
 	insightCmd.Flags().StringVar(&insightOptions.Fromsource, "fromsource", "", "Filter according to the source path")
 	insightCmd.Flags().StringVarP(&insightOptions.Namespace, "namespace", "n", "", "Namespace for resources")
 	insightCmd.Flags().StringVar(&insightOptions.Type, "type", "", "NW packet type : ingress|egress")
-	insightCmd.Flags().StringVar(&insightOptions.Rule, "rule", "", "NW packet Rule")
+	insightCmd.Flags().StringVar(&insightOptions.Rule, "rule-type", "", "NW packet Rule")
 }
