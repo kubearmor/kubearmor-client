@@ -34,5 +34,5 @@ func init() {
 	insightCmd.Flags().StringVar(&insightOptions.Fromsource, "fromsource", "", "Filter according to the source path")
 	insightCmd.Flags().StringVarP(&insightOptions.Namespace, "namespace", "n", "", "Namespace for resources")
 	insightCmd.Flags().StringVar(&insightOptions.Type, "type", "", "NW packet type : ingress|egress")
-	insightCmd.Flags().StringVar(&insightOptions.Rule, "ruletype", "", "NW packet Rule")
+	insightCmd.Flags().StringVar(&insightOptions.Rule, "rule", "", "NW packet Rule")
 }
