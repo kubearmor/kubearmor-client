@@ -40,6 +40,9 @@ func StartInsight(o Options) error {
 			gRPC = "localhost:9089"
 		}
 	}
+	if o.Source == "application" {
+		o.Source = "system"
+	}
 
 	data := &ipb.Request{
 		Request:       "observe",
@@ -61,8 +64,8 @@ func StartInsight(o Options) error {
 	defer conn.Close()
 
 	client := ipb.NewInsightClient(conn)
-
 	// var response opb.Response
+
 	response, err := client.GetInsightData(context.Background(), data)
 	if err != nil {
 		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
