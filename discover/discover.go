@@ -22,7 +22,7 @@ import (
 type Options struct {
 	GRPC        string
 	Format      string
-	Policy      string
+	Class       string
 	Namespace   string
 	Clustername string
 	Labels      string
@@ -44,7 +44,7 @@ func ConvertPolicy(o Options) error {
 	}
 
 	data := &wpb.WorkerRequest{
-		Policytype:  o.Policy,
+		Policytype:  o.Class,
 		Namespace:   o.Namespace,
 		Clustername: o.Clustername,
 		Labels:      o.Labels,
@@ -66,7 +66,7 @@ func ConvertPolicy(o Options) error {
 		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
 	}
 
-	if o.Policy == "network" {
+	if o.Class == "network" {
 		policy := types.CiliumNetworkPolicy{}
 
 		ciliumpolicy := []types.CiliumNetworkPolicy{}
@@ -99,7 +99,7 @@ func ConvertPolicy(o Options) error {
 				}
 			}
 		}
-	} else if o.Policy == "system" {
+	} else if o.Class == "system" {
 		policy := types.KubeArmorPolicy{}
 
 		kubearmorpolicy := []types.KubeArmorPolicy{}
@@ -139,14 +139,11 @@ func ConvertPolicy(o Options) error {
 
 // Policy discovers Cilium or KubeArmor policies
 func Policy(o Options) error {
-	if o.Policy == "cilium" {
-		o.Policy = "network"
-	} else if o.Policy == "kubearmor" {
-		o.Policy = "system"
-	} else {
-		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are cilium and kubearmor\n")
+	if o.Class == "application" {
+		o.Class = "system"
+	} else if o.Class != "application" || o.Class != "network" {
+		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are application and network\n")
 	}
-
 	if err := ConvertPolicy(o); err != nil {
 		return err
 	}
