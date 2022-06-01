@@ -17,8 +17,8 @@ require (
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220228115540-2211247620dd
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220321102834-0971f727bd8a
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220321102834-0971f727bd8a
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220321102834-0971f727bd8a
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220321102834-0971f727bd8a
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220530163223-1aaee570cbe3
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220530163223-1aaee570cbe3
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220504043216-6451e04be58b
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/rs/zerolog v1.26.1
