@@ -27,7 +27,7 @@ func init() {
 	rootCmd.AddCommand(insightCmd)
 
 	insightCmd.Flags().StringVar(&insightOptions.GRPC, "grpc", "", "gRPC server information")
-	insightCmd.Flags().StringVar(&insightOptions.Source, "class", "application", "The DB for insight : application|network|all")
+	insightCmd.Flags().StringVar(&insightOptions.Class, "class", "application", "The DB for insight : application|network|all")
 	insightCmd.Flags().StringVar(&insightOptions.Labels, "labels", "", "Labels for resources")
 	insightCmd.Flags().StringVar(&insightOptions.Containername, "containername", "", "Filter according to the Container name")
 	insightCmd.Flags().StringVar(&insightOptions.Clustername, "clustername", "", "Filter according to the Cluster name")
