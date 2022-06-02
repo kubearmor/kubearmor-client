@@ -22,7 +22,7 @@ type Options struct {
 	Clustername   string
 	Fromsource    string
 	Namespace     string
-	Source        string
+	Class         string
 	Type          string
 	Rule          string
 }
@@ -40,13 +40,13 @@ func StartInsight(o Options) error {
 			gRPC = "localhost:9089"
 		}
 	}
-	if o.Source == "application" {
-		o.Source = "system"
+	if o.Class == "application" {
+		o.Class = "system"
 	}
 
 	data := &ipb.Request{
 		Request:       "observe",
-		Source:        o.Source,
+		Source:        o.Class,
 		Labels:        o.Labels,
 		ContainerName: o.Containername,
 		ClusterName:   o.Clustername,
