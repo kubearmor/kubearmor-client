@@ -6,6 +6,7 @@ package log
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -211,6 +212,14 @@ func regexMatcher(filter *regexp.Regexp, res string) bool {
 }
 
 func watchAlertsHelper(res *pb.Alert, o Options) error {
+
+	if len(o.Selector) != 0 {
+		val := selectLabels(o, res.Labels)
+		if val != nil {
+			return nil
+		}
+	}
+
 	if o.Namespace != "" {
 		match := regexMatcher(CNamespace, res.NamespaceName)
 		if !match {
@@ -357,6 +366,14 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 }
 
 func WatchLogsHelper(res *pb.Log, o Options) error {
+
+	if len(o.Selector) != 0 {
+		val := selectLabels(o, res.Labels)
+		if val != nil {
+			return nil
+		}
+	}
+
 	if o.Namespace != "" {
 		match := regexMatcher(CNamespace, res.NamespaceName)
 		if !match {
@@ -490,4 +507,15 @@ func (fd *Feeder) DestroyClient() error {
 	fd.WgClient.Wait()
 
 	return nil
+}
+
+func selectLabels(o Options, labels string) error {
+
+	for _, val := range o.Selector {
+		if val == labels {
+			return nil
+		}
+	}
+	return errors.New("Not found any flag")
+
 }
