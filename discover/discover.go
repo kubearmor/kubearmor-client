@@ -139,12 +139,11 @@ func ConvertPolicy(o Options) error {
 
 // Policy discovers Cilium or KubeArmor policies
 func Policy(o Options) error {
-	if o.Class == "apllication" {
+	if o.Class == "application" {
 		o.Class = "system"
-	} else {
+	} else if o.Class != "application" || o.Class != "network" {
 		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are application and network\n")
 	}
-
 	if err := ConvertPolicy(o); err != nil {
 		return err
 	}
