@@ -24,7 +24,7 @@ type Options struct {
 	Namespace     string
 	Class         string
 	Type          string
-	Rule          string
+	Ruletype      string
 }
 
 // Get insights on observability data
@@ -53,7 +53,7 @@ func StartInsight(o Options) error {
 		FromSource:    o.Fromsource,
 		Namespace:     o.Namespace,
 		Type:          o.Type,
-		Rule:          o.Rule,
+		Rule:          o.Ruletype,
 	}
 
 	// create a client
