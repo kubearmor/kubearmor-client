@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	v2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
@@ -26,6 +27,8 @@ const (
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
 	// CiliumNetworkPolicy is the Kind used for Cilium network policies
 	CiliumNetworkPolicy = "CiliumNetworkPolicy"
+	// CiliumClusterwideNetworkPolicy is the Kind used for Cilium network policies
+	CiliumClusterwideNetworkPolicy = "CiliumClusterwideNetworkPolicy"
 )
 
 // PolicyOptions are optional configuration for kArmor vm policy
@@ -107,59 +110,71 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 		return err
 	}
 
-	js, err := yaml.YAMLToJSON(policyFile)
-	if err != nil {
-		return err
-	}
+	policies := strings.Split(string(policyFile), "---")
 
-	err = json.Unmarshal(js, &k)
-	if err != nil {
-		return err
-	}
+	for _, policy := range policies {
+		if policy == "" {
+			continue
+		}
 
-	var hostPolicy tp.K8sKubeArmorHostPolicy
-	var networkPolicy v2.CiliumNetworkPolicy
-	var policyEvent interface{}
-
-	if k.Kind == KubeArmorHostPolicy {
-		err = json.Unmarshal(js, &hostPolicy)
+		js, err := yaml.YAMLToJSON([]byte(policy))
 		if err != nil {
 			return err
 		}
 
-		policyEvent = tp.K8sKubeArmorHostPolicyEvent{
-			Type:   t,
-			Object: hostPolicy,
-		}
-
-	} else if k.Kind == CiliumNetworkPolicy {
-		err = json.Unmarshal(js, &networkPolicy)
+		err = json.Unmarshal(js, &k)
 		if err != nil {
 			return err
 		}
 
-		policyEvent = NetworkPolicyRequest{
-			Type:   t,
-			Object: networkPolicy,
+		var hostPolicy tp.K8sKubeArmorHostPolicy
+		var networkPolicy v2.CiliumNetworkPolicy
+		var policyEvent interface{}
+
+		if k.Kind == KubeArmorHostPolicy {
+			err = json.Unmarshal(js, &hostPolicy)
+			if err != nil {
+				return err
+			}
+
+			policyEvent = tp.K8sKubeArmorHostPolicyEvent{
+				Type:   t,
+				Object: hostPolicy,
+			}
+
+		} else if k.Kind == CiliumNetworkPolicy || k.Kind == CiliumClusterwideNetworkPolicy {
+			err = json.Unmarshal(js, &networkPolicy)
+			if err != nil {
+				return err
+			}
+
+			if networkPolicy.Spec == nil {
+				continue
+			}
+
+			policyEvent = NetworkPolicyRequest{
+				Type:   t,
+				Object: networkPolicy,
+			}
+
 		}
 
-	}
-
-	policyEventData, err := json.Marshal(policyEvent)
-	if err != nil {
-		return err
-	}
-
-	if isKvmsEnv {
-		// Non-K8s control plane with kvmservice, hence send policy over HTTP
-		if err = sendPolicyOverHTTP(httpAddress, k.Kind, policyEventData); err != nil {
+		policyEventData, err := json.Marshal(policyEvent)
+		if err != nil {
 			return err
 		}
-	} else {
-		// Systemd mode, hence send policy over gRPC
-		if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
-			return err
 
+		if isKvmsEnv {
+			// Non-K8s control plane with kvmservice, hence send policy over HTTP
+			if err = sendPolicyOverHTTP(httpAddress, k.Kind, policyEventData); err != nil {
+				return err
+			}
+		} else {
+			// Systemd mode, hence send policy over gRPC
+			if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
+				return err
+
+			}
 		}
 	}
 
