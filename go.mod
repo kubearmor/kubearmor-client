@@ -16,7 +16,7 @@ require (
 	github.com/clarketm/json v1.17.1
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220228115540-2211247620dd
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220321102834-0971f727bd8a
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220321102834-0971f727bd8a
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220613061228-45dd42e1e824
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220530163223-1aaee570cbe3
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220530163223-1aaee570cbe3
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220504043216-6451e04be58b
