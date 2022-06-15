@@ -855,10 +855,6 @@ github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc h1:
 github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc/go.mod h1:jH95bvc6gzdHxVdyUAx/MM9q27P9EPQUl13HkBO5mr4=
 github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220620050120-7e1810d2ad41 h1:JcYB5FBXQC25LYERpVPIiKAe+Yqi5ajE6Nhlzdt+L3w=
 github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220620050120-7e1810d2ad41/go.mod h1:PS5U+aErr2Phj1RqOjdQaIcCFaNCNNVk/AzMacvOg0Q=
-github.com/kubearmor/KubeArmor/deployments v0.0.0-20220620050120-7e1810d2ad41 h1:cxbg7TJuNXQ2klgOCqT2qi0Bf7RdeYMFhptDqQc5pLs=
-github.com/kubearmor/KubeArmor/deployments v0.0.0-20220620050120-7e1810d2ad41/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
-github.com/kubearmor/KubeArmor/deployments v0.0.0-20220705112953-c714aa67d578 h1:QkijCgbUnkxY16tpK2eaKU3yuaV8wvaVnIs8WjrOqUk=
-github.com/kubearmor/KubeArmor/deployments v0.0.0-20220705112953-c714aa67d578/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20220706172948-9d2644f2666b h1:prbwatIC08aeULQd+71mGNSROAnKBt4Z/OLzarcdMP4=
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20220706172948-9d2644f2666b/go.mod h1:cyEhgwG/sKmC6OI0Jgx+4T6/G7YiafcX2OpgSsbZ+b8=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41 h1:qlcrgrK4NAD1tIatGKUgsZUh/TfLXdLfyNwS7wbnKF0=
