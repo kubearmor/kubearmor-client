@@ -41,6 +41,7 @@ type Options struct {
 	Source        string
 	Resource      string
 	Limit         uint32
+	Selector      []string
 }
 
 // StopChan Channel

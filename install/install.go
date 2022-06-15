@@ -20,6 +20,7 @@ import (
 type Options struct {
 	Namespace      string
 	KubearmorImage string
+	Audit          string
 }
 
 // K8sInstaller for karmor install
@@ -78,9 +79,19 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		fmt.Print("KubeArmor Relay Deployment already exists ...\n")
 	}
 
-	fmt.Printf("KubeArmor DaemonSet %s...\n", o.KubearmorImage)
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
+	if o.Audit == "all" || strings.Contains(o.Audit, "file") {
+		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultFilePosture=audit")
+	}
+	if o.Audit == "all" || strings.Contains(o.Audit, "network") {
+		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultNetworkPosture=audit")
+	}
+	if o.Audit == "all" || strings.Contains(o.Audit, "capabilities") {
+		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=audit")
+	}
+	fmt.Printf("KubeArmor DaemonSet %s %v...\n", daemonset.Spec.Template.Spec.Containers[0].Image, daemonset.Spec.Template.Spec.Containers[0].Args)
+
 	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
