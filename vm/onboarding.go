@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	tp "github.com/kubearmor/KVMService/src/types"
@@ -43,6 +45,7 @@ func postHTTPRequest(eventData []byte, vmAction string, address string) (string,
 
 // List - Lists all configured VMs
 func List(address string) error {
+	var endpoints []tp.KVMSEndpoint
 
 	vmlist, err := postHTTPRequest(nil, "vmlist", address)
 	if err != nil {
@@ -50,17 +53,29 @@ func List(address string) error {
 		return err
 	}
 
-	if vmlist == "" {
+	err = json.Unmarshal([]byte(vmlist), &endpoints)
+	if err != nil {
+		fmt.Println("Failed to parse vm list")
+		return err
+	}
+
+	if len(endpoints) == 0 {
 		fmt.Println("No VMs configured")
 	} else {
-		fmt.Printf("List of configured vms are : %s\n", vmlist)
+		fmt.Println("-------------------------------------------")
+		fmt.Printf(" %-3s| %-15s| %-10s| %s\n", "", "VM Name", "Identity", "Labels")
+		fmt.Println("-------------------------------------------")
+		for idx, vm := range endpoints {
+			fmt.Printf(" %-3s| %-15s| %-10s| %s\n", strconv.Itoa(idx+1),
+				vm.VMName, strconv.Itoa(int(vm.Identity)), strings.Join(vm.Labels, "; "))
+		}
 	}
 
 	return nil
 }
 
 func Onboarding(eventType string, path string, address string) error {
-	var vm tp.K8sKubeArmorExternalWorkloadPolicy
+	var vm tp.KubeArmorVirtualMachinePolicy
 
 	vmFile, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
@@ -72,7 +87,7 @@ func Onboarding(eventType string, path string, address string) error {
 		return err
 	}
 
-	vmEvent := tp.K8sKubeArmorExternalWorkloadPolicyEvent{
+	vmEvent := tp.KubeArmorVirtualMachinePolicyEvent{
 		Type:   eventType,
 		Object: vm,
 	}
