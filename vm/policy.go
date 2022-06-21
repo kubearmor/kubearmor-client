@@ -23,6 +23,8 @@ import (
 )
 
 const (
+	// KubeArmorPolicy is the Kind used for KubeArmor container policies
+	KubeArmorPolicy = "KubeArmorPolicy"
 	// KubeArmorHostPolicy is the Kind used for KubeArmor host policies
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
 	// CiliumNetworkPolicy is the Kind used for Cilium network policies
@@ -36,7 +38,7 @@ type PolicyOptions struct {
 	GRPC string
 }
 
-func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
+func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
 	gRPC := ""
 
 	if o.GRPC != "" {
@@ -60,11 +62,17 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte) error {
 		Policy: policyEventData,
 	}
 
-	resp, err := client.HostPolicy(context.Background(), &req)
-	if err != nil || resp.Status != 1 {
-		return fmt.Errorf("failed to send policy")
+	if kind == KubeArmorHostPolicy {
+		resp, err := client.HostPolicy(context.Background(), &req)
+		if err != nil || resp.Status != 1 {
+			return fmt.Errorf("failed to send policy")
+		}
+	} else {
+		resp, err := client.ContainerPolicy(context.Background(), &req)
+		if err != nil || resp.Status != 1 {
+			return fmt.Errorf("failed to send policy")
+		}
 	}
-
 	fmt.Println("Success")
 	return nil
 }
@@ -127,6 +135,7 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 			return err
 		}
 
+		var containerPolicy tp.K8sKubeArmorPolicy
 		var hostPolicy tp.K8sKubeArmorHostPolicy
 		var networkPolicy v2.CiliumNetworkPolicy
 		var policyEvent interface{}
@@ -140,6 +149,17 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 			policyEvent = tp.K8sKubeArmorHostPolicyEvent{
 				Type:   t,
 				Object: hostPolicy,
+			}
+
+		} else if k.Kind == KubeArmorPolicy {
+			err = json.Unmarshal(js, &containerPolicy)
+			if err != nil {
+				return err
+			}
+
+			policyEvent = tp.K8sKubeArmorPolicyEvent{
+				Type:   t,
+				Object: containerPolicy,
 			}
 
 		} else if k.Kind == CiliumNetworkPolicy || k.Kind == CiliumClusterwideNetworkPolicy {
@@ -171,7 +191,7 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 			}
 		} else {
 			// Systemd mode, hence send policy over gRPC
-			if err = sendPolicyOverGRPC(o, policyEventData); err != nil {
+			if err = sendPolicyOverGRPC(o, policyEventData, k.Kind); err != nil {
 				return err
 
 			}
