@@ -34,6 +34,10 @@ type SimulationOutput struct {
 	Result        string
 }
 
+type KubeArmorCfg struct {
+	DefaultPosture string
+}
+
 func StartSimulation(o Options) error {
 	policyFile, err := os.ReadFile(filepath.Clean(o.Policy))
 	karmorPolicy := &tp.K8sKubeArmorPolicy{}
@@ -66,6 +70,22 @@ func StartSimulation(o Options) error {
 		response.Result = "Permission Denied"
 		PrintResults(response, "Block")
 		return nil
+	} else if len(karmorPolicy.Spec.File.MatchPaths) > 0 {
+		response.Resource = karmorPolicy.Spec.File.MatchPaths[0].Path
+		response.Policy = o.Policy
+		response.Severity = 1
+		response.Source = karmorPolicy.Spec.File.MatchPaths[0].Path
+		response.Data = "syscall=SYS_FOPEN"
+		if karmorPolicy.Spec.Action == "Block" {
+			response.Action = "Block"
+			response.Result = "Permission Denied"
+		} else if karmorPolicy.Spec.Action == "Allow" {
+			response.Action = "Allow"
+			response.Resource = ""
+		}
+
+	} else if len(karmorPolicy.Spec.Network.MatchProtocols) > 0 {
+		// todo implement match protocols
 	}
 
 	return nil
