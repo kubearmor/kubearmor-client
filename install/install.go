@@ -5,6 +5,7 @@ package install
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -13,7 +14,9 @@ import (
 	"github.com/kubearmor/kubearmor-client/k8s"
 
 	"golang.org/x/mod/semver"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // Options for karmor install
@@ -21,6 +24,7 @@ type Options struct {
 	Namespace      string
 	KubearmorImage string
 	Audit          string
+	Force          bool
 }
 
 // K8sInstaller for karmor install
@@ -169,6 +173,53 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	return nil
 }
 
+type patchStringValue struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value string `json:"value"`
+}
+
+func removeDeployAnnotations(c *k8s.Client, dep *v1.Deployment) {
+	cnt := 0
+	patchPayload := []patchStringValue{}
+	for k, v := range dep.Spec.Template.ObjectMeta.Annotations {
+		if strings.Contains(k, "kubearmor") || strings.Contains(v, "kubearmor") {
+			k = strings.Replace(k, "/", "~1", -1)
+			payload := patchStringValue{
+				Op:   "remove",
+				Path: "/spec/template/metadata/annotations/" + k,
+			}
+			patchPayload = append(patchPayload, payload)
+			cnt++
+		}
+	}
+
+	if cnt > 0 {
+		fmt.Printf("\tRemoving kubearmor annotations from deployment=%s namespace=%s\n",
+			dep.ObjectMeta.Name, dep.ObjectMeta.Namespace)
+		payloadBytes, _ := json.Marshal(patchPayload)
+		_, err := c.K8sClientset.AppsV1().Deployments(dep.ObjectMeta.Namespace).Patch(context.Background(), dep.ObjectMeta.Name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			fmt.Printf("failed to remove annotation ns:%s, deployment:%s, err:%s\n",
+				dep.ObjectMeta.Namespace, dep.ObjectMeta.Name, err.Error())
+			return
+		}
+	}
+}
+
+func removeAnnotations(c *k8s.Client) {
+	deps, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Println("could not get deployments")
+		return
+	}
+	fmt.Println("Force removing the annotations. Deployments might be restarted.")
+	for _, dep := range deps.Items {
+		dep := dep // this is added to handle "Implicit Memory Aliasing..."
+		removeDeployAnnotations(c, &dep)
+	}
+}
+
 // K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	fmt.Print("Mutation Admission Registration ...\n")
@@ -288,6 +339,10 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 			return err
 		}
 		fmt.Printf("CRD %s not found ...\n", hspName)
+	}
+
+	if o.Force {
+		removeAnnotations(c)
 	}
 
 	return nil
