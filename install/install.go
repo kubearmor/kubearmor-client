@@ -207,17 +207,17 @@ func removeDeployAnnotations(c *k8s.Client, dep *v1.Deployment) {
 	}
 }
 
-func removeAnnotations(c *k8s.Client) error {
+func removeAnnotations(c *k8s.Client) {
 	deps, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Println("could not get deployments")
-		return err
+		return
 	}
 	fmt.Println("Force removing the annotations. Deployments might be restarted.")
 	for _, dep := range deps.Items {
+		dep := dep // this is added to handle "Implicit Memory Aliasing..."
 		removeDeployAnnotations(c, &dep)
 	}
-	return nil
 }
 
 // K8sUninstaller for karmor uninstall
