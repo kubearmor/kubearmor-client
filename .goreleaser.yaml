@@ -8,6 +8,6 @@ builds:
     goarch:
       - amd64
       - arm64
-    ldflags: -w -s -X github.com/kubearmor/kubearmor-client/version.BuildDate={{.Date}} -X github.com/kubearmor/kubearmor-client/version.GitSummary={{.Version}}
+    ldflags: -w -s -X github.com/kubearmor/kubearmor-client/selfupdate.BuildDate={{.Date}} -X github.com/kubearmor/kubearmor-client/selfupdate.GitSummary={{.Version}}
     env:
       - CGO_ENABLED=0
