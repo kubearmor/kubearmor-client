@@ -15,7 +15,7 @@ The following sections show how to install the kArmor. It can be installed eithe
 kArmor has an installer script that will automatically grab the latest version of kArmor and install it locally.
 
 ```
-curl -sfL https://raw.githubusercontent.com/kubearmor/kubearmor-client/main/install.sh | sudo sh -s -- -b /usr/local/bin
+curl -sfL http://get.kubearmor.io/ | sudo sh -s -- -b /usr/local/bin
 ```
 
 The binary will be installed in `/usr/local/bin` folder.
@@ -50,6 +50,8 @@ Available Commands:
   insight     Policy insight from discovery engine
   install     Install KubeArmor in a Kubernetes Cluster
   log         Observe Logs from KubeArmor
+  rotate-tls  Rotate webhook controller tls certificates
+  selfupdate  selfupdate this cli tool
   sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
