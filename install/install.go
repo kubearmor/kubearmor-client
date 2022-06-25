@@ -399,7 +399,7 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		env = "docker"
 		return env
 	}
-	if (runtime == "docker" && semver.Compare(version, "v19.3") >= 0) || runtime == "containerd" {
+	if (runtime == "docker" && semver.Compare(version, "v19.3") >= 0) || runtime == "containerd" || runtime == "cri-o" {
 		env = "generic"
 		return env
 	}
