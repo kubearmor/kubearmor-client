@@ -17,21 +17,15 @@ type Options struct {
 	Policy string
 }
 type SimulationOutput struct {
-	ClusterName   string
-	HostName      string
-	PodName       string
-	ContainerID   string
-	ContainerName string
-	Labels        string
-	Policy        string
-	Severity      int
-	Type          string
-	Source        string
-	Operation     string
-	Resource      string
-	Data          string
-	Action        string
-	Result        string
+	Policy    string
+	Severity  int
+	Type      string
+	Source    string
+	Operation string
+	Resource  string
+	Data      string
+	Action    string
+	Result    string
 }
 
 type KubeArmorCfg struct {
@@ -42,12 +36,7 @@ func StartSimulation(o Options) error {
 	policyFile, err := os.ReadFile(filepath.Clean(o.Policy))
 	karmorPolicy := &tp.K8sKubeArmorPolicy{}
 	response := &SimulationOutput{
-		ClusterName: "Unkown",
-		HostName:    "Unkown",
-		PodName:     "Unknown",
-		Labels:      "Unkown",
-		Type:        "MatchedPolicy",
-		ContainerID: "Unkown",
+		Type: "MatchedPolicy",
 	}
 	if err != nil {
 		return fmt.Errorf("unable to read policy file; %s", err.Error())
@@ -62,28 +51,27 @@ func StartSimulation(o Options) error {
 	}
 	if len(karmorPolicy.Spec.Process.MatchPaths) > 0 {
 		response.Resource = karmorPolicy.Spec.Process.MatchPaths[0].Path
-		response.Policy = o.Policy
-		response.Severity = 1
+		response.Policy = karmorPolicy.Metadata.Name
+		response.Severity = karmorPolicy.Spec.Severity
 		response.Source = karmorPolicy.Spec.Process.MatchPaths[0].Path
 		response.Data = "syscall=SYS_EXECVE"
 		response.Action = karmorPolicy.Spec.Process.Action
 		response.Result = "Permission Denied"
-		PrintResults(response, "Block")
-		return nil
-	} else if len(karmorPolicy.Spec.File.MatchPaths) > 0 {
-		response.Resource = karmorPolicy.Spec.File.MatchPaths[0].Path
-		response.Policy = o.Policy
-		response.Severity = 1
+		printSimulation(response, response.Action)
+	} else if len(karmorPolicy.Spec.File.MatchDirectories) > 0 {
+		response.Resource = karmorPolicy.Spec.File.MatchDirectories[0].Directory
+		response.Policy = karmorPolicy.Metadata.Name
+		response.Severity = karmorPolicy.Spec.Severity
 		response.Source = karmorPolicy.Spec.File.MatchPaths[0].Path
-		response.Data = "syscall=SYS_FOPEN"
-		if karmorPolicy.Spec.Action == "Block" {
-			response.Action = "Block"
-			response.Result = "Permission Denied"
-		} else if karmorPolicy.Spec.Action == "Allow" {
-			response.Action = "Allow"
-			response.Resource = ""
-		}
+		response.Data = "syscall=SYS_OPENAT"
 
+		// Todo: Consider kubearmor.cfg
+		if karmorPolicy.Spec.File.Action == "Deny" {
+			response.Action = karmorPolicy.Spec.Action
+			response.Result = "Permission Denied"
+		}
+		response.Action = karmorPolicy.Spec.Action
+		response.Result = "Success"
 	} else if len(karmorPolicy.Spec.Network.MatchProtocols) > 0 {
 		// todo implement match protocols
 	}
@@ -91,26 +79,26 @@ func StartSimulation(o Options) error {
 	return nil
 }
 
-func PrintResults(out *SimulationOutput, title string) {
+func printSimulation(out *SimulationOutput, title string) {
+	fmt.Printf("Action: %s", title)
 	fmt.Printf(`
-	Action: %s
-	Telemetry Event:
-	== Alert ==
-	Cluster Name: %s
-	Host Name: %s
-	Namespace Name: %s
-	Pod Name: %s
-	Container ID: %s
-	Container Name: %s
-	Labels: %s
-	Policy: %s
-	Severity: %d
-	Type: %s
-	Source: %s
-	Operation: %s
-	Resource: %s
-	Data: %s
-	Action: %s
-	Result: %s
-	`, title, out.ClusterName, out.HostName, out.PodName, out.ContainerID, out.ContainerName, out.Labels, out.Policy, out.Severity, out.Type, out.Source, out.Operation, out.Resource, out.Data, out.Action, out.Result)
+Telemetry Event:
+== Alert ==
+Cluster Name: unknown
+Host Name: unknown
+Namespace Name: unknown
+Pod Name: unknown
+Container ID: unknown
+Container Name: unknown
+Labels: unknown
+Policy: %s
+Severity: %d
+Type: MatchedPolicy
+Source: %s
+Operation: %s
+Resource: %s
+Data: %s
+Action: %s
+Result: %s
+`, out.Policy, out.Severity, out.Source, out.Operation, out.Resource, out.Data, out.Action, out.Result)
 }
