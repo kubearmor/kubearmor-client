@@ -2,23 +2,31 @@ package log
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 )
 
-var eventChan chan []byte
-var gotEvent = false
+var eventChan chan interface{}
+var gotAlerts = 0
+var gotLogs = 0
 
 const maxEvents = 5
 
 func waitOnEvent(cnt int) {
 	for i := 0; i < cnt; i++ {
-		evt := <-eventChan
-		fmt.Printf("Event: %s\n", string(evt))
+		evtin := <-eventChan
+		switch evt := evtin.(type) {
+		case pb.Alert:
+			gotAlerts++
+		case pb.Log:
+			gotLogs++
+		default:
+			fmt.Printf("unknown event rcvd %v\n", reflect.TypeOf(evt))
+		}
 	}
-	gotEvent = true
 }
 
 func TestLogClient(t *testing.T) {
@@ -32,7 +40,7 @@ func TestLogClient(t *testing.T) {
 		ContainerName:  "los-polos",
 		ContainerImage: "evergreen",
 	}
-	eventChan = make(chan []byte, maxEvents)
+	eventChan = make(chan interface{}, maxEvents)
 	var o = Options{
 		EventChan: eventChan,
 	}
@@ -43,10 +51,10 @@ func TestLogClient(t *testing.T) {
 		}
 	}
 	go waitOnEvent(maxEvents)
-	for i := 0; i < 10 && !gotEvent; i++ {
+	for i := 0; i < 10 && gotAlerts < maxEvents; i++ {
 		time.Sleep(10 * time.Millisecond)
 	}
-	if !gotEvent {
-		t.Errorf("did not receive the event")
+	if gotAlerts < maxEvents {
+		t.Errorf("did not receive all the events")
 	}
 }
