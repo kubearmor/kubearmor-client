@@ -42,6 +42,7 @@ type Options struct {
 	Resource      string
 	Limit         uint32
 	Selector      []string
+	EventChan     chan []byte // channel to send events on
 }
 
 // StopChan Channel
@@ -175,7 +176,7 @@ func StartObserver(o Options) error {
 	close(StopChan)
 
 	logClient.Running = false
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 50)
 
 	// destroy the client
 	if err := logClient.DestroyClient(); err != nil {

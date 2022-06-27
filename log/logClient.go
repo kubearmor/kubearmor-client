@@ -192,7 +192,7 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 
 		if msgPath == "stdout" {
 			fmt.Printf("%s", str)
-		} else {
+		} else if msgPath != "" {
 			StrToFile(str, msgPath)
 		}
 	}
@@ -271,8 +271,11 @@ func watchAlertsHelper(res *pb.Alert, o Options) error {
 
 	str := ""
 
-	if o.JSON {
+	if o.JSON || o.EventChan != nil {
 		arr, _ := json.Marshal(res)
+		if o.EventChan != nil {
+			o.EventChan <- arr
+		}
 		str = fmt.Sprintf("%s\n", string(arr))
 	} else {
 		updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
@@ -325,7 +328,7 @@ func watchAlertsHelper(res *pb.Alert, o Options) error {
 
 	if o.LogPath == "stdout" {
 		fmt.Printf("%s", str)
-	} else {
+	} else if o.LogPath != "" {
 		StrToFile(str, o.LogPath)
 	}
 	return nil
@@ -425,8 +428,11 @@ func WatchLogsHelper(res *pb.Log, o Options) error {
 
 	str := ""
 
-	if o.JSON {
+	if o.JSON || o.EventChan != nil {
 		arr, _ := json.Marshal(res)
+		if o.EventChan != nil {
+			o.EventChan <- arr
+		}
 		str = fmt.Sprintf("%s\n", string(arr))
 	} else {
 		updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
@@ -459,7 +465,7 @@ func WatchLogsHelper(res *pb.Log, o Options) error {
 
 	if o.LogPath == "stdout" {
 		fmt.Printf("%s", str)
-	} else {
+	} else if o.LogPath != "" {
 		StrToFile(str, o.LogPath)
 	}
 	return nil
