@@ -18,7 +18,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220620050120-7e1810d2ad41
+	github.com/vikasvr/KubeArmor/deployments v0.0.0-20220628154456-4d7ade663821
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220620050120-7e1810d2ad41
@@ -49,6 +49,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/ahmetb/govvv v0.3.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

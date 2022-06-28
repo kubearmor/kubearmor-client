@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	deployments "github.com/kubearmor/KubeArmor/deployments/get"
+	deployments "github.com/vikasvr/KubeArmor/deployments/get"
 	"github.com/kubearmor/kubearmor-client/install"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

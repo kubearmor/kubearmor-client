@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	deployments "github.com/kubearmor/KubeArmor/deployments/get"
+	// deployments "github.com/vikasvr/KubeArmor/tree/vikasvr/crio-defaults/deployments/get"
+	deployments "github.com/vikasvr/KubeArmor/deployments/get"
 	"github.com/kubearmor/kubearmor-client/k8s"
 
 	"golang.org/x/mod/semver"
@@ -84,6 +84,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
+	fmt.Println(daemonset)
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
 	if o.Audit == "all" || strings.Contains(o.Audit, "file") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultFilePosture=audit")
@@ -399,7 +400,11 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		env = "docker"
 		return env
 	}
-	if (runtime == "docker" && semver.Compare(version, "v19.3") >= 0) || runtime == "containerd" || runtime == "cri-o" {
+	if runtime == "cri-o" {
+		env = "crio"
+		return env
+	}
+	if (runtime == "docker" && semver.Compare(version, "v19.3") >= 0) || runtime == "containerd" {
 		env = "generic"
 		return env
 	}
