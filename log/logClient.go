@@ -31,28 +31,28 @@ func StrToFile(str, destFile string) {
 	if _, err := os.Stat(destFile); err != nil {
 		newFile, err := os.Create(filepath.Clean(destFile))
 		if err != nil {
-			fmt.Printf("Failed to create a file (%s, %s)\n", destFile, err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to create a file (%s, %s)\n", destFile, err.Error())
 			return
 		}
 		if err := newFile.Close(); err != nil {
-			fmt.Printf("Failed to close the file (%s, %s)\n", destFile, err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to close the file (%s, %s)\n", destFile, err.Error())
 		}
 	}
 
 	// #nosec
 	file, err := os.OpenFile(destFile, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Printf("Failed to open a file (%s, %s)\n", destFile, err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to open a file (%s, %s)\n", destFile, err.Error())
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			fmt.Printf("Failed to close the file (%s, %s)\n", destFile, err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to close the file (%s, %s)\n", destFile, err.Error())
 		}
 	}()
 
 	_, err = file.WriteString(str)
 	if err != nil {
-		fmt.Printf("Failed to write a string into the file (%s, %s)\n", destFile, err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to write a string into the file (%s, %s)\n", destFile, err.Error())
 	}
 }
 
@@ -174,7 +174,7 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 	for fd.Running {
 		res, err := fd.msgStream.Recv()
 		if err != nil {
-			fmt.Printf("Failed to receive a message (%s)\n", err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to receive a message (%s)\n", err.Error())
 			break
 		}
 
@@ -192,12 +192,12 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 
 		if msgPath == "stdout" {
 			fmt.Printf("%s", str)
-		} else {
+		} else if msgPath != "" {
 			StrToFile(str, msgPath)
 		}
 	}
 
-	fmt.Println("Stopped WatchMessages")
+	fmt.Fprintln(os.Stderr, "Stopped WatchMessages")
 
 	return nil
 }
@@ -271,6 +271,9 @@ func watchAlertsHelper(res *pb.Alert, o Options) error {
 
 	str := ""
 
+	if o.EventChan != nil {
+		o.EventChan <- *res
+	}
 	if o.JSON {
 		arr, _ := json.Marshal(res)
 		str = fmt.Sprintf("%s\n", string(arr))
@@ -325,7 +328,7 @@ func watchAlertsHelper(res *pb.Alert, o Options) error {
 
 	if o.LogPath == "stdout" {
 		fmt.Printf("%s", str)
-	} else {
+	} else if o.LogPath != "" {
 		StrToFile(str, o.LogPath)
 	}
 	return nil
@@ -340,7 +343,6 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 		for i = 0; i < o.Limit; i++ {
 			res, err := fd.alertStream.Recv()
 			if err != nil {
-				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
 				break
 			}
 			_ = watchAlertsHelper(res, o)
@@ -352,7 +354,6 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 		for fd.Running {
 			res, err := fd.alertStream.Recv()
 			if err != nil {
-				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
 				break
 			}
 			_ = watchAlertsHelper(res, o)
@@ -360,7 +361,7 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 		}
 	}
 
-	fmt.Println("Stopped WatchAlerts")
+	fmt.Fprintln(os.Stderr, "Stopped WatchAlerts")
 
 	return nil
 }
@@ -425,6 +426,9 @@ func WatchLogsHelper(res *pb.Log, o Options) error {
 
 	str := ""
 
+	if o.EventChan != nil {
+		o.EventChan <- *res
+	}
 	if o.JSON {
 		arr, _ := json.Marshal(res)
 		str = fmt.Sprintf("%s\n", string(arr))
@@ -459,7 +463,7 @@ func WatchLogsHelper(res *pb.Log, o Options) error {
 
 	if o.LogPath == "stdout" {
 		fmt.Printf("%s", str)
-	} else {
+	} else if o.LogPath != "" {
 		StrToFile(str, o.LogPath)
 	}
 	return nil
@@ -475,7 +479,6 @@ func (fd *Feeder) WatchLogs(o Options) error {
 		for i = 0; i < o.Limit; i++ {
 			res, err := fd.logStream.Recv()
 			if err != nil {
-				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
 				break
 			}
 			_ = WatchLogsHelper(res, o)
@@ -485,7 +488,6 @@ func (fd *Feeder) WatchLogs(o Options) error {
 		for fd.Running {
 			res, err := fd.logStream.Recv()
 			if err != nil {
-				fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
 				break
 			}
 			_ = WatchLogsHelper(res, o)
@@ -493,7 +495,7 @@ func (fd *Feeder) WatchLogs(o Options) error {
 		}
 	}
 
-	fmt.Println("Stopped WatchLogs")
+	fmt.Fprintln(os.Stderr, "Stopped WatchLogs")
 
 	return nil
 }
