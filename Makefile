@@ -5,7 +5,7 @@ CURDIR     := $(shell pwd)
 INSTALLDIR := $(shell go env GOPATH)/bin/
 
 ifeq (, $(shell which govvv))
-$(shell go get github.com/ahmetb/govvv@latest)
+$(shell go install github.com/ahmetb/govvv@latest)
 endif
 
 PKG      := $(shell go list ./selfupdate)
