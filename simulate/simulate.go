@@ -16,6 +16,7 @@ type Options struct {
 	Action string
 	Policy string
 }
+
 type SimulationOutput struct {
 	Policy    string
 	Severity  int
@@ -34,13 +35,10 @@ type KubeArmorCfg struct {
 
 func StartSimulation(o Options) error {
 	policyFile, err := os.ReadFile(filepath.Clean(o.Policy))
-	karmorPolicy := &tp.K8sKubeArmorPolicy{}
-	response := &SimulationOutput{
-		Type: "MatchedPolicy",
-	}
 	if err != nil {
 		return fmt.Errorf("unable to read policy file; %s", err.Error())
 	}
+	karmorPolicy := &tp.K8sKubeArmorPolicy{}
 	js, err := yaml.YAMLToJSON(policyFile)
 	if err != nil {
 		return err
@@ -49,34 +47,10 @@ func StartSimulation(o Options) error {
 	if err != nil {
 		return err
 	}
-	if len(karmorPolicy.Spec.Process.MatchPaths) > 0 {
-		response.Resource = karmorPolicy.Spec.Process.MatchPaths[0].Path
-		response.Policy = karmorPolicy.Metadata.Name
-		response.Severity = karmorPolicy.Spec.Severity
-		response.Source = karmorPolicy.Spec.Process.MatchPaths[0].Path
-		response.Data = "syscall=SYS_EXECVE"
-		response.Action = karmorPolicy.Spec.Process.Action
-		response.Result = "Permission Denied"
-		printSimulation(response, response.Action)
-	} else if len(karmorPolicy.Spec.File.MatchDirectories) > 0 {
-		response.Resource = karmorPolicy.Spec.File.MatchDirectories[0].Directory
-		response.Policy = karmorPolicy.Metadata.Name
-		response.Severity = karmorPolicy.Spec.Severity
-		response.Source = karmorPolicy.Spec.File.MatchPaths[0].Path
-		response.Data = "syscall=SYS_OPENAT"
-
-		// Todo: Consider kubearmor.cfg
-		if karmorPolicy.Spec.File.Action == "Deny" {
-			response.Action = karmorPolicy.Spec.Action
-			response.Result = "Permission Denied"
-		}
-		response.Action = karmorPolicy.Spec.Action
-		response.Result = "Success"
-	} else if len(karmorPolicy.Spec.Network.MatchProtocols) > 0 {
-		// todo implement match protocols
-	}
-
+	pr := walkProcessTree(karmorPolicy)
+	fmt.Printf("%v", pr)
 	return nil
+
 }
 
 func printSimulation(out *SimulationOutput, title string) {
@@ -101,4 +75,59 @@ Data: %s
 Action: %s
 Result: %s
 `, out.Policy, out.Severity, out.Source, out.Operation, out.Resource, out.Data, out.Action, out.Result)
+}
+
+// walkProcessTree takes the src kubearmor policy and returns all the associated process rules
+func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
+	pr := processRules{}
+	if len(src.Spec.Process.MatchPaths) > 0 {
+		for i, rule := range src.Spec.Process.MatchPaths {
+			switch src.Spec.Action {
+			case "Allow":
+				pr.action = Allow
+			case "Block":
+				pr.action = Block
+			case "Audit":
+				pr.action = Audit
+				// if the action does not match any of these cases use default posture?
+			}
+
+			mr := matchRule{
+				path:        rule.Path,
+				isownerOnly: rule.OwnerOnly,
+				isDir:       false,
+			}
+			if len(rule.FromSource) > 0 {
+				mr.fromSource = rule.FromSource[i].Path
+			}
+
+			pr.rules = append(pr.rules, mr)
+
+		}
+	}
+	if len(src.Spec.Process.MatchDirectories) > 0 {
+		for i, rule := range src.Spec.Process.MatchDirectories {
+			switch src.Spec.Action {
+			case "Allow":
+				pr.action = Allow
+			case "Block":
+				pr.action = Block
+			case "Audit":
+				pr.action = Audit
+				// if the action does not match any of these cases use default posture?
+			}
+
+			mr := matchRule{
+				path:        rule.Directory,
+				isownerOnly: rule.OwnerOnly,
+				isDir:       true,
+			}
+			if len(rule.FromSource) > 0 {
+				mr.fromSource = rule.FromSource[i].Path
+			}
+			pr.rules = append(pr.rules, mr)
+		}
+	}
+	return &pr
+
 }
