@@ -12,9 +12,11 @@ var simulateCmd = &cobra.Command{
 	Short: "simulate a kubearmor policy",
 	Long:  `simulate a kubearmor policy`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// todo
-		simulate.StartSimulation(SimulateOptions)
+		if err := simulate.StartSimulation(SimulateOptions); err != nil {
+			return err
+		}
 		return nil
+
 	},
 }
 
