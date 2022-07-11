@@ -9,7 +9,7 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 )
 
-var eventChan chan []byte
+var eventChan chan EventInfo
 var done chan bool
 var gotAlerts = 0
 var gotLogs = 0
@@ -18,15 +18,10 @@ const maxEvents = 5
 
 func genericWaitOnEvent(cnt int) {
 	for evtin := range eventChan {
-		var res map[string]interface{}
-		err := json.Unmarshal(evtin, &res)
-		if err != nil {
-			fmt.Printf("error unmarshling %v\n", err.Error())
-		}
-		switch res["Type"].(string) {
-		case "MatchedPolicy":
+		switch evtin.Type {
+		case "Alert":
 			gotAlerts++
-		case "ContainerLog", "HostLog":
+		case "Log":
 			gotLogs++
 		default:
 			fmt.Printf("unknown event\n")
@@ -52,7 +47,7 @@ func TestLogClient(t *testing.T) {
 		ContainerImage: "evergreen",
 		Type:           "MatchedPolicy",
 	}
-	eventChan = make(chan []byte, maxEvents)
+	eventChan = make(chan EventInfo, maxEvents)
 	var o = Options{
 		EventChan: eventChan,
 	}
