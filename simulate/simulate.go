@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	"sigs.k8s.io/yaml"
@@ -17,18 +18,6 @@ type Options struct {
 	Policy string
 }
 
-type SimulationOutput struct {
-	Policy    string
-	Severity  int
-	Type      string
-	Source    string
-	Operation string
-	Resource  string
-	Data      string
-	Action    string
-	Result    string
-}
-
 type KubeArmorCfg struct {
 	DefaultPosture string
 }
@@ -36,7 +25,7 @@ type KubeArmorCfg struct {
 func StartSimulation(o Options) error {
 	policyFile, err := os.ReadFile(filepath.Clean(o.Policy))
 	if err != nil {
-		return fmt.Errorf("unable to read policy file; %s", err.Error())
+		return err
 	}
 	karmorPolicy := &tp.K8sKubeArmorPolicy{}
 	js, err := yaml.YAMLToJSON(policyFile)
@@ -47,8 +36,13 @@ func StartSimulation(o Options) error {
 	if err != nil {
 		return err
 	}
-	pr := walkProcessTree(karmorPolicy)
-	fmt.Printf("%v", pr)
+	// pr := walkProcessTree(karmorPolicy)
+	// fmt.Printf("%v", pr)
+	action, err := GetUserAction(o.Action)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%v", action)
 	return nil
 
 }
@@ -81,7 +75,7 @@ Result: %s
 func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
 	pr := processRules{}
 	if len(src.Spec.Process.MatchPaths) > 0 {
-		for i, rule := range src.Spec.Process.MatchPaths {
+		for _, rule := range src.Spec.Process.MatchPaths {
 			switch src.Spec.Action {
 			case "Allow":
 				pr.action = Allow
@@ -98,7 +92,9 @@ func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
 				isDir:       false,
 			}
 			if len(rule.FromSource) > 0 {
-				mr.fromSource = rule.FromSource[i].Path
+				for _, path := range rule.FromSource {
+					mr.fromSource = append(mr.fromSource, path.Path)
+				}
 			}
 
 			pr.rules = append(pr.rules, mr)
@@ -106,7 +102,7 @@ func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
 		}
 	}
 	if len(src.Spec.Process.MatchDirectories) > 0 {
-		for i, rule := range src.Spec.Process.MatchDirectories {
+		for _, rule := range src.Spec.Process.MatchDirectories {
 			switch src.Spec.Action {
 			case "Allow":
 				pr.action = Allow
@@ -123,11 +119,35 @@ func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
 				isDir:       true,
 			}
 			if len(rule.FromSource) > 0 {
-				mr.fromSource = rule.FromSource[i].Path
+				for _, path := range rule.FromSource {
+					mr.fromSource = append(mr.fromSource, path.Path)
+				}
 			}
 			pr.rules = append(pr.rules, mr)
 		}
 	}
 	return &pr
 
+}
+
+// GetUserAction takes an input action and returns a slice of the action type(exec,fopen,socket...) along with the corresponding path
+// eg "exec:/bin/sleep" -> [exec,/bin/sleep]
+func GetUserAction(action string) ([]string, error) {
+	// check if the action is supported
+	supportedActions := []string{"exec", "fopen", "socket", "accept"}
+	act := action[:strings.IndexByte(action, ':')]
+	if !contains(supportedActions, act) {
+		return []string{}, fmt.Errorf("the supplied action is currently unsupported. Supported actions: %v", supportedActions)
+	}
+	path := strings.Join(strings.Split(action, ":")[1:], ":")
+	return []string{act, path}, nil
+}
+
+func contains(src []string, target string) bool {
+	for _, a := range src {
+		if a == target {
+			return true
+		}
+	}
+	return false
 }
