@@ -13,7 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-func RotateTls(c *k8s.Client, namespace string) error {
+// RotateTLS - rotate TLS certs
+func RotateTLS(c *k8s.Client, namespace string) error {
 	// verify if all needed component are present in the cluster
 	fmt.Print("Checking if all needed component are present ...\n")
 	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.Background(), deployments.AnnotationsControllerServiceName, metav1.GetOptions{}); err != nil {

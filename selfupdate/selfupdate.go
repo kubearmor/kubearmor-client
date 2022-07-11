@@ -45,24 +45,25 @@ func confirmUserAction(action string) bool {
 	return true
 }
 
-func getLatest() (error, *selfupdate.Release) {
+func getLatest() (*selfupdate.Release, error) {
 	latest, found, err := selfupdate.DetectLatest(ghrepo)
 	if err != nil {
 		fmt.Println("Error occurred while detecting version:", err)
-		return err, nil
+		return nil, err
 	}
 	if !found {
 		fmt.Println("could not find latest release details")
-		return errors.New("could not find latest release"), nil
+		return nil, errors.New("could not find latest release")
 	}
-	return nil, latest
+	return latest, nil
 }
 
+//IsLatest - check if the current binary is the latest
 func IsLatest(curver string) (bool, string) {
 	if curver != "" && !isValidVersion(curver) {
 		return true, ""
 	}
-	err, latest := getLatest()
+	latest, err := getLatest()
 	if err != nil {
 		fmt.Println("failed getting latest info")
 		return true, ""
@@ -78,7 +79,7 @@ func IsLatest(curver string) (bool, string) {
 }
 
 func doSelfUpdate(curver string) error {
-	err, latest := getLatest()
+	latest, err := getLatest()
 	if err != nil {
 		return err
 	}

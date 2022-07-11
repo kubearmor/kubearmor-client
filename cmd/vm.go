@@ -12,9 +12,12 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
-	HTTPIP        string // HTTPIP : IP of the http request
-	HTTPPort      string // HTTPPort : Port of the http request
-	IsKvmsEnv     bool
+	// HTTPIP : IP of the http request
+	HTTPIP string
+	// HTTPPort : Port of the http request
+	HTTPPort string
+	//IsKvmsEnv : Is kubearmor virtual machine env?
+	IsKvmsEnv bool
 )
 
 // vmCmd represents the vm command

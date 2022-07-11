@@ -21,6 +21,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// EventInfo Event data signalled on EventChan
+type EventInfo struct {
+	Data []byte // json marshalled byte data for alert/log
+	Type string // "Alert"/"Log"
+}
+
 // Limitchan handles telemetry event output limit
 var Limitchan chan bool
 var i uint32
@@ -354,7 +360,7 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 
 	// Pass Events to Channel for further handling
 	if o.EventChan != nil {
-		o.EventChan <- arr
+		o.EventChan <- EventInfo{Data: arr, Type: t}
 	}
 
 	if o.JSON {

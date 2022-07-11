@@ -43,7 +43,7 @@ type Options struct {
 	Resource      string
 	Limit         uint32
 	Selector      []string
-	EventChan     chan []byte // channel to send events on
+	EventChan     chan EventInfo // channel to send events on
 }
 
 // StopChan Channel
