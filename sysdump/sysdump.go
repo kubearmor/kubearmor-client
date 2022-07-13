@@ -68,7 +68,8 @@ func Collect(c *k8s.Client, o Options) error {
 	errs.Go(func() error {
 		v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor daemonset not found. (possible if kubearmor is running in process mode)")
+			return nil
 		}
 		if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
 			return err
