@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -25,8 +26,13 @@ import (
 	"github.com/mholt/archiver/v3"
 )
 
+// Options options for sysdump
+type Options struct {
+	Filename string
+}
+
 // Collect Function
-func Collect(c *k8s.Client) error {
+func Collect(c *k8s.Client, o Options) error {
 	var errs errgroup.Group
 
 	d, err := os.MkdirTemp("", "karmor-sysdump")
@@ -62,7 +68,8 @@ func Collect(c *k8s.Client) error {
 	errs.Go(func() error {
 		v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor daemonset not found. (possible if kubearmor is running in process mode)")
+			return nil
 		}
 		if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
 			return err
@@ -176,7 +183,12 @@ func Collect(c *k8s.Client) error {
 		return dumpError
 	}
 
-	sysdumpFile := "karmor-sysdump-" + time.Now().Format(time.UnixDate) + ".zip"
+	sysdumpFile := ""
+	if o.Filename == "" {
+		sysdumpFile = "karmor-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
+	} else {
+		sysdumpFile = o.Filename
+	}
 
 	if err := archiver.Archive([]string{d}, sysdumpFile); err != nil {
 		return fmt.Errorf("failed to create zip file: %w", err)
