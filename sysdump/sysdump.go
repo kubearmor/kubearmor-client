@@ -288,7 +288,7 @@ func CheckStatus(c *k8s.Client) (bool, error) {
 		status = true
 	}
 	if !status {
-		fmt.Println("Kube-armor is not running in your cluster")
+		fmt.Println("KubeArmor is not running in your cluster")
 	}
 
 	return status, nil
