@@ -18,7 +18,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220706172948-9d2644f2666b
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220713111330-5ede97c62720
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220620050120-7e1810d2ad41
