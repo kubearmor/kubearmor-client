@@ -278,7 +278,7 @@ func IsDirEmpty(name string) (bool, error) {
 // Check the status of KubeArmor
 func CheckStatus(c *k8s.Client) (bool, error) {
 	var status bool
-	pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=kubearmor",
 	})
 	if err != nil {
