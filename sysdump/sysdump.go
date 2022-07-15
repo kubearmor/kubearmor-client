@@ -68,7 +68,7 @@ func Collect(c *k8s.Client, o Options) error {
 	errs.Go(func() error {
 		v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
 		if err != nil {
-			fmt.Printf("kubearmor daemonset not found. (possible if kubearmor is running in process mode)")
+			fmt.Printf("kubearmor daemonset not found. (possible if kubearmor is running in process mode)\n")
 			return nil
 		}
 		if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
@@ -81,7 +81,8 @@ func Collect(c *k8s.Client, o Options) error {
 	errs.Go(func() error {
 		v, err := c.KSPClientset.KubeArmorPolicies("").List(context.Background(), metav1.ListOptions{})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor CRD not found!\n")
+			return nil
 		}
 		if err := writeYaml(path.Join(d, "ksp.yaml"), v); err != nil {
 			return err
@@ -95,7 +96,8 @@ func Collect(c *k8s.Client, o Options) error {
 			LabelSelector: "kubearmor-app=kubearmor",
 		})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor pod not found. (possible if kubearmor is running in process mode)\n")
+			return nil
 		}
 
 		for _, p := range pods.Items {
@@ -144,21 +146,19 @@ func Collect(c *k8s.Client, o Options) error {
 			return err
 		}
 		for _, p := range pods.Items {
-			if p.Annotations["kubearmor-policy"] == "enabled" {
-				v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-				if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
-					return err
-				}
-				e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
-				if err != nil {
-					return err
-				}
-				if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
-					return err
-				}
+			v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
+				return err
+			}
+			e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
+			if err != nil {
+				return err
+			}
+			if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -229,7 +229,8 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 		LabelSelector: "kubearmor-app=kubearmor",
 	})
 	if err != nil {
-		return err
+		fmt.Printf("kubearmor not deployed in pod mode\n")
+		return nil
 	}
 	for _, pod := range pods.Items {
 		destPath := path.Join(d, fmt.Sprintf("%s_apparmor.tar.gz", pod.Name))
