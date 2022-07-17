@@ -35,6 +35,7 @@ type Options struct {
 func Collect(c *k8s.Client, o Options) error {
 	var errs errgroup.Group
 
+	runningStatus, _ := CheckStatus(c)
 	d, err := os.MkdirTemp("", "karmor-sysdump")
 	if err != nil {
 		return err
@@ -63,6 +64,13 @@ func Collect(c *k8s.Client, o Options) error {
 		}
 		return nil
 	})
+
+
+	if runningStatus {
+
+		// KubeArmor DaemonSet
+		errs.Go(func() error {
+			v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
 
 	// KubeArmor DaemonSet
 	errs.Go(func() error {
@@ -103,66 +111,111 @@ func Collect(c *k8s.Client, o Options) error {
 			fmt.Printf("getting logs from %s\n", p.Name)
 			v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
 			s, err := v.Stream(context.Background())
+
 			if err != nil {
 				fmt.Printf("failed getting logs from pod=%s err=%s\n", p.Name, err)
 				continue
 			}
-			defer s.Close()
-			var logs bytes.Buffer
-			if _, err = io.Copy(&logs, s); err != nil {
+			if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
 				return err
 			}
-			if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), logs.String()); err != nil {
-				return err
-			}
+			return nil
+		})
 
-			// KubeArmor Describe
-			pod, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+		// KubeArmor Security Policies
+		errs.Go(func() error {
+			v, err := c.KSPClientset.KubeArmorPolicies("").List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
-			if err := writeYaml(path.Join(d, "ka-pod-"+p.Name+".yaml"), pod); err != nil {
+			if err := writeYaml(path.Join(d, "ksp.yaml"), v); err != nil {
 				return err
 			}
+			return nil
+		})
 
-			// KubeArmor Event
-			e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, pod)
+		// KubeArmor Pod
+		errs.Go(func() error {
+			pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+				LabelSelector: "kubearmor-app=kubearmor",
+			})
 			if err != nil {
 				return err
 			}
-			if err := writeYaml(path.Join(d, "ka-pod-events-"+p.Name+".yaml"), e); err != nil {
+
+			for _, p := range pods.Items {
+				// KubeArmor Logs
+				v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
+				s, err := v.Stream(context.Background())
+				if err != nil {
+					return err
+				}
+				defer s.Close()
+				var logs bytes.Buffer
+				if _, err = io.Copy(&logs, s); err != nil {
+					return err
+				}
+				if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), logs.String()); err != nil {
+					return err
+				}
+
+				// KubeArmor Describe
+				pod, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				if err := writeYaml(path.Join(d, "ka-pod-"+p.Name+".yaml"), pod); err != nil {
+					return err
+				}
+
+				// KubeArmor Event
+				e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, pod)
+				if err != nil {
+					return err
+				}
+				if err := writeYaml(path.Join(d, "ka-pod-events-"+p.Name+".yaml"), e); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+
+		// Annotated Pods Description
+		errs.Go(func() error {
+			pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+			if err != nil {
 				return err
 			}
-		}
-		return nil
-	})
-
-	// Annotated Pods Description
-	errs.Go(func() error {
-		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			return err
-		}
-		for _, p := range pods.Items {
-			if p.Annotations["kubearmor-policy"] == "enabled" {
-				v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-				if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
-					return err
-				}
-				e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
-				if err != nil {
-					return err
-				}
-				if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
-					return err
+			for _, p := range pods.Items {
+				if p.Annotations["kubearmor-policy"] == "enabled" {
+					v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+					if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
+						return err
+					}
+					e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
+					if err != nil {
+						return err
+					}
+					if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
+						return err
+					}
 				}
 			}
-		}
-		return nil
-	})
+			return nil
+		})
+
+		// AppArmor Gzip
+		errs.Go(func() error {
+			if err := copyFromPod("/etc/apparmor.d", path.Join(d, "apparmor.tar.gz"), c); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
 
 	// AppArmor Gzip
 	errs.Go(func() error {
@@ -171,6 +224,7 @@ func Collect(c *k8s.Client, o Options) error {
 		}
 		return nil
 	})
+
 
 	dumpError := errs.Wait()
 
@@ -286,4 +340,23 @@ func IsDirEmpty(name string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// Check the status of KubeArmor
+func CheckStatus(c *k8s.Client) (bool, error) {
+	var status bool
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor",
+	})
+	if err != nil {
+		return false, err
+	}
+	if len(pods.Items) != 0 && pods.Items[0].Status.Phase == "Running" {
+		status = true
+	}
+	if !status {
+		fmt.Println("KubeArmor is not running in your cluster")
+	}
+
+	return status, nil
 }
