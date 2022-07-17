@@ -12,13 +12,22 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
 
+// EventInfo Event data signalled on EventChan
+type EventInfo struct {
+	Data []byte // json marshalled byte data for alert/log
+	Type string // "Alert"/"Log"
+}
+
+// Limitchan handles telemetry event output limit
 var Limitchan chan bool
 var i uint32
 
@@ -211,129 +220,6 @@ func regexMatcher(filter *regexp.Regexp, res string) bool {
 	return true
 }
 
-func watchAlertsHelper(res *pb.Alert, o Options) error {
-
-	if len(o.Selector) != 0 {
-		val := selectLabels(o, res.Labels)
-		if val != nil {
-			return nil
-		}
-	}
-
-	if o.Namespace != "" {
-		match := regexMatcher(CNamespace, res.NamespaceName)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.LogType != "" {
-		match := regexMatcher(CLogtype, res.Type)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.Operation != "" {
-		match := regexMatcher(COperation, res.Operation)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.ContainerName != "" {
-		match := regexMatcher(CContainerName, res.ContainerName)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.PodName != "" {
-		match := regexMatcher(CPodName, res.PodName)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.Source != "" {
-		match := regexMatcher(CSource, res.Source)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.Resource != "" {
-		match := regexMatcher(CResource, res.Resource)
-		if !match {
-			return nil
-		}
-	}
-
-	str := ""
-
-	if o.EventChan != nil {
-		o.EventChan <- *res
-	}
-	if o.JSON {
-		arr, _ := json.Marshal(res)
-		str = fmt.Sprintf("%s\n", string(arr))
-	} else {
-		updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
-		updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-
-		str = fmt.Sprintf("== Alert / %s ==\n", updatedTime)
-
-		str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-		str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
-
-		if res.NamespaceName != "" {
-			str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-			str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
-			str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
-			str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
-			str = str + fmt.Sprintf("Labels: %s\n", res.Labels)
-		}
-
-		if len(res.PolicyName) > 0 {
-			str = str + fmt.Sprintf("Policy Name: %s\n", res.PolicyName)
-		}
-
-		if len(res.Severity) > 0 {
-			str = str + fmt.Sprintf("Severity: %s\n", res.Severity)
-		}
-
-		if len(res.Tags) > 0 {
-			str = str + fmt.Sprintf("Tags: %s\n", res.Tags)
-		}
-
-		if len(res.Message) > 0 {
-			str = str + fmt.Sprintf("Message: %s\n", res.Message)
-		}
-
-		str = str + fmt.Sprintf("Type: %s\n", res.Type)
-		str = str + fmt.Sprintf("Source: %s\n", res.Source)
-		str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
-		str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
-
-		if len(res.Data) > 0 {
-			str = str + fmt.Sprintf("Data: %s\n", res.Data)
-		}
-
-		if len(res.Action) > 0 {
-			str = str + fmt.Sprintf("Action: %s\n", res.Action)
-		}
-
-		str = str + fmt.Sprintf("Result: %s\n", res.Result)
-	}
-
-	if o.LogPath == "stdout" {
-		fmt.Printf("%s", str)
-	} else if o.LogPath != "" {
-		StrToFile(str, o.LogPath)
-	}
-	return nil
-}
-
 // WatchAlerts Function
 func (fd *Feeder) WatchAlerts(o Options) error {
 	fd.WgClient.Add(1)
@@ -345,7 +231,9 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 			if err != nil {
 				break
 			}
-			_ = watchAlertsHelper(res, o)
+
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Alert", o)
 
 		}
 		Limitchan <- true
@@ -356,7 +244,9 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 			if err != nil {
 				break
 			}
-			_ = watchAlertsHelper(res, o)
+
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Alert", o)
 
 		}
 	}
@@ -364,110 +254,6 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 	fmt.Fprintln(os.Stderr, "Stopped WatchAlerts")
 
 	return nil
-}
-
-func WatchLogsHelper(res *pb.Log, o Options) error {
-
-	if len(o.Selector) != 0 {
-		val := selectLabels(o, res.Labels)
-		if val != nil {
-			return nil
-		}
-	}
-
-	if o.Namespace != "" {
-		match := regexMatcher(CNamespace, res.NamespaceName)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.LogType != "" {
-		match := regexMatcher(CLogtype, res.Type)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.Operation != "" {
-		match := regexMatcher(COperation, res.Operation)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.ContainerName != "" {
-		match := regexMatcher(CContainerName, res.ContainerName)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.PodName != "" {
-		match := regexMatcher(CPodName, res.PodName)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.Source != "" {
-		match := regexMatcher(CSource, res.Source)
-		if !match {
-			return nil
-		}
-	}
-
-	if o.Resource != "" {
-		match := regexMatcher(CResource, res.Resource)
-		if !match {
-			return nil
-		}
-	}
-
-	str := ""
-
-	if o.EventChan != nil {
-		o.EventChan <- *res
-	}
-	if o.JSON {
-		arr, _ := json.Marshal(res)
-		str = fmt.Sprintf("%s\n", string(arr))
-	} else {
-		updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
-		updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-
-		str = fmt.Sprintf("== Log / %s ==\n", updatedTime)
-
-		str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-		str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
-
-		if res.NamespaceName != "" {
-			str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-			str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
-			str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
-			str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
-			str = str + fmt.Sprintf("Labels: %s\n", res.Labels)
-		}
-
-		str = str + fmt.Sprintf("Type: %s\n", res.Type)
-		str = str + fmt.Sprintf("Source: %s\n", res.Source)
-		str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
-		str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
-
-		if len(res.Data) > 0 {
-			str = str + fmt.Sprintf("Data: %s\n", res.Data)
-		}
-
-		str = str + fmt.Sprintf("Result: %s\n", res.Result)
-	}
-
-	if o.LogPath == "stdout" {
-		fmt.Printf("%s", str)
-	} else if o.LogPath != "" {
-		StrToFile(str, o.LogPath)
-	}
-	return nil
-
 }
 
 // WatchLogs Function
@@ -481,7 +267,10 @@ func (fd *Feeder) WatchLogs(o Options) error {
 			if err != nil {
 				break
 			}
-			_ = WatchLogsHelper(res, o)
+
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Log", o)
+
 		}
 		Limitchan <- true
 	} else {
@@ -490,7 +279,9 @@ func (fd *Feeder) WatchLogs(o Options) error {
 			if err != nil {
 				break
 			}
-			_ = WatchLogsHelper(res, o)
+
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Log", o)
 
 		}
 	}
@@ -500,24 +291,157 @@ func (fd *Feeder) WatchLogs(o Options) error {
 	return nil
 }
 
+// WatchTelemetryHelper handles Alerts and Logs
+func WatchTelemetryHelper(arr []byte, t string, o Options) {
+	var res map[string]interface{}
+	err := json.Unmarshal(arr, &res)
+	if err != nil {
+		return
+	}
+
+	// Filter Telemetry based on provided options
+	if len(o.Selector) != 0 {
+		val := selectLabels(o, res["Labels"].(string))
+		if val != nil {
+			return
+		}
+	}
+
+	if o.Namespace != "" {
+		match := regexMatcher(CNamespace, res["NamespaceName"].(string))
+		if !match {
+			return
+		}
+	}
+
+	if o.LogType != "" {
+		match := regexMatcher(CLogtype, res["Type"].(string))
+		if !match {
+			return
+		}
+	}
+
+	if o.Operation != "" {
+		match := regexMatcher(COperation, res["Operation"].(string))
+		if !match {
+			return
+		}
+	}
+
+	if o.ContainerName != "" {
+		match := regexMatcher(CContainerName, res["ContainerName"].(string))
+		if !match {
+			return
+		}
+	}
+
+	if o.PodName != "" {
+		match := regexMatcher(CPodName, res["PodName"].(string))
+		if !match {
+			return
+		}
+	}
+
+	if o.Source != "" {
+		match := regexMatcher(CSource, res["Source"].(string))
+		if !match {
+			return
+		}
+	}
+
+	if o.Resource != "" {
+		match := regexMatcher(CResource, res["Resource"].(string))
+		if !match {
+			return
+		}
+	}
+
+	str := ""
+
+	// Pass Events to Channel for further handling
+	if o.EventChan != nil {
+		o.EventChan <- EventInfo{Data: arr, Type: t}
+	}
+
+	if o.JSON {
+		str = fmt.Sprintf("%s\n", string(arr))
+	} else {
+
+		if time, ok := res["UpdatedTime"]; ok {
+			updatedTime := strings.Replace(time.(string), "T", " ", -1)
+			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
+			str = fmt.Sprintf("== %s / %s ==\n", t, updatedTime)
+		} else {
+			str = fmt.Sprintf("== %s ==\n", t)
+		}
+
+		// Array of Keys to preserve order in Output
+		telKeys := []string{
+			"UpdatedTime",
+			"Timestamp",
+			"ClusterName",
+			"HostName",
+			"NamespaceName",
+			"PodName",
+			"Labels",
+			"ContainerName",
+			"ContainerID",
+			"ContainerImage",
+			"Type",
+			"PolicyName",
+			"Severity",
+			"Message",
+			"Source",
+			"Resource",
+			"Operation",
+			"Action",
+			"Data",
+			"Enforcer",
+			"Result",
+		}
+
+		var additionalKeys []string
+		// Looping through the Map to find additional keys not present in our array
+		for k := range res {
+			if !slices.Contains(telKeys, k) {
+				additionalKeys = append(additionalKeys, k)
+			}
+		}
+		sort.Strings(additionalKeys)
+		telKeys = append(telKeys, additionalKeys...)
+
+		for i := 2; i < len(telKeys); i++ { // Starting the loop from index 2 to skip printing timestamp again
+			k := telKeys[i]
+			// Check if fields are present in the structure and if present verifying that they are not empty
+			// Certain fields like Container* are not present in HostLogs, this check handles that and other edge cases
+			if v, ok := res[k]; ok && v != "" {
+				str = str + fmt.Sprintf("%s: %v\n", k, res[k])
+			}
+		}
+	}
+
+	if o.LogPath == "stdout" {
+		fmt.Printf("%s", str)
+	} else if o.LogPath != "" {
+		StrToFile(str, o.LogPath)
+	}
+
+}
+
 // DestroyClient Function
 func (fd *Feeder) DestroyClient() error {
 	if err := fd.conn.Close(); err != nil {
 		return err
 	}
-
 	fd.WgClient.Wait()
-
 	return nil
 }
 
 func selectLabels(o Options, labels string) error {
-
 	for _, val := range o.Selector {
 		if val == labels {
 			return nil
 		}
 	}
 	return errors.New("Not found any flag")
-
 }

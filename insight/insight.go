@@ -27,7 +27,7 @@ type Options struct {
 	Rule          string
 }
 
-// Get insights on observability data
+// StartInsight - Get insights on observability data
 func StartInsight(o Options) error {
 	gRPC := ""
 

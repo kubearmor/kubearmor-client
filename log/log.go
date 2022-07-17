@@ -16,8 +16,9 @@ import (
 
 type regexType *regexp.Regexp
 
+// Regex Compiled Structs
 var (
-	CNamespace     regexType // CNamespace : It is the regex compiled namespace
+	CNamespace     regexType
 	CLogtype       regexType
 	COperation     regexType
 	CContainerName regexType
@@ -42,7 +43,7 @@ type Options struct {
 	Resource      string
 	Limit         uint32
 	Selector      []string
-	EventChan     chan interface{} // channel to send events on
+	EventChan     chan EventInfo // channel to send events on
 }
 
 // StopChan Channel
@@ -196,6 +197,7 @@ func StartObserver(o Options) error {
 	return logClient.DestroyClient()
 }
 
+// StopObserver unblocks signal
 func StopObserver() {
 	unblockSignal = true
 }

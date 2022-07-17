@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// GeneratePki - generate pub/priv keypair
 func GeneratePki(namespace string, serviceName string) (*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error) {
 	ca, cakey, err := GenerateCA()
 	if err != nil {
@@ -57,6 +58,7 @@ func GeneratePki(namespace string, serviceName string) (*bytes.Buffer, *bytes.Bu
 	return caPEM, crtPEM, crtKeyPEM, nil
 }
 
+// GenerateCA - generate private key and a cert for a CA
 func GenerateCA() (*x509.Certificate, *rsa.PrivateKey, error) {
 	ca := &x509.Certificate{
 		SerialNumber: big.NewInt(123),
@@ -81,6 +83,7 @@ func GenerateCA() (*x509.Certificate, *rsa.PrivateKey, error) {
 	return ca, caPrivKey, nil
 }
 
+// GenerateCSR - generate certificate signing request
 func GenerateCSR(namespace string, serviceName string) (*x509.Certificate, *rsa.PrivateKey, error) {
 	csr := &x509.Certificate{
 		SerialNumber: big.NewInt(1234),
@@ -108,6 +111,7 @@ func GenerateCSR(namespace string, serviceName string) (*x509.Certificate, *rsa.
 	return csr, certPrivKey, nil
 }
 
+// SignCSR - signs a certificate signing request essentially approving it using the given CA
 func SignCSR(caCrt *x509.Certificate, caKey *rsa.PrivateKey, csrCrt *x509.Certificate, csrKey *rsa.PrivateKey) ([]byte, error) {
 	certBytes, err := x509.CreateCertificate(rand.Reader, csrCrt, caCrt, &csrKey.PublicKey, caKey)
 	if err != nil {

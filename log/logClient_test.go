@@ -1,36 +1,42 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 )
 
-var eventChan chan interface{}
+var eventChan chan EventInfo
+var done chan bool
 var gotAlerts = 0
 var gotLogs = 0
 
 const maxEvents = 5
 
-func waitOnEvent(cnt int) {
-	for i := 0; i < cnt; i++ {
-		evtin := <-eventChan
-		switch evt := evtin.(type) {
-		case pb.Alert:
+func genericWaitOnEvent(cnt int) {
+	for evtin := range eventChan {
+		switch evtin.Type {
+		case "Alert":
 			gotAlerts++
-		case pb.Log:
+		case "Log":
 			gotLogs++
 		default:
-			fmt.Printf("unknown event rcvd %v\n", reflect.TypeOf(evt))
+			fmt.Printf("unknown event\n")
+			break
+		}
+
+		if gotAlerts+gotLogs >= cnt {
+			break
 		}
 	}
+	done <- true
 }
 
 func TestLogClient(t *testing.T) {
-	var res = pb.Alert{
+	var res = &pb.Alert{
 		ClusterName:    "breaking-bad",
 		HostName:       "saymyname",
 		NamespaceName:  "heisenberg",
@@ -39,22 +45,34 @@ func TestLogClient(t *testing.T) {
 		ContainerID:    "12345678901234567890",
 		ContainerName:  "los-polos",
 		ContainerImage: "evergreen",
+		Type:           "MatchedPolicy",
 	}
-	eventChan = make(chan interface{}, maxEvents)
+	eventChan = make(chan EventInfo, maxEvents)
 	var o = Options{
 		EventChan: eventChan,
 	}
+
+	tel, err := json.Marshal(res)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	// Handle Telemetry Events
 	for i := 0; i < maxEvents; i++ {
-		err := watchAlertsHelper(&res, o)
-		if err != nil {
-			t.Errorf("watchAlertsHelper failed\n")
+		WatchTelemetryHelper(tel, "Alert", o)
+	}
+
+	done = make(chan bool, 1)
+	go genericWaitOnEvent(maxEvents)
+
+	// Check for timeouts
+	select {
+	case <-done:
+		if gotAlerts < maxEvents {
+			t.Errorf("did not receive all the events")
 		}
-	}
-	go waitOnEvent(maxEvents)
-	for i := 0; i < 10 && gotAlerts < maxEvents; i++ {
-		time.Sleep(10 * time.Millisecond)
-	}
-	if gotAlerts < maxEvents {
-		t.Errorf("did not receive all the events")
+	case <-time.After(100 * time.Millisecond):
+		t.Errorf("timed out")
 	}
 }

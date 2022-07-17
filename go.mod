@@ -18,7 +18,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220620050120-7e1810d2ad41
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220713111330-5ede97c62720
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220620050120-7e1810d2ad41
@@ -26,6 +26,7 @@ require (
 	github.com/rhysd/go-github-selfupdate v1.2.3
 	github.com/rs/zerolog v1.26.1
 	github.com/spf13/cobra v1.4.0
+	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.47.0
@@ -77,7 +78,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-github/v30 v30.1.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect

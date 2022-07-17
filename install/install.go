@@ -359,8 +359,11 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 
 	clusterName := clusterContext.Cluster
 	cluster := c.RawConfig.Clusters[clusterName]
+	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
+	nodeImage := nodes.Items[0].Status.NodeInfo.OSImage
 
-	// Detecting Environment based on cluster name and context
+	// Detecting Environment based on cluster name and context or OSImage
 	if clusterName == "minikube" || contextName == "minikube" {
 		env = "minikube"
 		return env
@@ -376,15 +379,17 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		return env
 	}
 
+	if strings.Contains(nodeImage, "Bottlerocket") {
+		env = "bottlerocket"
+		return env
+	}
+
 	if strings.HasSuffix(clusterName, ".eksctl.io") || strings.HasSuffix(cluster.Server, "eks.amazonaws.com") {
 		env = "eks"
 		return env
 	}
 
 	// Environment is Self Managed K8s, checking container runtime and it's version
-
-	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
 
 	if strings.Contains(containerRuntime, "k3s") {
 		env = "k3s"
@@ -399,6 +404,12 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 		env = "docker"
 		return env
 	}
+
+	if runtime == "cri-o" {
+		env = "oke"
+		return env
+	}
+
 	if (runtime == "docker" && semver.Compare(version, "v19.3") >= 0) || runtime == "containerd" {
 		env = "generic"
 		return env

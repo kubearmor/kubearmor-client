@@ -74,6 +74,7 @@ func List(address string) error {
 	return nil
 }
 
+// Onboarding - onboards a vm
 func Onboarding(eventType string, path string, address string) error {
 	var vm tp.KubeArmorVirtualMachinePolicy
 
