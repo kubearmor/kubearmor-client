@@ -81,10 +81,9 @@ func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) err
 	if t == "LIST" {
 		if string(respBody) == "" {
 			return fmt.Errorf("failed to get label list")
-		} else {
-			fmt.Printf("The label list for %s is %s\n", o.VMName, string(respBody))
-			return nil
 		}
+		fmt.Printf("The label list for %s is %s\n", o.VMName, string(respBody))
+		return nil
 	}
 
 	fmt.Println("Success")

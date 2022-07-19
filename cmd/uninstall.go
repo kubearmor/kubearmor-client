@@ -27,4 +27,5 @@ func init() {
 	rootCmd.AddCommand(uninstallCmd)
 
 	uninstallCmd.Flags().StringVarP(&uninstallOptions.Namespace, "namespace", "n", "kube-system", "Namespace for resources")
+	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove kubearmor annotations from deployments. (Deployments might be restarted)")
 }

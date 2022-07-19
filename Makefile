@@ -5,10 +5,10 @@ CURDIR     := $(shell pwd)
 INSTALLDIR := $(shell go env GOPATH)/bin/
 
 ifeq (, $(shell which govvv))
-$(shell go get github.com/ahmetb/govvv@latest)
+$(shell go install github.com/ahmetb/govvv@latest)
 endif
 
-PKG      := $(shell go list ./version)
+PKG      := $(shell go list ./selfupdate)
 GIT_INFO := $(shell govvv -flags -pkg $(PKG))
 
 .PHONY: build
@@ -22,6 +22,10 @@ install: build
 .PHONY: clean
 clean:
 	cd $(CURDIR); rm -f karmor
+
+.PHONY: test
+test:
+	cd $(CURDIR); go test -v ./...
 
 .PHONY: protobuf
 vm-protobuf:

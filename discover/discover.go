@@ -5,17 +5,17 @@ package discover
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/clarketm/json"
 	"github.com/rs/zerolog/log"
+	"sigs.k8s.io/yaml"
 
 	wpb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
 	"github.com/accuknox/auto-policy-discovery/src/types"
 	"google.golang.org/grpc"
-	"sigs.k8s.io/yaml"
 )
 
 // Options Structure
@@ -89,9 +89,10 @@ func ConvertPolicy(o Options) error {
 					str = fmt.Sprintf("%s\n", string(arr))
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
-					yamlarr, _ := yaml.Marshal(policy)
-					str = fmt.Sprintf("%s\n", string(yamlarr))
-					fmt.Printf("%s", str)
+					arr, _ := json.Marshal(policy)
+					yamlarr, _ := yaml.JSONToYAML(arr)
+					str = fmt.Sprintf("%s", string(yamlarr))
+					fmt.Printf("%s---\n", str)
 				} else {
 					log.Printf("Currently supported formats are json and yaml\n")
 					break
@@ -121,9 +122,10 @@ func ConvertPolicy(o Options) error {
 					str = fmt.Sprintf("%s\n", string(arr))
 					fmt.Printf("%s", str)
 				} else if o.Format == "yaml" {
-					yamlarr, _ := yaml.Marshal(policy)
-					str = fmt.Sprintf("%s\n", string(yamlarr))
-					fmt.Printf("%s", str)
+					arr, _ := json.Marshal(policy)
+					yamlarr, _ := yaml.JSONToYAML(arr)
+					str = fmt.Sprintf("%s", string(yamlarr))
+					fmt.Printf("%s---\n", str)
 				} else {
 					fmt.Printf("Currently supported formats are json and yaml\n")
 					break

@@ -8,13 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var dumpOptions sysdump.Options
+
 // sysdumpCmd represents the get command
 var sysdumpCmd = &cobra.Command{
 	Use:   "sysdump",
 	Short: "Collect system dump information for troubleshooting and error report",
 	Long:  `Collect system dump information for troubleshooting and error reports`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := sysdump.Collect(client); err != nil {
+		if err := sysdump.Collect(client, dumpOptions); err != nil {
 			return err
 		}
 		return nil
@@ -23,4 +25,5 @@ var sysdumpCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sysdumpCmd)
+	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "file", "f", "", "output file to use")
 }
