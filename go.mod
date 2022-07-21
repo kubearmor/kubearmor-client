@@ -16,6 +16,7 @@ require (
 	github.com/cilium/cilium v1.10.0
 	github.com/clarketm/json v1.17.1
 	github.com/fatih/color v1.13.0
+	github.com/json-iterator/go v1.1.12
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220706172948-9d2644f2666b
@@ -90,7 +91,6 @@ require (
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect

@@ -3,24 +3,27 @@
 
 package probe
 
-
 import (
+	"context"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 	"syscall"
-    "strings"
+	"time"
+
+	jsoniter "github.com/json-iterator/go"
+
+	"github.com/fatih/color"
+	"github.com/kubearmor/kubearmor-client/deployment"
+	"github.com/kubearmor/kubearmor-client/k8s"
 	"golang.org/x/mod/semver"
-    "log"
-    "github.com/fatih/color"
-    "os"
-    "io"
-    "time"
-    "github.com/kubearmor/kubearmor-client/k8s"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
-	"context"
-	corev1 "k8s.io/api/core/v1"
-	"github.com/kubearmor/kubearmor-client/deployment"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var white = color.New(color.FgWhite)
@@ -66,6 +69,17 @@ func probeDaemonUninstaller(c *k8s.Client, o ProbeOptions) error {
 }
 
 func PrintProbeResult(c *k8s.Client, o ProbeOptions) error{
+	if isKubeArmorRunning(c) {
+		getKubeArmorDeployments(c)
+		printContainers (c)
+        err := probeRunningKubeArmorNodes(c)
+		if err != nil {
+			log.Println("error occured when probing kubearmor nodes", err)
+		}
+		return nil;		
+    }
+
+	/*** if kubearmor is not running: ***/
     if o.Full {
         checkHostAuditSupport()
         checkLsmSupport(getHostSupportedLSM())
@@ -114,10 +128,7 @@ func getHostSupportedLSM() string {
 
 
 func kernelVersionSupported(kernelVersion string) bool {
-    if semver.Compare(kernelVersion, "4.14") >= 0 {
-        return true
-    }
-    return false;
+    return semver.Compare(kernelVersion, "4.14") >= 0
 }
 
 func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
@@ -313,3 +324,245 @@ func probeNode(c *k8s.Client){
 }
 
 
+
+type KubeArmorProbeData struct {
+	OSImage             string
+	KernelVersion       string
+	KubeletVersion      string
+	ContainerRuntime    string
+	SupportedLSMs       string
+	KernelHeaderPresent bool
+	HostSecurity        bool
+	ContainerSecurity   bool
+	KubeArmorPosture    KubeArmorPostures
+}
+type KubeArmorPostures struct {
+	DefaultFilePosture             string
+	DefaultNetworkPosture          string
+	DefaultCapabilitiesPosture     string
+	HostDefaultFilePosture         string
+	HostDefaultNetworkPosture      string
+	HostDefaultCapabilitiesPosture string
+}
+
+
+func isKubeArmorRunning(c *k8s.Client) bool{
+	_, err := getKubeArmorDaemonsets(c)
+	return err == nil
+	
+}
+
+func getKubeArmorDaemonsets(c *k8s.Client)  (bool, error) {
+
+	// // KubeArmor DaemonSet
+	w, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
+	if err != nil {
+		return  false, err
+	}
+	color.Green("\nFound KubeArmor running in Kubernetes \n\n")
+	_, err = boldWhite.Printf("Daemonset : \n")
+            if(err != nil){
+                color.Red(" Error while printing")
+			}
+	desired, ready, available := w.Status.DesiredNumberScheduled, w.Status.NumberReady, w.Status.NumberAvailable
+	if desired != ready && desired != available {
+		fmt.Printf("\t kubearmor \t Desired: %d, Ready: %d, Available: %d \n", desired, ready, available)
+		return false, nil
+	}
+	fmt.Printf("\t kubearmor \t Desired: %d, Ready: %d, Available: %d \n", desired, ready, available)
+	return true, nil
+}
+
+func getKubeArmorDeployments(c *k8s.Client)  {
+	_, err := boldWhite.Printf("Deployments : \n")
+            if(err != nil){
+                color.Red(" Error while printing")
+            }
+
+	//relay deployment
+	relayDeployment, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-relay", metav1.GetOptions{})
+	if err != nil {
+		return
+	}	
+	//not updated replicas- what we need is desired replicas
+	desired1, ready1, available1 := relayDeployment.Status.UpdatedReplicas, relayDeployment.Status.ReadyReplicas, relayDeployment.Status.AvailableReplicas 
+	fmt.Printf("\t kubearmor-relay \t Desired: %d, Ready: %d, Available: %d \n", desired1, ready1, available1)
+
+	//host policy manager deployment
+	hostPolicyDeployment, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-host-policy-manager", metav1.GetOptions{})
+	if err != nil {
+		return
+	}	
+	//not updated replicas- what we need is desired replicas
+	desired2, ready2, available2 := hostPolicyDeployment.Status.UpdatedReplicas, hostPolicyDeployment.Status.ReadyReplicas, hostPolicyDeployment.Status.AvailableReplicas 
+	fmt.Printf("\t kubearmor-relay \t Desired: %d, Ready: %d, Available: %d \n", desired2, ready2, available2)
+
+	//policy manager deployment
+	policyManagerDeployment, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-policy-manager", metav1.GetOptions{})
+	if err != nil {
+		return
+	}	
+	//not updated replicas- what we need is desired replicas
+	desired3, ready3, available3 := policyManagerDeployment.Status.UpdatedReplicas, policyManagerDeployment.Status.ReadyReplicas, policyManagerDeployment.Status.AvailableReplicas 
+	fmt.Printf("\t kubearmor-policy-manager \t Desired: %d, Ready: %d, Available: %d \n", desired3, ready3, available3)
+}
+
+func printContainers(c *k8s.Client){
+	kubearmorContainerCount, kubearmorImageVersion := getKubeArmorContainerCount(c)
+	relayContainerCount, relayImageVersion := getKubeArmorRelayContainerCountAndImageVersion(c)
+	_, err := boldWhite.Printf("Containers : \n")
+            if(err != nil){
+                color.Red(" Error while printing")
+            }
+	fmt.Printf("\t kubearmor \t Running: %d \t <image Version>: %s \n", kubearmorContainerCount, kubearmorImageVersion)
+	fmt.Printf("\t kubearmor-relay \t Running: %d \t <image Version>: %s \n", relayContainerCount, relayImageVersion)
+	
+}
+
+func getKubeArmorContainerCount(c *k8s.Client) (int, string) {
+	kubearmorContainerCount := 0;
+	kubearmorImageVersion := ""
+	kubearmorPods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor",
+	})
+	if err != nil {
+		log.Println("error occured when getting kubearmor pods", err)
+		return kubearmorContainerCount, kubearmorImageVersion
+	}
+
+	if len(kubearmorPods.Items) > 0 {
+		kubearmorImageVersion = kubearmorPods.Items[0].Spec.Containers[0].Image
+		for _, kubearmorPodItem := range kubearmorPods.Items {
+			kubearmorContainerCount+= len(kubearmorPodItem.Spec.Containers)			
+		}
+	}
+	
+	return kubearmorContainerCount, kubearmorImageVersion
+
+}
+
+func getKubeArmorRelayContainerCountAndImageVersion(c *k8s.Client) (int, string){
+	// KubeArmor Relay Pod
+	relayContainerCount := 0;
+	relayImageVersion := ""
+	relayPods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor-relay",
+	})
+	if err != nil {
+		//log.Println("error occured when getting kubearmor relay pods")
+		return relayContainerCount,relayImageVersion
+	}
+
+	if len(relayPods.Items) > 0 {
+		relayImageVersion = relayPods.Items[0].Spec.Containers[0].Image
+		for _, relayPodItem := range relayPods.Items {
+			relayContainerCount += len(relayPodItem.Spec.Containers)
+			
+		}
+	}
+	return relayContainerCount, relayImageVersion
+}
+
+
+func probeRunningKubeArmorNodes(c *k8s.Client) error {
+
+	// // KubeArmor Nodes
+	nodes, err := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		log.Println("error getting nodes",err)
+		return err
+	}
+
+	if len(nodes.Items) > 0 {
+		 
+		for i, item := range nodes.Items{
+            _, err := boldWhite.Printf("Node %d : \n", i+1)
+            if(err != nil){
+                color.Red(" Error while printing")
+            }
+            readDataFromKubeArmor(c, item.Name)
+            
+        }
+    }else{
+        fmt.Println("No kubernetes environment found")
+     }
+
+	return nil
+}
+
+func readDataFromKubeArmor(c *k8s.Client, nodeName string) error{
+	var kd *KubeArmorProbeData
+
+	srcPath := "/tmp/karmorProbeData.cfg"
+	pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor",
+        FieldSelector: "spec.nodeName=" + nodeName,
+	})
+	if err != nil {
+		log.Println("error occured while getting kubeArmor pods", err)
+		return err
+	}
+	reader, outStream := io.Pipe()
+	cmdArr := []string{"cat", srcPath}
+	req := c.K8sClientset.CoreV1().RESTClient().
+		Get().
+		Namespace("kube-system").
+		Resource("pods").
+		Name(pods.Items[0].Name).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Container: pods.Items[0].Spec.Containers[0].Name,
+			Command:   cmdArr,
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
+
+	if err != nil {
+		return err
+	}
+	go func() {
+		defer outStream.Close()
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:  os.Stdin,
+			Stdout: outStream,
+			Stderr: os.Stderr,
+			Tty:    false,
+		})
+	}()
+	buf, err := io.ReadAll(reader)
+	if err != nil {
+        log.Println("an error occured when reading file", err)
+		return err
+	}
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	err =  json.Unmarshal(buf, &kd)
+	if err != nil {
+        log.Println("an error occured when parsing file", err)
+		return err
+	}
+	printKubeArmorProbeOutput(kd)
+    return nil
+}
+
+func printKubeArmorProbeOutput(kd *KubeArmorProbeData){
+
+	fmt.Printf("\t OS Image: ") 
+	color.Green( kd.OSImage )
+	fmt.Printf("\t Kernel Version: ") 
+	color.Green( kd.KernelVersion )
+	fmt.Printf("\t Kubelet Version: ") 
+	color.Green( kd.KubeletVersion )
+	fmt.Printf("\t Container Runtime: ") 
+	color.Green( kd.ContainerRuntime )
+	fmt.Printf("\t Supported LSMs: ") 
+	color.Green( kd.SupportedLSMs )
+	fmt.Printf("\t Host Security: ") 
+	color.Green(  strconv.FormatBool(kd.HostSecurity) )
+	fmt.Printf("\t Container Security: ") 
+	color.Green( strconv.FormatBool(kd.ContainerSecurity) )
+	fmt.Printf("\t KubeArmor Posture: ") 
+	color.Green( kd.KubeArmorPosture.DefaultFilePosture )
+}
