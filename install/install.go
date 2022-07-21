@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/mod/semver"
 	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -207,7 +208,19 @@ func removeDeployAnnotations(c *k8s.Client, dep *v1.Deployment) {
 	}
 }
 
+func removePodAnnotations(c *k8s.Client, pod *corev1.Pod) {
+	for k, v := range pod.GetAnnotations() {
+		if strings.Contains(k, "kubearmor") || strings.Contains(v, "kubearmor") {
+			fmt.Printf("\tRemoving kubearmor annotations from pod=%s namespace=%s\n", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace)
+			pod.SetAnnotations(nil)
+			c.K8sClientset.CoreV1().Pods(pod.ObjectMeta.Namespace).Update(context.Background(), pod, metav1.UpdateOptions{})
+			c.K8sClientset.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(context.Background(), pod.ObjectMeta.Name, metav1.DeleteOptions{})
+		}
+	}
+}
+
 func removeAnnotations(c *k8s.Client) {
+	// Remove deployment annotations
 	deps, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Println("could not get deployments")
@@ -217,6 +230,17 @@ func removeAnnotations(c *k8s.Client) {
 	for _, dep := range deps.Items {
 		dep := dep // this is added to handle "Implicit Memory Aliasing..."
 		removeDeployAnnotations(c, &dep)
+	}
+
+	//Remove pod annotations
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Println("could not get pods")
+		return
+	}
+	for _, pod := range pods.Items {
+		pod := pod // this is added to handle "Implicit Memory Aliasing..."
+		removePodAnnotations(c, &pod)
 	}
 }
 
