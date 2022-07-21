@@ -36,13 +36,15 @@ func StartSimulation(o Options) error {
 	if err != nil {
 		return err
 	}
-	// pr := walkProcessTree(karmorPolicy)
-	// fmt.Printf("%v", pr)
-	action, err := GetUserAction(o.Action)
+	pr := walkProcessTree(karmorPolicy)
+	userAction, err := GetUserAction(o.Action)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%v", action)
+	so := pr.GenerateTelemetry(karmorPolicy.Metadata.Name, userAction)
+	for _, simulations := range so {
+		printSimulation(&simulations, "test")
+	}
 	return nil
 
 }
@@ -50,7 +52,6 @@ func StartSimulation(o Options) error {
 func printSimulation(out *SimulationOutput, title string) {
 	fmt.Printf("Action: %s", title)
 	fmt.Printf(`
-Telemetry Event:
 == Alert ==
 Cluster Name: unknown
 Host Name: unknown
@@ -100,6 +101,7 @@ func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
 			pr.rules = append(pr.rules, mr)
 
 		}
+		return &pr
 	}
 	if len(src.Spec.Process.MatchDirectories) > 0 {
 		for _, rule := range src.Spec.Process.MatchDirectories {
@@ -130,17 +132,17 @@ func walkProcessTree(src *tp.K8sKubeArmorPolicy) *processRules {
 
 }
 
-// GetUserAction takes an input action and returns a slice of the action type(exec,fopen,socket...) along with the corresponding path
-// eg "exec:/bin/sleep" -> [exec,/bin/sleep]
-func GetUserAction(action string) ([]string, error) {
+// GetUserAction takes an input action and returns type UserAction of the action type(exec,fopen,socket...) along with the corresponding path
+// eg "exec:/bin/sleep"
+func GetUserAction(action string) (UserAction, error) {
 	// check if the action is supported
 	supportedActions := []string{"exec", "fopen", "socket", "accept"}
-	act := action[:strings.IndexByte(action, ':')]
-	if !contains(supportedActions, act) {
-		return []string{}, fmt.Errorf("the supplied action is currently unsupported. Supported actions: %v", supportedActions)
+	operation := action[:strings.IndexByte(action, ':')]
+	if !contains(supportedActions, operation) {
+		return UserAction{}, fmt.Errorf("the supplied action is currently unsupported. Supported actions: %v", supportedActions)
 	}
 	path := strings.Join(strings.Split(action, ":")[1:], ":")
-	return []string{act, path}, nil
+	return UserAction{operation, path}, nil
 }
 
 func contains(src []string, target string) bool {

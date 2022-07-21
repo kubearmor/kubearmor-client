@@ -69,6 +69,11 @@ type Event struct {
 	// ne NetworkEvent
 }
 
+type UserAction struct {
+	Operation string
+	Path      string
+}
+
 type SimulationOutput struct {
 	Policy    string
 	Severity  int
@@ -81,28 +86,71 @@ type SimulationOutput struct {
 	Result    string
 }
 
-func (pr *processRules) GenerateTelemetry(policyName string, userAction string) []SimulationOutput {
+func (pr *processRules) GenerateTelemetry(policyName string, userAction UserAction) []SimulationOutput {
 	out := []SimulationOutput{}
-	for _, rule := range pr.rules {
-		so := SimulationOutput{}
-		if rule.path == userAction {
+	if len(pr.rules) > 0 {
+		for _, rule := range pr.rules {
+			so := SimulationOutput{}
 			so.Policy = policyName
 			so.Type = "MatchedPolicy"
-			so.Source = userAction
-			so.Resource = rule.path
 			so.Operation = "Process"
 			so.Data = "SYS_EXECVE"
-			switch pr.action {
-			case Allow:
-				so.Action = PermissionAllowed
-			case Block:
-				so.Action = PermissionDenied
-			case Audit:
-				so.Action = PermissionAudit
-				// if the action does not match any of these cases use default posture?
+			so.Resource = rule.path
+			if rule.path == userAction.Path {
+				so.Source = userAction.Path
+				so.Result = GetActionResult(pr.action)
+				switch pr.action {
+				case Allow:
+					so.Action = "Allow"
+				case Block:
+					so.Action = "Block"
+				case Audit:
+					so.Action = "Audit"
+				}
 			}
-		}
 
+			if len(rule.fromSource) > 0 {
+				if contains(rule.fromSource, userAction.Path) {
+					so.Source = userAction.Path
+					so.Result = GetActionResult(pr.action)
+					switch pr.action {
+					case Allow:
+						so.Action = "Allow"
+					case Block:
+						so.Action = "Block"
+					case Audit:
+						so.Action = "Audit"
+					}
+				}
+
+			}
+			out = append(out, so)
+		}
 	}
 	return out
+}
+
+func GetActionResult(action Action) string {
+	switch action {
+	case Allow:
+		return PermissionAllowed
+	case Block:
+		return PermissionDenied
+	case Audit:
+		return PermissionAudit
+	default:
+		return PermissionDenied
+	}
+}
+
+func ActiontoString(action Action) string {
+	switch action {
+	case Allow:
+		return "Allow"
+	case Block:
+		return "Block"
+	case Audit:
+		return "Audit"
+	}
+	return ""
 }
