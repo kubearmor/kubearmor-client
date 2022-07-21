@@ -213,8 +213,14 @@ func removePodAnnotations(c *k8s.Client, pod *corev1.Pod) {
 		if strings.Contains(k, "kubearmor") || strings.Contains(v, "kubearmor") {
 			fmt.Printf("\tRemoving kubearmor annotations from pod=%s namespace=%s\n", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace)
 			pod.SetAnnotations(nil)
-			c.K8sClientset.CoreV1().Pods(pod.ObjectMeta.Namespace).Update(context.Background(), pod, metav1.UpdateOptions{})
-			c.K8sClientset.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(context.Background(), pod.ObjectMeta.Name, metav1.DeleteOptions{})
+			_, err := c.K8sClientset.CoreV1().Pods(pod.ObjectMeta.Namespace).Update(context.Background(), pod, metav1.UpdateOptions{})
+			if err != nil {
+				fmt.Println(err)
+			}
+			err = c.K8sClientset.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(context.Background(), pod.ObjectMeta.Name, metav1.DeleteOptions{})
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
