@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
@@ -69,6 +71,10 @@ func probeDaemonUninstaller(c *k8s.Client, o ProbeOptions) error {
 }
 
 func PrintProbeResult(c *k8s.Client, o ProbeOptions) error{
+	if isSystemdMode(){
+		probeSystemdMode()
+		return nil
+	} 
 	if isKubeArmorRunning(c) {
 		getKubeArmorDeployments(c)
 		printContainers (c)
@@ -566,3 +572,47 @@ func printKubeArmorProbeOutput(kd *KubeArmorProbeData){
 	fmt.Printf("\t KubeArmor Posture: ") 
 	color.Green( kd.KubeArmorPosture.DefaultFilePosture )
 }
+
+//sudo systemctl status kubearmor
+func isSystemdMode() bool{
+	cmd := exec.Command("systemctl", "status", "kubearmor")
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+	  if _, ok := err.(*exec.ExitError); ok {
+		return false
+	  } else {
+		os.Exit(1)
+		return false
+	  }
+	}
+	color.Green("\nFound KubeArmor running in Systemd mode \n\n")
+	return true
+  }
+
+  func probeSystemdMode() error{
+	var kd *KubeArmorProbeData
+    jsonFile, err := os.Open("/tmp/karmorProbeData.cfg")
+    if err != nil {
+        log.Println(err)
+		return err
+    }
+    defer jsonFile.Close()
+
+    buf, err := ioutil.ReadAll(jsonFile)
+    if err != nil {
+        log.Println("1. an error occured when reading file", err)
+        return err
+    }
+    var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	err =  json.Unmarshal(buf, &kd)
+	if err != nil {
+        log.Println("an error occured when parsing file", err)
+		return err
+	}
+	_, err = boldWhite.Printf("Host : \n")
+            if(err != nil){
+                color.Red(" Error")
+            }
+	printKubeArmorProbeOutput(kd)
+	return nil
+  }
