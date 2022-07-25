@@ -125,7 +125,7 @@ func getHostSupportedLSM() string {
 
     b, err := os.ReadFile("/sys/kernel/security/lsm")
     if err != nil {
-        log.Printf("an error occured when reading file")
+        log.Println("Unable to read supported LSM on host or security lsm path does not exist")
         return "none"
     }
     s := string(b)
@@ -582,7 +582,6 @@ func isSystemdMode() bool{
 	  if _, ok := err.(*exec.ExitError); ok {
 		return false
 	  } else {
-		os.Exit(1)
 		return false
 	  }
 	}
