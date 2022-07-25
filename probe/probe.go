@@ -5,6 +5,7 @@ package probe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -48,7 +49,7 @@ func probeDaemonInstaller(c *k8s.Client, o ProbeOptions) error {
     daemonset.Spec.Template.Spec.Containers[0].Image = o.ProbeDaemonImage
     if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
         if !strings.Contains(err.Error(), "already exists") {
-            return err
+			return errors.New("unable to install kubearmor daemonset: kubernetes environment not found or cluster not configured correctly")
         }
     }
     return nil
