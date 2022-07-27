@@ -95,7 +95,18 @@ func PrintProbeResult(c *k8s.Client, o ProbeOptions) error{
             return err
         }
         color.Yellow("\t Creating probe daemonset ...")
-        time.Sleep(2 * time.Second)
+
+		w, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Get(context.Background(), karmorprobe , metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		time.Sleep(2 * time.Second)
+		desired, ready, available := w.Status.DesiredNumberScheduled, w.Status.NumberReady, w.Status.NumberAvailable
+		if desired != ready && desired != available{
+			err = errors.New("timeout when creating karmor probe daemonset")
+			return err
+		}
+			
         probeNode(c)
         if err := probeDaemonUninstaller(c, o); err != nil {
             return err
@@ -402,7 +413,7 @@ func getKubeArmorDeployments(c *k8s.Client)  {
 	}	
 	//not updated replicas- what we need is desired replicas
 	desired2, ready2, available2 := hostPolicyDeployment.Status.UpdatedReplicas, hostPolicyDeployment.Status.ReadyReplicas, hostPolicyDeployment.Status.AvailableReplicas 
-	fmt.Printf("\t kubearmor-relay \t Desired: %d, Ready: %d, Available: %d \n", desired2, ready2, available2)
+	fmt.Printf("\t kubearmor-host-policy-manager \t Desired: %d, Ready: %d, Available: %d \n", desired2, ready2, available2)
 
 	//policy manager deployment
 	policyManagerDeployment, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-policy-manager", metav1.GetOptions{})
@@ -493,6 +504,7 @@ func probeRunningKubeArmorNodes(c *k8s.Client) error {
     }else{
         fmt.Println("No kubernetes environment found")
      }
+	 getAnnotatedPods(c)
 
 	return nil
 }
@@ -600,7 +612,7 @@ func isSystemdMode() bool{
 
     buf, err := ioutil.ReadAll(jsonFile)
     if err != nil {
-        log.Println("1. an error occured when reading file", err)
+        log.Println("an error occured when reading file", err)
         return err
     }
     var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -615,4 +627,29 @@ func isSystemdMode() bool{
             }
 	printKubeArmorProbeOutput(kd)
 	return nil
+  }
+
+  func getAnnotatedPods(c *k8s.Client)error{
+	// Annotated Pods Description
+	
+		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = boldWhite.Printf("Annotated pods : \n")
+            if(err != nil){
+                color.Red(" Error printing bold text")
+            }
+		fmt.Printf("\t NAMESPACE \t\t NAME\n")
+
+		for _, p := range pods.Items {
+			if p.Annotations["kubearmor-policy"] == "enabled" {
+				v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				fmt.Println("\t",v.Namespace,"\t\t ",v.Name)
+			}
+		}
+		return nil
   }
