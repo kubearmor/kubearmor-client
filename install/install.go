@@ -5,16 +5,23 @@ package install
 
 import (
 	"context"
-	"encoding/json"
+	"path/filepath"
+
 	"errors"
 	"fmt"
+	"os"
+	"path"
 	"strings"
+
+	"github.com/clarketm/json"
+	"sigs.k8s.io/yaml"
 
 	deployments "github.com/kubearmor/KubeArmor/deployments/get"
 	"github.com/kubearmor/kubearmor-client/k8s"
 
 	"golang.org/x/mod/semver"
 	v1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -25,6 +32,7 @@ type Options struct {
 	KubearmorImage string
 	Audit          string
 	Force          bool
+	Save           bool
 }
 
 // K8sInstaller for karmor install
@@ -35,52 +43,84 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 	fmt.Printf("Auto Detected Environment : %s\n", env)
 
-	fmt.Printf("CRD %s ...\n", kspName)
-	if _, err := CreateCustomResourceDefinition(c, kspName); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	var printYAML []interface{}
+
+	kspCRD := CreateCustomResourceDefinition(kspName)
+	if !o.Save {
+		fmt.Printf("CRD %s ...\n", kspName)
+		if _, err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Create(context.Background(), &kspCRD, metav1.CreateOptions{}); err != nil {
+			if !apierrors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create CRD %s: %+v", kspName, err)
+			}
+			return fmt.Errorf("CRD %s already exists %+v", kspName, err)
 		}
-		fmt.Printf("CRD %s already exists ...\n", kspName)
+	} else {
+		printYAML = append(printYAML, kspCRD)
 	}
 
-	fmt.Printf("CRD %s ...\n", hspName)
-	if _, err := CreateCustomResourceDefinition(c, hspName); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	hspCRD := CreateCustomResourceDefinition(hspName)
+	if !o.Save {
+		fmt.Printf("CRD %s ...\n", hspName)
+		if _, err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Create(context.Background(), &hspCRD, metav1.CreateOptions{}); err != nil {
+			if !apierrors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create CRD %s: %+v", hspName, err)
+			}
+			return fmt.Errorf("CRD %s already exists %+v", hspName, err)
 		}
-		fmt.Printf("CRD %s already exists ...\n", hspName)
+	} else {
+		printYAML = append(printYAML, hspCRD)
 	}
 
-	fmt.Print("Service Account ...\n")
-	if _, err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Create(context.Background(), deployments.GetServiceAccount(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	serviceAccount := deployments.GetServiceAccount(o.Namespace)
+	if !o.Save {
+		fmt.Print("Service Account ...\n")
+		if _, err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Create(context.Background(), serviceAccount, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("Service Account already exists ...\n")
 		}
-		fmt.Print("Service Account already exists ...\n")
+	} else {
+		printYAML = append(printYAML, serviceAccount)
 	}
 
-	fmt.Print("Cluster Role Bindings ...\n")
-	if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), deployments.GetClusterRoleBinding(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	clusterRoleBinding := deployments.GetClusterRoleBinding(o.Namespace)
+	if !o.Save {
+		fmt.Print("Cluster Role Bindings ...\n")
+		if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), clusterRoleBinding, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("Cluster Role Bindings already exists ...\n")
 		}
-		fmt.Print("Cluster Role Bindings already exists ...\n")
+	} else {
+		printYAML = append(printYAML, clusterRoleBinding)
 	}
 
-	fmt.Print("KubeArmor Relay Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), deployments.GetRelayService(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	relayService := deployments.GetRelayService(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Relay Service ...\n")
+		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), relayService, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Relay Service already exists ...\n")
 		}
-		fmt.Print("KubeArmor Relay Service already exists ...\n")
+	} else {
+		printYAML = append(printYAML, relayService)
 	}
 
-	fmt.Print("KubeArmor Relay Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), deployments.GetRelayDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	relayDeployment := deployments.GetRelayDeployment(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Relay Deployment ...\n")
+		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), relayDeployment, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Relay Deployment already exists ...\n")
 		}
-		fmt.Print("KubeArmor Relay Deployment already exists ...\n")
+	} else {
+		printYAML = append(printYAML, relayDeployment)
 	}
 
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
@@ -96,79 +136,155 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 	fmt.Printf("KubeArmor DaemonSet %s %v...\n", daemonset.Spec.Template.Spec.Containers[0].Image, daemonset.Spec.Template.Spec.Containers[0].Args)
 
-	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	if !o.Save {
+		if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor DaemonSet already exists ...\n")
 		}
-		fmt.Print("KubeArmor DaemonSet already exists ...\n")
+	} else {
+		printYAML = append(printYAML, daemonset)
 	}
 
-	fmt.Print("KubeArmor Policy Manager Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), deployments.GetPolicyManagerService(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	policyManagerService := deployments.GetPolicyManagerService(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Policy Manager Service ...\n")
+		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), policyManagerService, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Policy Manager Service already exists ...\n")
 		}
-		fmt.Print("KubeArmor Policy Manager Service already exists ...\n")
+	} else {
+		printYAML = append(printYAML, policyManagerService)
 	}
 
-	fmt.Print("KubeArmor Policy Manager Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), deployments.GetPolicyManagerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	policyManagerDeployment := deployments.GetPolicyManagerDeployment(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Policy Manager Deployment ...\n")
+		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), policyManagerDeployment, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Policy Manager Deployment already exists ...\n")
 		}
-		fmt.Print("KubeArmor Policy Manager Deployment already exists ...\n")
+	} else {
+		printYAML = append(printYAML, policyManagerDeployment)
 	}
 
-	fmt.Print("KubeArmor Host Policy Manager Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), deployments.GetHostPolicyManagerService(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	hostPolicyManagerService := deployments.GetHostPolicyManagerService(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Host Policy Manager Service ...\n")
+		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), hostPolicyManagerService, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Host Policy Manager Service already exists ...\n")
 		}
-		fmt.Print("KubeArmor Host Policy Manager Service already exists ...\n")
+	} else {
+		printYAML = append(printYAML, hostPolicyManagerService)
 	}
 
-	fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), deployments.GetHostPolicyManagerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	hostPolicyManagerDeployment := deployments.GetHostPolicyManagerDeployment(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
+		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), hostPolicyManagerDeployment, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Host Policy Manager Deployment already exists ...\n")
 		}
-		fmt.Print("KubeArmor Host Policy Manager Deployment already exists ...\n")
+	} else {
+		printYAML = append(printYAML, hostPolicyManagerDeployment)
 	}
 
-	fmt.Print("KubeArmor Annotation Controller TLS certificates ...\n")
 	caCert, tlsCrt, tlsKey, err := GeneratePki(o.Namespace, deployments.AnnotationsControllerServiceName)
 	if err != nil {
-		fmt.Print("Could'nt generate TLS secret ...\n")
+		fmt.Print("Couldn't generate TLS secret ...\n")
 		return err
 	}
-	if _, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Create(context.Background(), deployments.GetAnnotationsControllerTLSSecret(o.Namespace, caCert.String(), tlsCrt.String(), tlsKey.String()), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	annotationsControllerTLSSecret := deployments.GetAnnotationsControllerTLSSecret(o.Namespace, caCert.String(), tlsCrt.String(), tlsKey.String())
+	if !o.Save {
+		fmt.Print("KubeArmor Annotation Controller TLS certificates ...\n")
+		if _, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Create(context.Background(), annotationsControllerTLSSecret, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Annotation Controller TLS certificates already exists ...\n")
 		}
-		fmt.Print("KubeArmor Annotation Controller TLS certificates already exists ...\n")
+	} else {
+		printYAML = append(printYAML, annotationsControllerTLSSecret)
 	}
 
-	fmt.Print("KubeArmor Annotation Controller Deployment ...\n")
-	if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), deployments.GetAnnotationsControllerDeployment(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	annotationsControllerDeployment := deployments.GetAnnotationsControllerDeployment(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Annotation Controller Deployment ...\n")
+		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), annotationsControllerDeployment, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Annotation Controller Deployment already exists ...\n")
 		}
-		fmt.Print("KubeArmor Annotation Controller Deployment already exists ...\n")
+	} else {
+		printYAML = append(printYAML, annotationsControllerDeployment)
 	}
 
-	fmt.Print("KubeArmor Annotation Controller Service ...\n")
-	if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), deployments.GetAnnotationsControllerService(o.Namespace), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			return err
+	annotationsControllerService := deployments.GetAnnotationsControllerService(o.Namespace)
+	if !o.Save {
+		fmt.Print("KubeArmor Annotation Controller Service ...\n")
+		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), annotationsControllerService, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Annotation Controller Service already exists ...\n")
 		}
-		fmt.Print("KubeArmor Annotation Controller Service already exists ...\n")
+	} else {
+		printYAML = append(printYAML, annotationsControllerService)
 	}
-	fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration ...\n")
-	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), deployments.GetAnnotationsControllerMutationAdmissionConfiguration(o.Namespace, caCert.Bytes()), metav1.CreateOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
+
+	annotationsControllerMutationAdmissionConfiguration := deployments.GetAnnotationsControllerMutationAdmissionConfiguration(o.Namespace, caCert.Bytes())
+	if !o.Save {
+		fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration ...\n")
+		if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), annotationsControllerMutationAdmissionConfiguration, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration already exists ...\n")
+		}
+	} else {
+		printYAML = append(printYAML, annotationsControllerMutationAdmissionConfiguration)
+	}
+
+	// Save the Generated YAML to file
+	if o.Save {
+		currDir, err := os.Getwd()
+		if err != nil {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration already exists ...\n")
+
+		f, err := os.Create(filepath.Clean(path.Join(currDir, "kubearmor.yaml")))
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := f.Close(); err != nil {
+				fmt.Printf("Error closing file: %s\n", err)
+			}
+		}()
+
+		for _, o := range printYAML {
+			if err := writeToYAML(f, o); err != nil {
+				return err
+			}
+		}
+
+		err = f.Sync()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("KubeArmor manifest file saved to \033[1m%s\033[0m\n", f.Name())
+
 	}
 	return nil
 }
@@ -360,6 +476,9 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 	clusterName := clusterContext.Cluster
 	cluster := c.RawConfig.Clusters[clusterName]
 	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if len(nodes.Items) <= 0 {
+		return env
+	}
 	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
 	nodeImage := nodes.Items[0].Status.NodeInfo.OSImage
 
@@ -416,4 +535,24 @@ func autoDetectEnvironment(c *k8s.Client) (name string) {
 	}
 
 	return env
+}
+
+func writeToYAML(f *os.File, o interface{}) error {
+	// Use "clarketm/json" to marshal so as to support zero values of structs with omitempty
+	j, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+
+	object, err := yaml.JSONToYAML(j)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(append([]byte("---\n"), object...))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
