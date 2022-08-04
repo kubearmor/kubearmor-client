@@ -13,7 +13,7 @@ GIT_INFO := $(shell govvv -flags -pkg $(PKG))
 
 .PHONY: build
 build:
-	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "-w -s ${GIT_INFO}" -o karmor
+	cd $(CURDIR); go mod tidy; go build -ldflags "-w -s ${GIT_INFO}" -o karmor
 
 .PHONY: install
 install: build

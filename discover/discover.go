@@ -101,13 +101,11 @@ func ConvertPolicy(o Options) error {
 			}
 		}
 	} else if o.Policy == "system" {
-		policy := types.KubeArmorPolicy{}
-
 		kubearmorpolicy := []types.KubeArmorPolicy{}
 
 		if len(response.Kubearmorpolicy) > 0 {
 			for _, val := range response.Kubearmorpolicy {
-				policy = types.KubeArmorPolicy{}
+				policy := types.KubeArmorPolicy{}
 
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
