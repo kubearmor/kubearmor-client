@@ -147,113 +147,62 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		printYAML = append(printYAML, daemonset)
 	}
 
-	policyManagerService := deployments.GetPolicyManagerService(o.Namespace)
+	kubearmorControllerService := deployments.GetKubeArmorControllerService(o.Namespace)
 	if !o.Save {
-		fmt.Print("KubeArmor Policy Manager Service ...\n")
-		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), policyManagerService, metav1.CreateOptions{}); err != nil {
+		fmt.Print("KubeArmor Controller Service ...\n")
+		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), kubearmorControllerService, metav1.CreateOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			fmt.Print("KubeArmor Policy Manager Service already exists ...\n")
+			fmt.Print("KubeArmor Controller Service already exists ...\n")
 		}
 	} else {
-		printYAML = append(printYAML, policyManagerService)
+		printYAML = append(printYAML, kubearmorControllerService)
 	}
 
-	policyManagerDeployment := deployments.GetPolicyManagerDeployment(o.Namespace)
+	kubearmorControllerDeployment := deployments.GetKubeArmorControllerDeployment(o.Namespace)
 	if !o.Save {
-		fmt.Print("KubeArmor Policy Manager Deployment ...\n")
-		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), policyManagerDeployment, metav1.CreateOptions{}); err != nil {
+		fmt.Print("KubeArmor Controller Deployment ...\n")
+		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), kubearmorControllerDeployment, metav1.CreateOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			fmt.Print("KubeArmor Policy Manager Deployment already exists ...\n")
+			fmt.Print("KubeArmor Controller Deployment already exists ...\n")
 		}
 	} else {
-		printYAML = append(printYAML, policyManagerDeployment)
+		printYAML = append(printYAML, kubearmorControllerDeployment)
 	}
 
-	hostPolicyManagerService := deployments.GetHostPolicyManagerService(o.Namespace)
-	if !o.Save {
-		fmt.Print("KubeArmor Host Policy Manager Service ...\n")
-		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), hostPolicyManagerService, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-			fmt.Print("KubeArmor Host Policy Manager Service already exists ...\n")
-		}
-	} else {
-		printYAML = append(printYAML, hostPolicyManagerService)
-	}
-
-	hostPolicyManagerDeployment := deployments.GetHostPolicyManagerDeployment(o.Namespace)
-	if !o.Save {
-		fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
-		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), hostPolicyManagerDeployment, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-			fmt.Print("KubeArmor Host Policy Manager Deployment already exists ...\n")
-		}
-	} else {
-		printYAML = append(printYAML, hostPolicyManagerDeployment)
-	}
-
-	caCert, tlsCrt, tlsKey, err := GeneratePki(o.Namespace, deployments.AnnotationsControllerServiceName)
+	caCert, tlsCrt, tlsKey, err := GeneratePki(o.Namespace, deployments.KubeArmorControllerServiceName)
 	if err != nil {
 		fmt.Print("Couldn't generate TLS secret ...\n")
 		return err
 	}
-	annotationsControllerTLSSecret := deployments.GetAnnotationsControllerTLSSecret(o.Namespace, caCert.String(), tlsCrt.String(), tlsKey.String())
+
+	kubearmorControllerTLSSecret := deployments.GetKubeArmorControllerTLSSecret(o.Namespace, caCert.String(), tlsCrt.String(), tlsKey.String())
 	if !o.Save {
-		fmt.Print("KubeArmor Annotation Controller TLS certificates ...\n")
-		if _, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Create(context.Background(), annotationsControllerTLSSecret, metav1.CreateOptions{}); err != nil {
+		fmt.Print("KubeArmor Controller TLS certificates ...\n")
+		if _, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Create(context.Background(), kubearmorControllerTLSSecret, metav1.CreateOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			fmt.Print("KubeArmor Annotation Controller TLS certificates already exists ...\n")
+			fmt.Print("KubeArmor Controller TLS certificates already exists ...\n")
 		}
 	} else {
-		printYAML = append(printYAML, annotationsControllerTLSSecret)
+		printYAML = append(printYAML, kubearmorControllerTLSSecret)
 	}
 
-	annotationsControllerDeployment := deployments.GetAnnotationsControllerDeployment(o.Namespace)
+	kubearmorControllerMutationAdmissionConfiguration := deployments.GetKubeArmorControllerMutationAdmissionConfiguration(o.Namespace, caCert.Bytes())
 	if !o.Save {
-		fmt.Print("KubeArmor Annotation Controller Deployment ...\n")
-		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), annotationsControllerDeployment, metav1.CreateOptions{}); err != nil {
+		fmt.Print("KubeArmor Controller Mutation Admission Registration ...\n")
+		if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), kubearmorControllerMutationAdmissionConfiguration, metav1.CreateOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			fmt.Print("KubeArmor Annotation Controller Deployment already exists ...\n")
+			fmt.Print("KubeArmor Controller Mutation Admission Registration already exists ...\n")
 		}
 	} else {
-		printYAML = append(printYAML, annotationsControllerDeployment)
-	}
-
-	annotationsControllerService := deployments.GetAnnotationsControllerService(o.Namespace)
-	if !o.Save {
-		fmt.Print("KubeArmor Annotation Controller Service ...\n")
-		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), annotationsControllerService, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-			fmt.Print("KubeArmor Annotation Controller Service already exists ...\n")
-		}
-	} else {
-		printYAML = append(printYAML, annotationsControllerService)
-	}
-
-	annotationsControllerMutationAdmissionConfiguration := deployments.GetAnnotationsControllerMutationAdmissionConfiguration(o.Namespace, caCert.Bytes())
-	if !o.Save {
-		fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration ...\n")
-		if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), annotationsControllerMutationAdmissionConfiguration, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-			fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration already exists ...\n")
-		}
-	} else {
-		printYAML = append(printYAML, annotationsControllerMutationAdmissionConfiguration)
+		printYAML = append(printYAML, kubearmorControllerMutationAdmissionConfiguration)
 	}
 
 	// Save the Generated YAML to file
@@ -338,37 +287,48 @@ func removeAnnotations(c *k8s.Client) {
 
 // K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
-	fmt.Print("Mutation Admission Registration ...\n")
+	// To be removed in KubeArmor v0.7
+	fmt.Print("Mutation Admission Registration [Deprecated]...\n")
 	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.AnnotationsControllerServiceName, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		fmt.Print("Mutation Admission Registration not found [Deprecated]...\n")
+	}
+
+	fmt.Print("Mutation Admission Registration ...\n")
+	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
 		fmt.Print("Mutation Admission Registration not found ...\n")
 	}
 
-	fmt.Print("KubeArmor Annotation Controller Service ...\n")
+	// To be removed in KubeArmor v0.7
+	fmt.Print("KubeArmor Annotation Controller Service [Deprecated]...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), deployments.AnnotationsControllerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller Service not found ...\n")
+		fmt.Print("KubeArmor Annotation Controller Service not found [Deprecated]...\n")
 	}
-
-	fmt.Print("KubeArmor Annotation Controller Deployment ...\n")
+	// To be removed in KubeArmor v0.7
+	fmt.Print("KubeArmor Annotation Controller Deployment [Deprecated]...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), deployments.AnnotationsControllerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller Deployment not found ...\n")
+		fmt.Print("KubeArmor Annotation Controller Deployment not found [Deprecated]...\n")
 	}
-
-	fmt.Print("KubeArmor Annotation Controller TLS certificates ...\n")
-	if err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Delete(context.Background(), deployments.AnnotationsControllerSecretName, metav1.DeleteOptions{}); err != nil {
+	// To be removed in KubeArmor v0.7
+	fmt.Print("KubeArmor Annotation Controller TLS certificates [Deprecated]...\n")
+	if err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerSecretName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller TLS certificates not found ...\n")
+		fmt.Print("KubeArmor Annotation Controller TLS certificates not found [Deprecated]...\n")
 	}
+
 	fmt.Print("Service Account ...\n")
 	if err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Delete(context.Background(), serviceAccountName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -409,36 +369,52 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("KubeArmor DaemonSet not found ...\n")
 	}
 
-	fmt.Print("KubeArmor Policy Manager Service ...\n")
+	fmt.Print("KubeArmor Policy Manager Service [Deprecated]...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), policyManagerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Policy Manager Service not found ...\n")
+		fmt.Print("KubeArmor Policy Manager Service not found [Deprecated]...\n")
 	}
 
-	fmt.Print("KubeArmor Policy Manager Deployment ...\n")
+	fmt.Print("KubeArmor Policy Manager Deployment [Deprecated]...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), policyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Policy Manager Deployment not found ...\n")
+		fmt.Print("KubeArmor Policy Manager Deployment not found [Deprecated]...\n")
 	}
 
-	fmt.Print("KubeArmor Host Policy Manager Service ...\n")
+	fmt.Print("KubeArmor Host Policy Manager Service [Deprecated]...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), hostPolicyManagerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Host Policy Manager Service not found ...\n")
+		fmt.Print("KubeArmor Host Policy Manager Service not found [Deprecated]...\n")
 	}
 
-	fmt.Print("KubeArmor Host Policy Manager Deployment ...\n")
+	fmt.Print("KubeArmor Host Policy Manager Deployment [Deprecated]...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), hostPolicyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Host Policy Manager Deployment not found ...\n")
+		fmt.Print("KubeArmor Host Policy Manager Deployment not found [Deprecated]...\n")
+	}
+
+	fmt.Print("KubeArmor Controller Service ...\n")
+	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerServiceName, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		fmt.Print("KubeArmor Controller Service not found ...\n")
+	}
+
+	fmt.Print("KubeArmor Controller Deployment ...\n")
+	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		fmt.Print("KubeArmor Controller Deployment not found ...\n")
 	}
 
 	fmt.Printf("CRD %s ...\n", kspName)

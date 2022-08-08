@@ -17,19 +17,19 @@ import (
 func RotateTLS(c *k8s.Client, namespace string) error {
 	// verify if all needed component are present in the cluster
 	fmt.Print("Checking if all needed component are present ...\n")
-	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.Background(), deployments.AnnotationsControllerServiceName, metav1.GetOptions{}); err != nil {
+	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.GetOptions{}); err != nil {
 		return err
 	}
 
-	if _, err := c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), deployments.AnnotationsControllerServiceName, metav1.GetOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), deployments.KubeArmorControllerServiceName, metav1.GetOptions{}); err != nil {
 		return err
 	}
 
-	origdeploy, err := c.K8sClientset.AppsV1().Deployments(namespace).Get(context.Background(), deployments.AnnotationsControllerDeploymentName, metav1.GetOptions{})
+	origdeploy, err := c.K8sClientset.AppsV1().Deployments(namespace).Get(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.AnnotationsControllerSecretName, metav1.GetOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.KubeArmorControllerSecretName, metav1.GetOptions{}); err != nil {
 		return nil
 	}
 
@@ -43,7 +43,7 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 	}
 	fmt.Print("Using suffix " + suffix + " for all new temorary resources ...\n")
 
-	serviceName := deployments.AnnotationsControllerServiceName + "-" + suffix
+	serviceName := deployments.KubeArmorControllerServiceName + "-" + suffix
 	caCert, tlsCrt, tlsKey, err := install.GeneratePki(namespace, serviceName)
 	if err != nil {
 		fmt.Print("Could'nt generate TLS secret ...\n")
@@ -51,16 +51,16 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 	}
 
 	fmt.Print("Installing temporary resources ...\n")
-	fmt.Print("KubeArmor Annotation Controller temporary TLS certificates ...\n")
-	secret := deployments.GetAnnotationsControllerTLSSecret(namespace, caCert.String(), tlsCrt.String(), tlsKey.String())
+	fmt.Print("KubeArmor Controller temporary TLS certificates ...\n")
+	secret := deployments.GetKubeArmorControllerTLSSecret(namespace, caCert.String(), tlsCrt.String(), tlsKey.String())
 	secret.Name = secret.GetName() + "-" + suffix
 	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Create(context.Background(), secret, metav1.CreateOptions{}); err != nil {
-		fmt.Print("KubeArmor Annotation Controller TLS certificates with the same suffix exists ...\n")
+		fmt.Print("KubeArmor Controller TLS certificates with the same suffix exists ...\n")
 		return err
 	}
 
-	fmt.Print("KubeArmor Annotation Controller temporary Deployment ...\n")
-	deploy := deployments.GetAnnotationsControllerDeployment(namespace)
+	fmt.Print("KubeArmor Controller temporary Deployment ...\n")
+	deploy := deployments.GetKubeArmorControllerDeployment(namespace)
 	deploy.Name = deploy.GetName() + "-" + suffix
 	for i, s := range deploy.Spec.Template.Spec.Volumes {
 		if s.Name == "cert" {
@@ -74,45 +74,45 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 	deploy.Spec.Selector.MatchLabels = selectLabels
 	deploy.Spec.Replicas = origdeploy.Spec.Replicas
 	if _, err := c.K8sClientset.AppsV1().Deployments(namespace).Create(context.Background(), deploy, metav1.CreateOptions{}); err != nil {
-		fmt.Print("KubeArmor Annotation Controller Deployment with the same suffix exists ...\n")
+		fmt.Print("KubeArmor Controller Deployment with the same suffix exists ...\n")
 		return err
 	}
 
 	fmt.Print("Waiting for the deployment to start, sleeping 15 seconds ...\n")
 	time.Sleep(15 * time.Second)
 
-	fmt.Print("KubeArmor Annotation Controller temporary Service ...\n")
-	service := deployments.GetAnnotationsControllerService(namespace)
+	fmt.Print("KubeArmor Controller temporary Service ...\n")
+	service := deployments.GetKubeArmorControllerService(namespace)
 	service.Name = serviceName
 	service.Spec.Selector = selectLabels
 	if _, err := c.K8sClientset.CoreV1().Services(namespace).Create(context.Background(), service, metav1.CreateOptions{}); err != nil {
-		fmt.Print("KubeArmor Annotation Controller Service with the same suffix exists ...\n")
+		fmt.Print("KubeArmor Controller Service with the same suffix exists ...\n")
 		return err
 	}
 
-	fmt.Print("KubeArmor Annotation Controller temporary Mutation Admission Registration ...\n")
-	mutation := deployments.GetAnnotationsControllerMutationAdmissionConfiguration(namespace, caCert.Bytes())
+	fmt.Print("KubeArmor Controller temporary Mutation Admission Registration ...\n")
+	mutation := deployments.GetKubeArmorControllerMutationAdmissionConfiguration(namespace, caCert.Bytes())
 	mutation.Name = mutation.Name + "-" + suffix
 	mutation.Webhooks[0].ClientConfig.Service.Name = service.GetName()
 	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), mutation, metav1.CreateOptions{}); err != nil {
-		fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration with the same suffix exists ...\n")
+		fmt.Print("KubeArmor Controller Mutation Admission Registration with the same suffix exists ...\n")
 		return err
 	}
 
 	fmt.Print("Temporarily removing the main mutation registation ...\n")
-	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.AnnotationsControllerServiceName, metav1.DeleteOptions{}); err != nil {
+	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 
 	fmt.Print("Generating new certificates ...\n")
-	caCert, tlsCrt, tlsKey, err = install.GeneratePki(namespace, deployments.AnnotationsControllerServiceName)
+	caCert, tlsCrt, tlsKey, err = install.GeneratePki(namespace, deployments.KubeArmorControllerServiceName)
 	if err != nil {
 		fmt.Print("Could'nt generate TLS secret ...\n")
 		return err
 	}
 
 	fmt.Print("Updating the main TLS secret ...\n")
-	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Update(context.Background(), deployments.GetAnnotationsControllerTLSSecret(namespace, caCert.String(), tlsCrt.String(), tlsKey.String()), metav1.UpdateOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Update(context.Background(), deployments.GetKubeArmorControllerTLSSecret(namespace, caCert.String(), tlsCrt.String(), tlsKey.String()), metav1.UpdateOptions{}); err != nil {
 		return err
 	}
 
@@ -124,7 +124,7 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 	}
 	time.Sleep(10 * time.Second)
 
-	origdeploy, err = c.K8sClientset.AppsV1().Deployments(namespace).Get(context.Background(), deployments.AnnotationsControllerDeploymentName, metav1.GetOptions{})
+	origdeploy, err = c.K8sClientset.AppsV1().Deployments(namespace).Get(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -135,11 +135,11 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 	time.Sleep(10 * time.Second)
 
 	fmt.Print("Restoring main mutation registation ... \n")
-	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), deployments.GetAnnotationsControllerMutationAdmissionConfiguration(namespace, caCert.Bytes()), metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), deployments.GetKubeArmorControllerMutationAdmissionConfiguration(namespace, caCert.Bytes()), metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller Mutation Admission Registration already exists ...\n")
+		fmt.Print("KubeArmor Controller Mutation Admission Registration already exists ...\n")
 	}
 
 	fmt.Print("Deleting temprary ressources ...\n")
@@ -151,28 +151,28 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 		fmt.Print("Mutation Admission Registration not found ...\n")
 	}
 
-	fmt.Print("KubeArmor Annotation Controller Service ...\n")
+	fmt.Print("KubeArmor Controller Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(namespace).Delete(context.Background(), service.Name, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller Service not found ...\n")
+		fmt.Print("KubeArmor Controller Service not found ...\n")
 	}
 
-	fmt.Print("KubeArmor Annotation Controller Deployment ...\n")
+	fmt.Print("KubeArmor Controller Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(namespace).Delete(context.Background(), deploy.Name, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller Deployment not found ...\n")
+		fmt.Print("KubeArmor Controller Deployment not found ...\n")
 	}
 
-	fmt.Print("KubeArmor Annotation Controller TLS certificates ...\n")
+	fmt.Print("KubeArmor Controller TLS certificates ...\n")
 	if err := c.K8sClientset.CoreV1().Secrets(namespace).Delete(context.Background(), secret.Name, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("KubeArmor Annotation Controller TLS certificates not found ...\n")
+		fmt.Print("KubeArmor Controller TLS certificates not found ...\n")
 	}
 
 	fmt.Print("Certificates were rotated ...\n")
@@ -184,7 +184,7 @@ func getFreeRandSuffix(c *k8s.Client, namespace string) (suffix string, err erro
 	for {
 		suffix = rand.String(5)
 		found = false
-		if _, err = c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.Background(), deployments.AnnotationsControllerServiceName+"-"+suffix, metav1.GetOptions{}); err != nil {
+		if _, err = c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.Background(), deployments.KubeArmorControllerServiceName+"-"+suffix, metav1.GetOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return "", err
 			}
@@ -192,7 +192,7 @@ func getFreeRandSuffix(c *k8s.Client, namespace string) (suffix string, err erro
 			found = true
 		}
 
-		if _, err = c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), deployments.AnnotationsControllerServiceName+"-"+suffix, metav1.GetOptions{}); err != nil {
+		if _, err = c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), deployments.KubeArmorControllerDeploymentName+"-"+suffix, metav1.GetOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return "", err
 			}
@@ -200,7 +200,7 @@ func getFreeRandSuffix(c *k8s.Client, namespace string) (suffix string, err erro
 			found = true
 		}
 
-		if _, err = c.K8sClientset.AppsV1().Deployments(namespace).Get(context.Background(), deployments.AnnotationsControllerDeploymentName+"-"+suffix, metav1.GetOptions{}); err != nil {
+		if _, err = c.K8sClientset.AppsV1().Deployments(namespace).Get(context.Background(), deployments.KubeArmorControllerDeploymentName+"-"+suffix, metav1.GetOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return "", err
 			}
@@ -208,7 +208,7 @@ func getFreeRandSuffix(c *k8s.Client, namespace string) (suffix string, err erro
 			found = true
 		}
 
-		if _, err = c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.AnnotationsControllerSecretName+"-"+suffix, metav1.GetOptions{}); err != nil {
+		if _, err = c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.KubeArmorControllerSecretName+"-"+suffix, metav1.GetOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return "", err
 			}
