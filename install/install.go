@@ -348,11 +348,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		time.Sleep(300*time.Millisecond)
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app",FieldSelector: "status.phase!=Running"})
 		podno:=len(pods.Items)
-		fmt.Printf("\rKARMOR pods left to run : %d ... %s               ",podno,rcursor[rcursorcount])
-		rcursorcount++
-		if rcursorcount == 4 {
-			rcursorcount=0
-		}
+		fmt.Printf("\rKARMOR pods left to run : %d ... %s               ",podno,rcursor[rcursorcount%4])
 		if podno == 0 {
 			fmt.Printf("\r🥳  DONE CHECKING , ALL SERVICES ARE RUNNING ...                 \n")
 			fmt.Printf("⌚️  Execution Time : %s \n",time.Since(stime))
