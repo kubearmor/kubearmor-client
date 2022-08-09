@@ -180,7 +180,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=audit")
 	}
 	s:=strings.Join(daemonset.Spec.Template.Spec.Containers[0].Args," ")
-	printMessage("🚀  KubeArmor DaemonSet"+daemonset.Spec.Template.Spec.Containers[0].Image+s+" ...",true)
+	printMessage("🛡  KubeArmor DaemonSet"+daemonset.Spec.Template.Spec.Containers[0].Image+s+" ...",true)
 
 	if !o.Save {
 		if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
