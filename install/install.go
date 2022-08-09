@@ -51,7 +51,7 @@ var progbar progressBar
 
 func printMessage(msg string,prog bool) int {
 	if progbar.filled == 0 {
-		fmt.Printf("KARMOR-CLI INSTALL \n \n")
+		fmt.Printf("                  \n")
 	}
 	if prog {
 		progbar.filled+=progbar.step
@@ -180,7 +180,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=audit")
 	}
 	s:=strings.Join(daemonset.Spec.Template.Spec.Containers[0].Args," ")
-	printMessage("🛡  KubeArmor DaemonSet"+daemonset.Spec.Template.Spec.Containers[0].Image+s+" ...",true)
+	printMessage("🛡   KubeArmor DaemonSet"+daemonset.Spec.Template.Spec.Containers[0].Image+s+" ...",true)
 
 	if !o.Save {
 		if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
@@ -341,16 +341,26 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		printMessage("🤩  KubeArmor manifest file saved to \033[1m"+s3+"\033[0m",false)
 
 	}
-	fmt.Printf("Checking if Karmor containers are running ...")
+	fmt.Printf("Checking if KubeArmor pods are running ...")
 	rcursor:=[4]string{"−","\\","|","/"}
 	rcursorcount:=0
+	otime:=time.Now()
+	otime=otime.Add(600*time.Second)
 	for {
 		time.Sleep(300*time.Millisecond)
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app",FieldSelector: "status.phase!=Running"})
 		podno:=len(pods.Items)
-		fmt.Printf("\rKARMOR pods left to run : %d ... %s               ",podno,rcursor[rcursorcount%4])
+		fmt.Printf("\rKUBEARMOR pods left to run : %d ... %s               ",podno,rcursor[rcursorcount])
+		rcursorcount++
+		if rcursorcount==4 {
+			rcursorcount=0
+		}
+		if !otime.After(time.Now()) {
+			fmt.Printf("\r⌚️  Check Incomplete due to Time-Out!                     \n")
+			break
+		}
 		if podno == 0 {
-			fmt.Printf("\r🥳  DONE CHECKING , ALL SERVICES ARE RUNNING ...                 \n")
+			fmt.Printf("\r🥳  Done Checking , ALL Services are running!                     \n")
 			fmt.Printf("⌚️  Execution Time : %s \n",time.Since(stime))
 			break
 		}
