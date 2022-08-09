@@ -315,7 +315,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		}
 		defer func() {
 			if err := f.Close(); err != nil {
-				//printMessage("Error closing file: "+err,false)
+				fmt.Printf("Error closing file: %s\n", err)
 			}
 		}()
 
