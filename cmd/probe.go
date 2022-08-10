@@ -27,6 +27,5 @@ var probeCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(probeCmd)
 	probeCmd.Flags().StringVarP(&probeInstallOptions.Namespace, "namespace", "n", "default", "Namespace for resources")
-	probeCmd.Flags().StringVarP(&probeInstallOptions.ProbeDaemonImage, "image", "i", "alpine", "Kubearmor daemonset image to use")
 	probeCmd.Flags().BoolVar(&probeInstallOptions.Full, "full", false, "Full performs full probing")
 }
