@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
 
+// Package sysdump collects and dumps information for troubleshooting KubeArmor
 package sysdump
 
 import (

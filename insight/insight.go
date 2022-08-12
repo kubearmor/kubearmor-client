@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
+// Package insight fetches insight data from discovery engine
 package insight
 
 import (

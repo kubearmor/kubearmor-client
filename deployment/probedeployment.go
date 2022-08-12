@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
+// Package deployment contains configuration for the daemonset deployment we leverage to probe into k8s cluster
 package deployment
 
 import (
@@ -10,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// Karmorprobe is the identifier for the daemonset we use to probe into k8s cluster
 var Karmorprobe = "karmor-probe"
 
 // GenerateDaemonSet Function

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var probeInstallOptions probe.ProbeOptions
+var probeInstallOptions probe.Options
 
 // probeCmd represents the get command
 var probeCmd = &cobra.Command{
