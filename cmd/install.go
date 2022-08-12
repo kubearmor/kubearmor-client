@@ -16,6 +16,7 @@ var installCmd = &cobra.Command{
 	Short: "Install KubeArmor in a Kubernetes Cluster",
 	Long:  `Install KubeArmor in a Kubernetes Clusters`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		install.Animation=true
 		if err := install.K8sInstaller(client, installOptions); err != nil {
 			return err
 		}
