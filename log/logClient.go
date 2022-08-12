@@ -308,49 +308,77 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 	}
 
 	if o.Namespace != "" {
-		match := regexMatcher(CNamespace, res["NamespaceName"].(string))
+		ns, ok := res["NamespaceName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CNamespace, ns)
 		if !match {
 			return
 		}
 	}
 
 	if o.LogType != "" {
-		match := regexMatcher(CLogtype, res["Type"].(string))
+		t, ok := res["Type"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CLogtype, t)
 		if !match {
 			return
 		}
 	}
 
 	if o.Operation != "" {
-		match := regexMatcher(COperation, res["Operation"].(string))
+		op, ok := res["Operation"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(COperation, op)
 		if !match {
 			return
 		}
 	}
 
 	if o.ContainerName != "" {
-		match := regexMatcher(CContainerName, res["ContainerName"].(string))
+		cn, ok := res["ContainerName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CContainerName, cn)
 		if !match {
 			return
 		}
 	}
 
 	if o.PodName != "" {
-		match := regexMatcher(CPodName, res["PodName"].(string))
+		pn, ok := res["PodName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CPodName, pn)
 		if !match {
 			return
 		}
 	}
 
 	if o.Source != "" {
-		match := regexMatcher(CSource, res["Source"].(string))
+		src, ok := res["Source"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CSource, src)
 		if !match {
 			return
 		}
 	}
 
 	if o.Resource != "" {
-		match := regexMatcher(CResource, res["Resource"].(string))
+		rs, ok := res["Resource"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CResource, rs)
 		if !match {
 			return
 		}
