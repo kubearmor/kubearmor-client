@@ -133,7 +133,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !apierrors.IsAlreadyExists(err) {
 				return fmt.Errorf("failed to create CRD %s: %+v", kspName, err)
 			}
-			return fmt.Errorf("CRD %s already exists %+v", kspName, err)
+			printMessage("ℹ️   CRD "+kspName+" already exists", false)
 		}
 	} else {
 		printYAML = append(printYAML, kspCRD)
@@ -146,7 +146,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !apierrors.IsAlreadyExists(err) {
 				return fmt.Errorf("failed to create CRD %s: %+v", hspName, err)
 			}
-			return fmt.Errorf("CRD %s already exists %+v", hspName, err)
+			printMessage("ℹ️   CRD "+hspName+" already exists", false)
 		}
 	} else {
 		printYAML = append(printYAML, hspCRD)
@@ -159,7 +159,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("Service Account already exists  ", false)
+			printMessage("ℹ️   Service Account already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, serviceAccount)
@@ -172,7 +172,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("Cluster Role Bindings already exists  ", false)
+			printMessage("ℹ️   Cluster Role Bindings already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, clusterRoleBinding)
@@ -185,7 +185,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Relay Service already exists  ", false)
+			printMessage("ℹ️   KubeArmor Relay Service already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, relayService)
@@ -198,7 +198,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Relay Deployment already exists  ", false)
+			printMessage("ℹ️   KubeArmor Relay Deployment already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, relayDeployment)
@@ -223,7 +223,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor DaemonSet already exists  ", false)
+			printMessage("ℹ️   KubeArmor DaemonSet already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, daemonset)
@@ -236,7 +236,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Policy Manager Service already exists  ", false)
+			printMessage("ℹ️   KubeArmor Policy Manager Service already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, policyManagerService)
@@ -249,7 +249,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Policy Manager Deployment already exists  ", false)
+			printMessage("ℹ️   KubeArmor Policy Manager Deployment already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, policyManagerDeployment)
@@ -262,7 +262,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Host Policy Manager Service already exists  ", false)
+			printMessage("ℹ️   KubeArmor Host Policy Manager Service already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, hostPolicyManagerService)
@@ -275,7 +275,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Host Policy Manager Deployment already exists  ", false)
+			printMessage("ℹ️   KubeArmor Host Policy Manager Deployment already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, hostPolicyManagerDeployment)
@@ -293,7 +293,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Annotation Controller TLS certificates already exists  ", false)
+			printMessage("ℹ️   KubeArmor Annotation Controller TLS certificates already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, annotationsControllerTLSSecret)
@@ -306,7 +306,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Annotation Controller Deployment already exists  ", false)
+			printMessage("ℹ️   KubeArmor Annotation Controller Deployment already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, annotationsControllerDeployment)
@@ -319,7 +319,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Annotation Controller Service already exists  ", false)
+			printMessage("ℹ️   KubeArmor Annotation Controller Service already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, annotationsControllerService)
@@ -332,7 +332,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
-			printMessage("KubeArmor Annotation Controller Mutation Admission Registration already exists  ", false)
+			printMessage("ℹ️   KubeArmor Annotation Controller Mutation Admission Registration already exists  ", false)
 		}
 	} else {
 		printYAML = append(printYAML, annotationsControllerMutationAdmissionConfiguration)
