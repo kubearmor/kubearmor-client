@@ -81,8 +81,6 @@ func printAnimation(msg string, flag bool) int {
 func printMessage(msg string, flag bool) int {
 	if Animation {
 		printAnimation(msg, flag)
-	} else {
-		fmt.Printf(msg+"\n")
 	}
 	return 0
 }
