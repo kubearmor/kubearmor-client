@@ -527,23 +527,23 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("KubeArmor Host Policy Manager Deployment not found ...\n")
 	}
 
-	fmt.Printf("CRD %s ...\n", kspName)
-	if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Printf("CRD %s not found ...\n", kspName)
-	}
-
-	fmt.Printf("CRD %s ...\n", hspName)
-	if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Printf("CRD %s not found ...\n", hspName)
-	}
-
 	if o.Force {
+		fmt.Printf("CRD %s ...\n", kspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found ...\n", kspName)
+		}
+
+		fmt.Printf("CRD %s ...\n", hspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found ...\n", hspName)
+		}
+
 		removeAnnotations(c)
 	}
 
