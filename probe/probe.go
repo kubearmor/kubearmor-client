@@ -31,11 +31,14 @@ import (
 
 var white = color.New(color.FgWhite)
 var boldWhite = white.Add(color.Bold)
+var karmorprobe = "karmor-probe"
+
 
 
 // Options for probe daemonset options install
 type ProbeOptions struct {
     Namespace      string
+    ProbeDaemonImage string
     Full          bool
 }
 
@@ -43,9 +46,9 @@ type ProbeOptions struct {
 func probeDaemonInstaller(c *k8s.Client, o ProbeOptions) error {
     
     daemonset := deployment.GenerateDaemonSet(o.Namespace)
+    daemonset.Spec.Template.Spec.Containers[0].Image = o.ProbeDaemonImage
     if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
         if !strings.Contains(err.Error(), "already exists") {
-			fmt.Println(err)
 			return errors.New("unable to install kubearmor daemonset: kubernetes environment not found or cluster not configured correctly")
         }
     }
@@ -57,7 +60,7 @@ func probeDaemonInstaller(c *k8s.Client, o ProbeOptions) error {
 
 func probeDaemonUninstaller(c *k8s.Client, o ProbeOptions) error {
     color.Yellow("\t Deleting Karmor Probe DaemonSet ...\n")
-	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), deployment.Karmorprobe, metav1.DeleteOptions{}); err != nil {
+	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), karmorprobe, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
@@ -93,7 +96,7 @@ func PrintProbeResult(c *k8s.Client, o ProbeOptions) error{
         }
         color.Yellow("\t Creating probe daemonset ...")
 
-		w, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Get(context.Background(), deployment.Karmorprobe , metav1.GetOptions{})
+		w, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Get(context.Background(), karmorprobe , metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -122,10 +125,10 @@ func checkLsmSupport(supportedLSM string) {
     fmt.Printf("\t Enforcement:") 
     if strings.Contains(supportedLSM, "selinux"){
         color.Yellow(" Partial (Supported LSMs: "+ supportedLSM + ") \n\t To have full enforcement support, apparmor must be supported")
-    }else if strings.Contains(supportedLSM, "apparmor")|| strings.Contains(supportedLSM, "bpf"){
+    }else if strings.Contains(supportedLSM, "apparmor"){
         color.Green(" Full (Supported LSMs: "+ supportedLSM + ")")
     }else{
-        color.Red(" None (Supported LSMs: "+ supportedLSM + ") \n\t To have full enforcement support, AppArmor or BPFLSM must be supported")
+        color.Red(" None (Supported LSMs: "+ supportedLSM + ") \n\t To have full enforcement support, apparmor must be supported")
     }
 }
 
@@ -149,7 +152,7 @@ func kernelVersionSupported(kernelVersion string) bool {
 func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
 
     if kernelVersionSupported(kernelVersion) && kernelHeaderPresent{
-        color.Green(" Supported (Kernel Version " + kernelVersion +")")
+        color.Green(" Supported (Kernel Version " + kernelVersion )
     }else if(kernelVersionSupported(kernelVersion)){
         color.Red(" Not Supported : Kernel header must be present")
     }else{
@@ -166,10 +169,6 @@ func checkKernelHeaderPresent() bool{
         var path = ""
         if _, err := os.Stat("/etc/redhat-release"); !os.IsNotExist(err) {
             path = "/usr/src/"+int8ToStr(uname.Release[:])
-        }else if _, err := os.Stat("/lib/modules/"+int8ToStr(uname.Release[:])+"/build/Kconfig"); !os.IsNotExist(err) {
-            path = "/lib/modules/"+int8ToStr(uname.Release[:])+"/build"
-        }else if _, err := os.Stat("/lib/modules/"+int8ToStr(uname.Release[:])+"/source/Kconfig"); !os.IsNotExist(err) {
-            path = "/lib/modules/"+int8ToStr(uname.Release[:])+"/source"
         }else{
             path = "/usr/src/linux-headers-"+int8ToStr(uname.Release[:])
         }
@@ -185,7 +184,7 @@ func checkKernelHeaderPresent() bool{
 /** check if there's any file like $(uname -r) in directory /usr/src/  **/
 func checkNodeKernelHeaderPresent(c *k8s.Client, nodeName string, kernelVersion string) bool{
     pods, err := c.K8sClientset.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{
-		LabelSelector: "kubearmor-app=karmor-probe",
+		LabelSelector: "k8s-app=karmor-probe",
         FieldSelector: "spec.nodeName=" + nodeName,
 	})
 	if err != nil {
@@ -252,8 +251,6 @@ func int8ToStr(arr []int8) string {
 }
 
 func checkHostAuditSupport() {
-	color.Yellow("\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
-
 	var uname syscall.Utsname
     if err := syscall.Uname(&uname); err == nil {
         kVersion:= int8ToStr(uname.Release[:])
@@ -277,7 +274,7 @@ func checkHostAuditSupport() {
 func getNodeLsmSupport(c *k8s.Client, nodeName string) (string, error) {
     srcPath := "/sys/kernel/security/lsm"
     pods, err := c.K8sClientset.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{
-		LabelSelector: "kubearmor-app=karmor-probe",
+		LabelSelector: "k8s-app=karmor-probe",
         FieldSelector: "spec.nodeName=" + nodeName,
 	})
 	if err != nil {

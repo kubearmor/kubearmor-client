@@ -6,13 +6,13 @@ import (
     corev1 "k8s.io/api/core/v1"
 )
 
-var Karmorprobe = "karmor-probe"
+var karmorprobe = "karmor-probe"
 
 // GenerateDaemonSet Function
 func GenerateDaemonSet(namespace string) *appsv1.DaemonSet {
 
     var label = map[string]string{
-        "kubearmor-app": Karmorprobe,
+        "k8s-app": karmorprobe,
     }
     var privileged = bool(true)
     var terminationGracePeriodSeconds = int64(30)
@@ -59,7 +59,7 @@ func GenerateDaemonSet(namespace string) *appsv1.DaemonSet {
             APIVersion: "apps/v1",
         },
         ObjectMeta: metav1.ObjectMeta{
-            Name:      Karmorprobe,
+            Name:      karmorprobe,
             Labels:    label,
             Namespace: namespace,
         },
@@ -85,7 +85,7 @@ func GenerateDaemonSet(namespace string) *appsv1.DaemonSet {
                     RestartPolicy: "Always",
                     Containers: []corev1.Container{
                         {
-                            Name:            Karmorprobe,
+                            Name:            karmorprobe,
                             Image:           "alpine",
                             ImagePullPolicy: "Always",
                             SecurityContext: &corev1.SecurityContext{
