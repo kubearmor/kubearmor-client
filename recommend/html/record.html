@@ -1,0 +1,20 @@
+            <tr onclick="showHideRow('{{.RowID}}');">
+				{{range .Rec}}
+					<td>{{.Name}}</td>
+				{{end}}
+            </tr>
+            <tr id="{{.RowID}}" class="hidden_row">
+                <td colspan="100%">
+					<h3>Kubearmor Security Policy</h3>
+<pre>
+{{.Policy}}
+</pre>
+					<h3>Description</h3>
+					{{.Description}}
+					<br>
+					<h3>References</h3>
+					{{range .Refs}}
+					{{.Name}}: {{.URL}}<br>
+					{{end}}
+                </td>
+            </tr>

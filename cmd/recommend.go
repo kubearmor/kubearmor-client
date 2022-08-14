@@ -10,7 +10,7 @@ import (
 
 var recommendOptions recommend.Options
 
-// recommendCmd represents the get command
+// recommendCmd represents the recommend command
 var recommendCmd = &cobra.Command{
 	Use:   "recommend",
 	Short: "Recommend Policies",
@@ -27,5 +27,7 @@ func init() {
 	rootCmd.AddCommand(recommendCmd)
 
 	recommendCmd.Flags().StringSliceVar(&recommendOptions.Images, "image", []string{}, "Container image list (comma separated)")
-	recommendCmd.Flags().StringVarP(&recommendOptions.Outfile, "outfile", "o", "kubearmor-policies.yaml", "output file to write policies")
+	recommendCmd.Flags().StringVarP(&recommendOptions.Outdir, "outdir", "o", "out", "output folder to write policies")
+	recommendCmd.Flags().StringVarP(&recommendOptions.Reportfile, "report", "r", "report.txt", "report file")
+	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "tags (comma-separated) to apply. Eg. PCI-DSS, MITRE")
 }

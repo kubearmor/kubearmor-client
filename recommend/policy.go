@@ -4,14 +4,17 @@
 package recommend
 
 import (
-	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/clarketm/json"
+
 	"github.com/accuknox/auto-policy-discovery/src/types"
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
+	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/yaml"
 )
 
@@ -37,11 +40,26 @@ func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
 				FromSource: fromSourceArr,
 			}
 			policy.Spec.File.MatchDirectories = append(policy.Spec.File.MatchDirectories, dirRule)
+		} else {
+			pathRule := types.KnoxMatchPaths{
+				Path:       path,
+				FromSource: fromSourceArr,
+			}
+			policy.Spec.File.MatchPaths = append(policy.Spec.File.MatchPaths, pathRule)
 		}
 	}
 }
 
-func createPolicy(img *ImageInfo, ms MatchSpec) (types.KubeArmorPolicy, error) {
+func mkPathFromTag(tag string) string {
+	r := strings.NewReplacer(
+		"/", "-",
+		":", "-",
+		"\\", "-",
+	)
+	return r.Replace(tag)
+}
+
+func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) {
 	policy := types.KubeArmorPolicy{
 		APIVersion: "security.kubearmor.com/v1",
 		Kind:       "KubeArmorPolicy",
@@ -57,12 +75,7 @@ func createPolicy(img *ImageInfo, ms MatchSpec) (types.KubeArmorPolicy, error) {
 	if ms.Name != "" {
 		policy.Metadata["name"] = ms.Name
 	} else {
-		r := strings.NewReplacer(
-			"/", "-",
-			":", "-",
-			"\\", "-",
-		)
-		policy.Metadata["name"] = "ksp-" + r.Replace(img.RepoTags[0])
+		policy.Metadata["name"] = "ksp-" + mkPathFromTag(img.RepoTags[0])
 	}
 
 	policy.Spec.Action = ms.OnEvent.Action
@@ -76,56 +89,85 @@ func createPolicy(img *ImageInfo, ms MatchSpec) (types.KubeArmorPolicy, error) {
 
 	// add container selector
 	repotag := strings.Split(img.RepoTags[0], ":")
-	policy.Spec.Selector.MatchLabels["container"] = repotag[0]
+	policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
 
 	addPolicyRule(&policy, ms.Rules)
 	return policy, nil
 }
 
-func getPolicyFromImageInfo(img *ImageInfo) {
+func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
+	matches := checkForSpec(filepath.Join(ms.Precondition), img.FileList)
+	if len(matches) <= 0 {
+		return false
+	}
+	return true
+}
+
+func matchTags(ms MatchSpec) bool {
+	if len(options.Tags) <= 0 {
+		return true
+	}
+	for _, t := range options.Tags {
+		if slices.Contains(ms.OnEvent.Tags, t) {
+			return true
+		}
+	}
+	return false
+}
+
+func (img *ImageInfo) getPolicyFromImageInfo() {
 	if img.OS != "linux" {
 		color.Red("non-linux platforms are not supported, yet.")
 		return
 	}
-	isFirst := true
-	polFile, err := os.Create(options.Outfile)
-	defer closeCheckErr(polFile, options.Outfile)
 	idx := 0
+	if err := ReportStart(img); err != nil {
+		log.WithError(err).Error("report start failed")
+		return
+	}
 	ms, err := getNextRule(&idx)
 	for ; err == nil; ms, err = getNextRule(&idx) {
-		log.WithFields(log.Fields{
-			"spec": ms,
-			"idx":  idx,
-		}).Info("processing spec")
-		matches := checkForSpec(filepath.Join(ms.Precondition), img.FileList)
-		if len(matches) <= 0 {
+		// matches preconditions
+
+		if !matchTags(ms) {
 			continue
 		}
 
-		policy, err := createPolicy(img, ms)
+		if !img.checkPreconditions(ms) {
+			continue
+		}
+
+		policy, err := img.createPolicy(ms)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
-				"image": img,
-				"spec":  ms,
+				"image": img, "spec": ms,
 			}).Error("create policy failed, skipping")
+			continue
+		}
+
+		poldir := fmt.Sprintf("%s/%s", options.Outdir, mkPathFromTag(img.RepoTags[0]))
+		_ = os.Mkdir(poldir, 0750)
+
+		outfile := fmt.Sprintf("%s/%s.yaml", poldir, ms.Name)
+		f, err := os.Create(filepath.Clean(outfile))
+		if err != nil {
+			log.WithError(err).Error(fmt.Sprintf("create file %s failed", outfile))
 			continue
 		}
 
 		arr, _ := json.Marshal(policy)
 		yamlarr, _ := yaml.JSONToYAML(arr)
-		if !isFirst {
-			_, _ = polFile.WriteString("---\n")
+		if _, err := f.WriteString(string(yamlarr)); err != nil {
+			log.WithError(err).Error("WriteString failed")
 		}
-		if _, err := polFile.WriteString(string(yamlarr)); err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"file": options.Outfile,
-			}).Error("WriteString failed")
+		if err := f.Sync(); err != nil {
+			log.WithError(err).Error("file sync failed")
 		}
-		isFirst = false
+		if err := f.Close(); err != nil {
+			log.WithError(err).Error("file close failed")
+		}
+		_ = ReportRecord(ms, outfile)
+		color.Green("created policy %s ...", outfile)
 	}
-	if err := polFile.Sync(); err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"file": options.Outfile,
-		}).Error("file sync failed")
-	}
+	_ = ReportSectEnd(img)
 }

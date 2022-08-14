@@ -11,14 +11,12 @@ replace (
 )
 
 require (
-	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220622153732-597108ffed2c
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/cilium/cilium v1.10.0
+	github.com/cilium/cilium v1.10.13
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
-	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220815044951-425f333210e1
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220728032827-8078616fc8bd
@@ -26,9 +24,8 @@ require (
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
-	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/rhysd/go-github-selfupdate v1.2.3
 	github.com/rs/zerolog v1.26.1
 	github.com/sirupsen/logrus v1.9.0
@@ -50,7 +47,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
+require k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
@@ -61,6 +58,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
@@ -109,6 +107,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -118,8 +117,8 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
-	github.com/miekg/dns v1.1.26 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -129,6 +128,7 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
@@ -137,8 +137,10 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.12.1 // indirect
+	github.com/prometheus/client_golang v1.12.2 // indirect
 	github.com/prometheus/client_model v0.2.1-0.20210607210712-147c58e9608a // indirect
+	github.com/prometheus/common v0.32.1 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.21.10 // indirect
@@ -156,7 +158,7 @@ require (
 	go.mongodb.org/mongo-driver v1.8.4 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -166,7 +168,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect
-	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5 // indirect
 	sigs.k8s.io/kustomize/api v0.11.4 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect

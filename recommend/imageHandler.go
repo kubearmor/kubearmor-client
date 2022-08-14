@@ -7,8 +7,8 @@ import (
 	"archive/tar"
 	"bufio"
 	"context"
+	_ "embed" // need for embedding
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -18,9 +18,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/clarketm/json"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/fatih/color"
 	"github.com/moby/term"
 	log "github.com/sirupsen/logrus"
 )
@@ -33,6 +36,7 @@ type ImageInfo struct {
 	Name     string
 	RepoTags []string
 	Arch     string
+	Distro   string
 	OS       string
 	FileList []string
 	DirList  []string
@@ -158,14 +162,15 @@ func extractTar(tarname string) ([]string, []string) {
 			if err != nil {
 				log.WithError(err).WithFields(log.Fields{
 					"target": tgt,
-				}).Fatal("tar open file")
-			}
+				}).Error("tar open file")
+			} else {
 
-			// copy over contents
-			if _, err := io.CopyN(f, tr, 2e+8 /*200MB*/); err != io.EOF {
-				log.WithError(err).WithFields(log.Fields{
-					"target": tgt,
-				}).Fatal("tar io.Copy()")
+				// copy over contents
+				if _, err := io.CopyN(f, tr, 2e+9 /*2GB*/); err != io.EOF {
+					log.WithError(err).WithFields(log.Fields{
+						"target": tgt,
+					}).Fatal("tar io.Copy()")
+				}
 			}
 			closeCheckErr(f, tgt)
 			if strings.HasSuffix(tgt, "layer.tar") { // deflate container image layer
@@ -228,29 +233,33 @@ func getFileBytes(fname string) ([]byte, error) {
 	return io.ReadAll(f)
 }
 
-func readManifest(img *ImageInfo, manifest string) {
+func (img *ImageInfo) readManifest(manifest string) {
 	// read manifest file
 	barr, err := getFileBytes(manifest)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"manifest": manifest,
-		}).Fatal("manifest read failed")
+		log.WithError(err).Fatal("manifest read failed")
 	}
 	var manres []map[string]interface{}
 	err = json.Unmarshal(barr, &manres)
 	if err != nil {
 		log.WithError(err).Fatal("manifest json unmarshal failed")
 	}
-	if len(manres) != 1 {
+	if len(manres) < 1 {
 		log.WithFields(log.Fields{
 			"len":     len(manres),
 			"results": manres,
-		}).Fatal("expecting one config in manifest!")
+		}).Fatal("expecting atleast one config in manifest!")
 	}
-	// 	man := manres.(map[string]interface{})
+
+	var man map[string]interface{}
+	for _, man = range manres {
+		if man["RepoTags"] != nil {
+			break
+		}
+	}
 
 	// read config file
-	config := filepath.Join(tempDir, manres[0]["Config"].(string))
+	config := filepath.Join(tempDir, man["Config"].(string))
 	barr, err = getFileBytes(config)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -264,13 +273,50 @@ func readManifest(img *ImageInfo, manifest string) {
 	}
 	img.Arch = cfgres["architecture"].(string)
 	img.OS = cfgres["os"].(string)
-	for _, tag := range manres[0]["RepoTags"].([]interface{}) {
+	for _, tag := range man["RepoTags"].([]interface{}) {
 		img.RepoTags = append(img.RepoTags, tag.(string))
-		// img.RepoTags = manres[0]["RepoTags"].([]interface{}).([]string)
 	}
 }
 
-func getImageInfo(img *ImageInfo) {
+type distroRule struct {
+	Distro string `json:"distro"`
+	Match  []struct {
+		Path string `json:"path"`
+	} `json:"match"`
+}
+
+//go:embed json/distro.json
+var distroJSON []byte
+
+var distroRules []distroRule
+
+func init() {
+	err := json.Unmarshal(distroJSON, &distroRules)
+	if err != nil {
+		color.Red("failed to unmarshal distro json rules")
+		log.WithError(err).Fatal("failed to unmarshal distro json rules")
+	}
+}
+
+func (img *ImageInfo) getDistro() {
+	for _, d := range distroRules {
+		match := true
+		for _, m := range d.Match {
+			matches := checkForSpec(filepath.Clean(tempDir+m.Path), img.FileList)
+			if len(matches) == 0 {
+				match = false
+				break
+			}
+		}
+		if len(d.Match) > 0 && match {
+			color.Green("Distribution %s", d.Distro)
+			img.Distro = d.Distro
+			return
+		}
+	}
+}
+
+func (img *ImageInfo) getImageInfo() {
 	matches := checkForSpec(filepath.Join(tempDir, "manifest.json"), img.FileList)
 	if len(matches) != 1 {
 		log.WithFields(log.Fields{
@@ -278,12 +324,16 @@ func getImageInfo(img *ImageInfo) {
 			"matches": matches,
 		}).Fatal("expecting one manifest.json!")
 	}
-	readManifest(img, matches[0])
+	img.readManifest(matches[0])
+
+	img.getDistro()
 }
 
 func getImageDetails(imageName string) error {
-	var img ImageInfo
-	img.Name = imageName
+	img := ImageInfo{
+		Name: imageName,
+	}
+
 	// step 1: save the image to a tar file
 	tarname := saveImageToTar(imageName)
 
@@ -291,12 +341,10 @@ func getImageDetails(imageName string) error {
 	img.FileList, img.DirList = extractTar(tarname)
 
 	// step 3: getImageInfo
-	getImageInfo(&img)
+	img.getImageInfo()
 
-	getPolicyFromImageInfo(&img)
-	// Check if os == linux
-	// Check if certificates folder exists
-	// Check if package management tools exists
+	// step 4: get policy from image info
+	img.getPolicyFromImageInfo()
 	return nil
 }
 
