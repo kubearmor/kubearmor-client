@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
 
+// Package version checks the current CLI version and if there's a need to update it
 package version
 
 import (

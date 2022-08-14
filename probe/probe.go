@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
+// Package probe helps check compatibility of KubeArmor in a given environment
 package probe
 
 import (
@@ -26,26 +27,25 @@ import (
 var white = color.New(color.FgWhite)
 var boldWhite = white.Add(color.Bold)
 
-// Options for probe daemonset options install
-type ProbeOptions struct {
+// Options provides probe daemonset options install
+type Options struct {
 	Namespace string
 	Full      bool
 }
 
 // K8sInstaller for karmor install
-func probeDaemonInstaller(c *k8s.Client, o ProbeOptions) error {
-
+func probeDaemonInstaller(c *k8s.Client, o Options) error {
 	daemonset := deployment.GenerateDaemonSet(o.Namespace)
 	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
 	}
-	return nil
 
+	return nil
 }
 
-func probeDaemonUninstaller(c *k8s.Client, o ProbeOptions) error {
+func probeDaemonUninstaller(c *k8s.Client, o Options) error {
 	color.Yellow("\t Deleting Karmor Probe DaemonSet ...\n")
 	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), deployment.Karmorprobe, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -57,7 +57,8 @@ func probeDaemonUninstaller(c *k8s.Client, o ProbeOptions) error {
 	return nil
 }
 
-func PrintProbeResult(c *k8s.Client, o ProbeOptions) error {
+// PrintProbeResult prints the result for the  host and k8s probing kArmor does to check compatibility with KubeArmor
+func PrintProbeResult(c *k8s.Client, o Options) error {
 	if o.Full {
 		checkHostAuditSupport()
 		checkLsmSupport(getHostSupportedLSM())
@@ -92,12 +93,12 @@ func checkLsmSupport(supportedLSM string) {
 }
 
 func getHostSupportedLSM() string {
-
 	b, err := os.ReadFile("/sys/kernel/security/lsm")
 	if err != nil {
 		log.Printf("an error occured when reading file")
 		return "none"
 	}
+
 	s := string(b)
 	return s
 }
@@ -107,7 +108,6 @@ func kernelVersionSupported(kernelVersion string) bool {
 }
 
 func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
-
 	if kernelVersionSupported(kernelVersion) && kernelHeaderPresent {
 		color.Green(" Supported (Kernel Version " + kernelVersion + ")")
 	} else if kernelVersionSupported(kernelVersion) {
@@ -115,7 +115,6 @@ func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
 	} else {
 		color.Red(" Not Supported (Kernel Version " + kernelVersion + " \n\t Kernel version must be greater than 4.14) and kernel header must be present")
 	}
-
 }
 
 func checkKernelHeaderPresent() bool {
@@ -138,8 +137,8 @@ func checkKernelHeaderPresent() bool {
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			return true
 		}
-
 	}
+
 	return false
 }
 
@@ -152,6 +151,7 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, nodeName string, kernelVersion 
 	if err != nil {
 		return false
 	}
+
 	srcPath := "/usr/src/"
 	fileName := "*" + kernelVersion + "*"
 	reader, outStream := io.Pipe()
@@ -176,6 +176,7 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, nodeName string, kernelVersion 
 	if err != nil {
 		return false
 	}
+
 	go func() {
 		defer outStream.Close()
 		err = exec.Stream(remotecommand.StreamOptions{
@@ -185,17 +186,18 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, nodeName string, kernelVersion 
 			Tty:    false,
 		})
 	}()
+
 	buf, err := io.ReadAll(reader)
 	if err != nil {
 		return false
 	}
+
 	s := string(buf)
 	if strings.Contains(s, "No such file or directory") || len(s) == 0 {
 		return false
-	} else {
-		return true
 	}
 
+	return true
 }
 
 // A utility to convert the values to proper strings.
@@ -207,15 +209,17 @@ func int8ToStr(arr []int8) string {
 		}
 		b = append(b, byte(v))
 	}
+
 	return string(b)
 }
 
 func checkHostAuditSupport() {
 	color.Yellow("\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
+
 	var uname syscall.Utsname
 	if err := syscall.Uname(&uname); err == nil {
-		kVersion := int8ToStr(uname.Release[:])
-		s := strings.Split(kVersion, "-")
+		ver := int8ToStr(uname.Release[:])
+		s := strings.Split(ver, "-")
 		kernelVersion := s[0]
 
 		_, err := boldWhite.Println("Host:")
@@ -224,11 +228,9 @@ func checkHostAuditSupport() {
 		}
 		fmt.Printf("\t Observability/Audit:")
 		checkAuditSupport(kernelVersion, checkKernelHeaderPresent())
-
 	} else {
 		color.Red(" Error")
 	}
-
 }
 
 func getNodeLsmSupport(c *k8s.Client, nodeName string) (string, error) {
@@ -240,6 +242,7 @@ func getNodeLsmSupport(c *k8s.Client, nodeName string) (string, error) {
 	if err != nil {
 		return "none", err
 	}
+
 	reader, outStream := io.Pipe()
 	cmdArr := []string{"cat", srcPath}
 	req := c.K8sClientset.CoreV1().RESTClient().
@@ -256,11 +259,12 @@ func getNodeLsmSupport(c *k8s.Client, nodeName string) (string, error) {
 			Stderr:    true,
 			TTY:       false,
 		}, scheme.ParameterCodec)
-	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
 
+	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
 	if err != nil {
 		return "none", err
 	}
+
 	go func() {
 		defer outStream.Close()
 		err = exec.Stream(remotecommand.StreamOptions{
@@ -270,11 +274,13 @@ func getNodeLsmSupport(c *k8s.Client, nodeName string) (string, error) {
 			Tty:    false,
 		})
 	}()
+
 	buf, err := io.ReadAll(reader)
 	if err != nil {
 		log.Printf("an error occured when reading file")
 		return "none", err
 	}
+
 	s := string(buf)
 	return s, nil
 }
@@ -298,5 +304,4 @@ func probeNode(c *k8s.Client) {
 	} else {
 		fmt.Println("No kubernetes environment found")
 	}
-
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2022 Authors of KubeArmor
+
+// Package rotatetls rotates webhook controller tls certificates
 package rotatetls
 
 import (

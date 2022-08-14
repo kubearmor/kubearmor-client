@@ -34,6 +34,7 @@ vm-protobuf:
 .PHONY: gofmt
 gofmt:
 	cd $(CURDIR); gofmt -s -d $(shell find . -type f -name '*.go' -print)
+	cd $(CURDIR); test -z "$(shell gofmt -s -l $(shell find . -type f -name '*.go' -print) | tee /dev/stderr)"
 
 .PHONY: golint
 golint:

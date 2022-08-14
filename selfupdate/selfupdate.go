@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
+// Package selfupdate exposes KubeArmor build details and provides interface to check and update the CLI itself
 package selfupdate
 
 import (
