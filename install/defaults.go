@@ -4,7 +4,6 @@
 package install
 
 var kubearmor = "kubearmor"
-var port int32 = 32767
 
 var serviceAccountName = kubearmor
 var clusterRoleBindingName = kubearmor
