@@ -73,7 +73,7 @@ func printBar(msg string, total int) int {
 func printAnimation(msg string, flag bool) int {
 	clearLine(90)
 	fmt.Printf(msg + "\n")
-	if flag == true {
+	if flag {
 		progress++
 	}
 	printBar("    KubeArmor Installing ", 16)
@@ -117,6 +117,7 @@ func checkPods(c *k8s.Client) int {
 
 // K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
+	animation = o.Animation
 	env := AutoDetectEnvironment(c)
 	if env == "none" {
 		return errors.New("unsupported environment or cluster not configured correctly")
