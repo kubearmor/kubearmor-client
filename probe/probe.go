@@ -10,8 +10,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/fatih/color"
@@ -22,6 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
+
+	"errors"
+
+	"github.com/kubearmor/kubearmor-client/install"
+	"golang.org/x/sys/unix"
 )
 
 var white = color.New(color.FgWhite)
@@ -59,6 +64,13 @@ func probeDaemonUninstaller(c *k8s.Client, o Options) error {
 
 // PrintProbeResult prints the result for the  host and k8s probing kArmor does to check compatibility with KubeArmor
 func PrintProbeResult(c *k8s.Client, o Options) error {
+	if runtime.GOOS != "linux" {
+		env := install.AutoDetectEnvironment(c)
+		if env == "none" {
+			return errors.New("unsupported environment or cluster not configured correctly")
+		}
+	}
+
 	if o.Full {
 		checkHostAuditSupport()
 		checkLsmSupport(getHostSupportedLSM())
@@ -98,7 +110,6 @@ func getHostSupportedLSM() string {
 		log.Printf("an error occured when reading file")
 		return "none"
 	}
-
 	s := string(b)
 	return s
 }
@@ -119,19 +130,19 @@ func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
 
 func checkKernelHeaderPresent() bool {
 	//check if there's any directory /usr/src/$(uname -r)
-	var uname syscall.Utsname
-	if err := syscall.Uname(&uname); err == nil {
+	var uname unix.Utsname
+	if err := unix.Uname(&uname); err == nil {
 
 		var path = ""
 		if _, err := os.Stat("/etc/redhat-release"); !os.IsNotExist(err) {
-			path = "/usr/src/" + int8ToStr(uname.Release[:])
-		} else if _, err := os.Stat("/lib/modules/" + int8ToStr(uname.Release[:]) + "/build/Kconfig"); !os.IsNotExist(err) {
-			path = "/lib/modules/" + int8ToStr(uname.Release[:]) + "/build"
-		} else if _, err := os.Stat("/lib/modules/" + int8ToStr(uname.Release[:]) + "/source/Kconfig"); !os.IsNotExist(err) {
-			path = "/lib/modules/" + int8ToStr(uname.Release[:]) + "/source"
+			path = "/usr/src/" + string(uname.Release[:])
+		} else if _, err := os.Stat("/lib/modules/" + string(uname.Release[:]) + "/build/Kconfig"); !os.IsNotExist(err) {
+			path = "/lib/modules/" + string(uname.Release[:]) + "/build"
+		} else if _, err := os.Stat("/lib/modules/" + string(uname.Release[:]) + "/source/Kconfig"); !os.IsNotExist(err) {
+			path = "/lib/modules/" + string(uname.Release[:]) + "/source"
 
 		} else {
-			path = "/usr/src/linux-headers-" + int8ToStr(uname.Release[:])
+			path = "/usr/src/linux-headers-" + string(uname.Release[:])
 		}
 
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
@@ -200,26 +211,12 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, nodeName string, kernelVersion 
 	return true
 }
 
-// A utility to convert the values to proper strings.
-func int8ToStr(arr []int8) string {
-	b := make([]byte, 0, len(arr))
-	for _, v := range arr {
-		if v == 0x00 {
-			break
-		}
-		b = append(b, byte(v))
-	}
-
-	return string(b)
-}
-
 func checkHostAuditSupport() {
 	color.Yellow("\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
-
-	var uname syscall.Utsname
-	if err := syscall.Uname(&uname); err == nil {
-		ver := int8ToStr(uname.Release[:])
-		s := strings.Split(ver, "-")
+	var uname unix.Utsname
+	if err := unix.Uname(&uname); err == nil {
+		kVersion := string(uname.Release[:])
+		s := strings.Split(kVersion, "-")
 		kernelVersion := s[0]
 
 		_, err := boldWhite.Println("Host:")

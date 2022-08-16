@@ -117,8 +117,7 @@ func checkPods(c *k8s.Client) int {
 
 // K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
-	animation = o.Animation
-	env := autoDetectEnvironment(c)
+	env := AutoDetectEnvironment(c)
 	if env == "none" {
 		return errors.New("unsupported environment or cluster not configured correctly")
 	}
@@ -550,7 +549,8 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	return nil
 }
 
-func autoDetectEnvironment(c *k8s.Client) (name string) {
+// AutoDetectEnvironment detect the environment for a given k8s context
+func AutoDetectEnvironment(c *k8s.Client) (name string) {
 	env := "none"
 
 	contextName := c.RawConfig.CurrentContext
