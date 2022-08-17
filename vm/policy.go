@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -121,7 +122,8 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 	policies := strings.Split(string(policyFile), "---")
 
 	for _, policy := range policies {
-		if policy == "" {
+
+		if matched, _ := regexp.MatchString("^\\s*$", policy); matched {
 			continue
 		}
 
