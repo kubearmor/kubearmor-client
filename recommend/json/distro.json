@@ -1,0 +1,26 @@
+[
+	{
+		"distro": "ubuntu",
+		"match": [
+			{
+				"path": "/etc/dpkg/origins/ubuntu"
+			}
+		]
+	},
+	{
+		"distro": "debian",
+		"match": [
+			{
+				"path": "/etc/dpkg/origins/debian"
+			}
+		]
+	},
+	{
+		"distro": "alpine",
+		"match": [
+			{
+				"path": "/sbin/apk"
+			}
+		]
+	}
+]

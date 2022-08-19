@@ -1,0 +1,17 @@
+    <div id="wrapper">
+	<table align=center border=1 cellpadding=1>
+	  {{range .ImgInfo}}
+	  <tr align=left>
+		 <td>{{.Key}}</td>
+		 <td>{{.Val}}</td>
+	  </tr>
+	  {{end}}
+	</table>
+
+        <table border=1 id="table_detail" align=center cellpadding=10>
+            <tr>
+                {{range .HdrCols}}
+                    <th>{{.Name}}</th>
+                {{end}}
+            </tr>
+
