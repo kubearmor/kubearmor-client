@@ -22,7 +22,7 @@ require (
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220728032827-8078616fc8bd
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220825185443-557eed6f971a
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/olekukonko/tablewriter v0.0.5

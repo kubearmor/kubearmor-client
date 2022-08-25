@@ -711,6 +711,8 @@ github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41/go.mod h1:8NwuCbDs76/wmWvRnODxpTqdHTX61ovSJ5DBXh22C+w=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1 h1:HOntsSjM0bA7QlFimkSwFMUdxN7i2S9hx2TS/EdPp14=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1/go.mod h1:tsQnbUwJtoeDB4oQiIaBBoOOajwKoQFpKrTHLAeD4F8=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220825185443-557eed6f971a h1:/VNa7v89+Q9vw1h72YvRyAwdrrh6E1FpMQ12abP4ZQc=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220825185443-557eed6f971a/go.mod h1:tsQnbUwJtoeDB4oQiIaBBoOOajwKoQFpKrTHLAeD4F8=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhnIaL+V+BEER86oLrvS+kWobKpbJuye0=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 h1:6E+4a0GO5zZEnZ81pIr0yLvtUWk2if982qA3F3QD6H4=
