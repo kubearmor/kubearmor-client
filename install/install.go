@@ -449,7 +449,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	}
 
 	fmt.Print("KubeArmor Annotation Controller TLS certificates ...\n")
-	if err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Delete(context.Background(), deployments.AnnotationsControllerSecretName, metav1.DeleteOptions{}); err != nil {
+	if err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerSecretName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
