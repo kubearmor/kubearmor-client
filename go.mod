@@ -11,31 +11,31 @@ replace (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220622153732-597108ffed2c
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220825081034-e68c767a6d13
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cilium/cilium v1.10.13
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
-	github.com/kubearmor/KVMService/src/types v0.0.0-20220619161146-0f42a61893bc
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220815044951-425f333210e1
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220728032827-8078616fc8bd
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1
+	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220825185443-557eed6f971a
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220825185443-557eed6f971a
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220825185443-557eed6f971a
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220825185443-557eed6f971a
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220825185443-557eed6f971a
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
+	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/rhysd/go-github-selfupdate v1.2.3
 	github.com/rs/zerolog v1.26.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
-	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
+	golang.org/x/exp v0.0.0-20220823124025-807a23277127
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 	google.golang.org/genproto v0.0.0-20220815135757-37a418bb8959 // indirect
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.1

@@ -33,7 +33,7 @@ func RotateTLS(c *k8s.Client, namespace string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.AnnotationsControllerSecretName, metav1.GetOptions{}); err != nil {
+	if _, err := c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.KubeArmorControllerSecretName, metav1.GetOptions{}); err != nil {
 		return nil
 	}
 
@@ -212,7 +212,7 @@ func getFreeRandSuffix(c *k8s.Client, namespace string) (suffix string, err erro
 			found = true
 		}
 
-		if _, err = c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.AnnotationsControllerSecretName+"-"+suffix, metav1.GetOptions{}); err != nil {
+		if _, err = c.K8sClientset.CoreV1().Secrets(namespace).Get(context.Background(), deployments.KubeArmorControllerSecretName+"-"+suffix, metav1.GetOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return "", err
 			}
