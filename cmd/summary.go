@@ -13,8 +13,8 @@ var summaryOptions summary.Options
 // summaryCmd represents the summary command
 var summaryCmd = &cobra.Command{
 	Use:   "summary",
-	Short: "Policy summary from discovery engine",
-	Long:  `Policy summary from discovery engine`,
+	Short: "Observability from discovery engine",
+	Long:  `Discovery engine keeps the telemetry information from the policy enforcement engines and the karmor connects to it to provide this as observability data`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := summary.Summary(summaryOptions); err != nil {
 			return err
