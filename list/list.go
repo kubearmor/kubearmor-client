@@ -66,7 +66,7 @@ func printK8SPolicies(policies []v1.KubeArmorPolicy, namespace string) error {
 }
 
 func printSystemdPolices() error {
-	files, err := filepath.Glob("/opt/kubearmor/*.yaml")
+	files, err := filepath.Glob("/opt/kubearmor/policies/*.yaml")
 	if err != nil {
 		return err
 	}
