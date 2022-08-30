@@ -5,9 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	v1 "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
@@ -66,8 +66,11 @@ func printK8SPolicies(policies []v1.KubeArmorPolicy, namespace string) error {
 }
 
 func printSystemdPolices() error {
-	files, err := filepath.Glob("/opt/kubearmor/policies/*.yaml")
+	files, err := ioutil.ReadDir("/opt/kubearmor/policies/")
 	if err != nil {
+		if errors.Is(err, fs.ErrPermission) {
+			return errors.New("unable to read policy backups. Try running with elevated priviledges")
+		}
 		return err
 	}
 	if len(files) <= 0 {
@@ -76,19 +79,23 @@ func printSystemdPolices() error {
 	}
 	policies := []tp.K8sKubeArmorHostPolicy{}
 	for _, file := range files {
-		path := fmt.Sprintf("/opt/kubearmor/%s", file)
+		path := fmt.Sprintf("/opt/kubearmor/policies/%s", file.Name())
 		fileBytes, err := ioutil.ReadFile(path)
 		if err != nil {
 			return err
 		}
 		policy := tp.K8sKubeArmorHostPolicy{}
 
-		err = yaml.Unmarshal(fileBytes, policy)
+		err = yaml.Unmarshal(fileBytes, &policy)
 		if err != nil {
 			return err
 		}
 		policies = append(policies, policy)
 
+	}
+
+	if err != nil {
+		fmt.Println(err)
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Policy Name"})
@@ -103,7 +110,6 @@ func printSystemdPolices() error {
 	}
 	table.Render()
 	return nil
-
 }
 
 func CheckEnv(c *k8s.Client) (string, error) {
