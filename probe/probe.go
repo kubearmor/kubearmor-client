@@ -606,6 +606,8 @@ func getAnnotatedPods(c *k8s.Client) error {
 	for _, v := range data {
 		table.Append(v)
 	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 	table.Render()
 	return nil
 }
@@ -624,8 +626,6 @@ func getPoliciesOnAnnotatedPods(c *k8s.Client) (map[string][]string, error) {
 				maps[policy.Name] = append(maps[policy.Name], key+":"+value)
 			}
 		}
-	} else {
-		fmt.Printf("No Resource found in namespace\n")
 	}
 	return maps, nil
 }
@@ -649,8 +649,13 @@ func renderOutputInTableWithNoBorders(data [][]string) {
 
 func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy string) bool {
 	for _, slice := range input {
+		//if slice contains podname, then append the policy to the existing policies
 		if slices.Contains(slice, name) {
-			slice[2] = slice[2] + ", " + policy //if slice contains podname, then append the policy to the existing policies
+			if slice[2] == "" {
+				slice[2] = policy
+			} else {
+				slice[2] = slice[2] + "\n" + policy
+			}
 			return true
 		}
 
