@@ -113,20 +113,22 @@ func printSystemdPolices() error {
 }
 
 func CheckEnv(c *k8s.Client) (string, error) {
-	// check if kamor is running in K8s
-	_, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-policy-manager", metav1.GetOptions{})
-	if err != nil {
-		if kerr.IsNotFound(err) {
-			// deployment not found check systemd
-			_, err := os.Stat("/usr/lib/systemd/system/kubearmor.service")
-			if err == nil {
-				return "systemd", nil
+	// deployment not found check systemd
+	_, err := os.Stat("/usr/lib/systemd/system/kubearmor.service")
+	if err == nil {
+		return "systemd", nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return "", errors.New("unable to detect kubearmor installation")
+	} else {
+		// check if kamor is running in K8s
+		_, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-policy-manager", metav1.GetOptions{})
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				return "", errors.New("unable to find kubearmor in cluster. Try running karmor install")
 			}
-			if errors.Is(err, os.ErrNotExist) {
-				return "", errors.New("unable to detect kubearmor installation")
-			}
+			return "", err
 		}
-		return "", err
 	}
 	return "k8s", nil
 }
