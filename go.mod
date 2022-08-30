@@ -19,7 +19,6 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220825185443-557eed6f971a
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220825185443-557eed6f971a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220825185443-557eed6f971a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220825185443-557eed6f971a
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220825185443-557eed6f971a
@@ -47,7 +46,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
+require (
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220830040101-f657b0146f88
+	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
+)
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
