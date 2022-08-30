@@ -47,7 +47,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
+require (
+	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
+)
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
@@ -164,7 +167,6 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect

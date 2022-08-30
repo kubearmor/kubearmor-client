@@ -13,9 +13,9 @@ import (
 	v1 "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/olekukonko/tablewriter"
+	"gopkg.in/yaml.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type Options struct {
