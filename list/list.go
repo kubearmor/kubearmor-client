@@ -13,9 +13,9 @@ import (
 	v1 "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/olekukonko/tablewriter"
-	"gopkg.in/yaml.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type Options struct {
@@ -80,11 +80,7 @@ func printSystemdPolices() error {
 	policies := []tp.K8sKubeArmorHostPolicy{}
 	for _, file := range files {
 		path := fmt.Sprintf("/opt/kubearmor/policies/%s", file.Name())
-		reader, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		fileBytes, err := ioutil.ReadAll(reader)
+		fileBytes, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
