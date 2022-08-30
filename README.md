@@ -44,6 +44,7 @@ Available Commands:
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
   vm          VM commands for kvmservice
+  probe       Checks for supported kubearmor features in the current environment       
 
 Flags:
   -h, --help   help for karmor

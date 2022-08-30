@@ -17,11 +17,13 @@ require (
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
+	github.com/json-iterator/go v1.1.12
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220825185443-557eed6f971a
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220825185443-557eed6f971a
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220825185443-557eed6f971a
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220825185443-557eed6f971a
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220815044951-425f333210e1
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220830040101-f657b0146f88
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae
 	github.com/olekukonko/tablewriter v0.0.5
@@ -29,9 +31,8 @@ require (
 	github.com/rs/zerolog v1.26.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.4.0
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
-	golang.org/x/exp v0.0.0-20220823124025-807a23277127
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
@@ -46,10 +47,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require (
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220830040101-f657b0146f88
-	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
-)
+require k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
@@ -108,8 +106,7 @@ require (
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.14.1 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -159,6 +156,7 @@ require (
 	github.com/xlab/treeprint v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.8.4 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
