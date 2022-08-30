@@ -80,12 +80,15 @@ func printSystemdPolices() error {
 	policies := []tp.K8sKubeArmorHostPolicy{}
 	for _, file := range files {
 		path := fmt.Sprintf("/opt/kubearmor/policies/%s", file.Name())
-		fileBytes, err := ioutil.ReadFile(path)
+		reader, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		fileBytes, err := ioutil.ReadAll(reader)
 		if err != nil {
 			return err
 		}
 		policy := tp.K8sKubeArmorHostPolicy{}
-
 		err = yaml.Unmarshal(fileBytes, &policy)
 		if err != nil {
 			return err
