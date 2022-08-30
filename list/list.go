@@ -32,7 +32,10 @@ func ListPolicies(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		printK8SPolicies(policies.Items, o.Namespace)
+		err = printK8SPolicies(policies.Items, o.Namespace)
+		if err != nil {
+			return err
+		}
 	} else if env == "systemd" {
 		err := printSystemdPolices()
 		if err != nil {
