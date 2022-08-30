@@ -33,6 +33,7 @@ func init() {
 	rootCmd.AddCommand(recommendCmd)
 
 	recommendCmd.Flags().StringSliceVar(&recommendOptions.Images, "image", []string{}, "Container image list (comma separated)")
+	recommendCmd.Flags().StringSliceVar(&recommendOptions.Uselabels, "use-labels", []string{}, "User defined labels for policy (comma separated)")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Outdir, "outdir", "o", "out", "output folder to write policies")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Reportfile, "report", "r", "report.txt", "report file")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "tags (comma-separated) to apply. Eg. PCI-DSS, MITRE")

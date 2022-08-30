@@ -245,8 +245,8 @@ func checkHostAuditSupport() {
 	color.Yellow("\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
 	var uname unix.Utsname
 	if err := unix.Uname(&uname); err == nil {
-		kVersion := string(uname.Release[:])
-		s := strings.Split(kVersion, "-")
+		kerVersion := string(uname.Release[:])
+		s := strings.Split(kerVersion, "-")
 		kernelVersion := s[0]
 
 		_, err := boldWhite.Println("Host:")
@@ -333,6 +333,7 @@ func probeNode(c *k8s.Client, o Options) {
 	}
 }
 
+// KubeArmorProbeData structure definition
 type KubeArmorProbeData struct {
 	OSImage                 string
 	KernelVersion           string

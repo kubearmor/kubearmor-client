@@ -34,10 +34,14 @@ func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
 	}
 	for _, path := range pr.Path {
 		if strings.HasSuffix(path, "/") {
+
 			dirRule := types.KnoxMatchDirectories{
 				Dir:        path,
 				Recursive:  true,
 				FromSource: fromSourceArr,
+			}
+			if pr.Owneronly {
+				dirRule.OwnerOnly = true
 			}
 			policy.Spec.File.MatchDirectories = append(policy.Spec.File.MatchDirectories, dirRule)
 		} else {
@@ -89,10 +93,23 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 
 	// add container selector
 	repotag := strings.Split(img.RepoTags[0], ":")
-	policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
+	// If user defined labels are present, update the matchLabels with them or use default matchLabels
+	if len(options.Uselabels) > 0 {
+		for _, uselabel := range options.Uselabels {
+			userLabel := strings.FieldsFunc(strings.TrimSpace(uselabel), MultiSplit)
+			policy.Spec.Selector.MatchLabels[userLabel[0]] = userLabel[1]
+		}
+	} else {
+		policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
+	}
 
 	addPolicyRule(&policy, ms.Rules)
 	return policy, nil
+}
+
+// MultiSplit function: to split string using multiple delimiters
+func MultiSplit(r rune) bool {
+	return r == ':' || r == '='
 }
 
 func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
