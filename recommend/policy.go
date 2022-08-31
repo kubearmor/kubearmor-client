@@ -36,7 +36,7 @@ func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
 		if strings.HasSuffix(path, "/") {
 			dirRule := types.KnoxMatchDirectories{
 				Dir:        path,
-				Recursive:  true,
+				Recursive:  pr.Recursive,
 				FromSource: fromSourceArr,
 			}
 			policy.Spec.File.MatchDirectories = append(policy.Spec.File.MatchDirectories, dirRule)
