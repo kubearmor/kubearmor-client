@@ -5,16 +5,17 @@ package cmd
 
 import (
 	"errors"
+	"net"
 
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
 )
 
-// vmPolicyAddCmd represents the command for vm onboarding
+// vmOnboardAddCmd represents the command for vm onboarding
 var vmOnboardAddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "onboard new vm onto nonk8s control plane",
-	Long:  `onboard new vm onto nonk8s control plane`,
+	Short: "onboard new VM onto kvms control plane vm",
+	Long:  `onboard new VM onto kvms control plane vm`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires a path to valid vm YAML as argument")
@@ -22,7 +23,8 @@ var vmOnboardAddCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("ADDED", args[0]); err != nil {
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
+		if err := vm.Onboarding("ADDED", args[0], httpAddress); err != nil {
 			return err
 		}
 		return nil
@@ -32,8 +34,8 @@ var vmOnboardAddCmd = &cobra.Command{
 // vmOnboardDeleteCmd represents the command for vm offboarding
 var vmOnboardDeleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "offboard existing vm from nonk8s control plane",
-	Long:  `offboard existing vm from nonk8s control plane`,
+	Short: "offboard existing VM from kvms control plane vm",
+	Long:  `offboard existing VM from kvms control plane vm`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires a path to valid vm YAML as argument")
@@ -41,7 +43,22 @@ var vmOnboardDeleteCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.Onboarding("DELETED", args[0]); err != nil {
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
+		if err := vm.Onboarding("DELETED", args[0], httpAddress); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
+// vmListCmd represents the command for vm listing
+var vmListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list configured VMs",
+	Long:  `list configured VMs`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		httpAddress := "http://" + net.JoinHostPort(HTTPIP, HTTPPort)
+		if err := vm.List(httpAddress); err != nil {
 			return err
 		}
 		return nil
@@ -55,4 +72,5 @@ var vmOnboardDeleteCmd = &cobra.Command{
 func init() {
 	vmCmd.AddCommand(vmOnboardAddCmd)
 	vmCmd.AddCommand(vmOnboardDeleteCmd)
+	vmCmd.AddCommand(vmListCmd)
 }

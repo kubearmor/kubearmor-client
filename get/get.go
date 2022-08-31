@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
 
+// Package get communicates with CRD Client
 package get
 
 import (
@@ -29,7 +30,7 @@ func Resources(c *k8s.Client, o Options) error {
 			fmt.Printf("%v \n", policy.Name)
 		}
 	} else {
-		fmt.Printf("No Resource found in %s namespace", o.Namespace)
+		fmt.Printf("No Resource found in %s namespace\n", o.Namespace)
 	}
 	return nil
 }

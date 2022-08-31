@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
 
+// Package version checks the current CLI version and if there's a need to update it
 package version
 
 import (
@@ -8,19 +9,20 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/selfupdate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GitSummary for karmor git build
-var GitSummary string
-
-// BuildDate for karmor git build
-var BuildDate string
-
 // PrintVersion handler for karmor version
 func PrintVersion(c *k8s.Client) error {
-	fmt.Printf("karmor version %s %s/%s BuildDate=%s\n", GitSummary, runtime.GOOS, runtime.GOARCH, BuildDate)
+	fmt.Printf("karmor version %s %s/%s BuildDate=%s\n", selfupdate.GitSummary, runtime.GOOS, runtime.GOARCH, selfupdate.BuildDate)
+	latest, latestVer := selfupdate.IsLatest(selfupdate.GitSummary)
+	if !latest {
+		color.HiMagenta("update available version " + latestVer)
+		color.HiMagenta("use [karmor selfupdate] to update to latest")
+	}
 	kubearmorVersion, err := getKubeArmorVersion(c)
 	if err != nil {
 		return nil

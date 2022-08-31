@@ -32,4 +32,13 @@ func init() {
 	logCmd.Flags().StringVar(&logOptions.LogPath, "logPath", "stdout", "Output location for alerts and logs, {path|stdout|none}")
 	logCmd.Flags().StringVar(&logOptions.LogFilter, "logFilter", "policy", "Filter for what kinds of alerts and logs to receive, {policy|system|all}")
 	logCmd.Flags().BoolVar(&logOptions.JSON, "json", false, "Flag to print alerts and logs in the JSON format")
+	logCmd.Flags().StringVar(&logOptions.Namespace, "namespace", "", "Specify the namespace")
+	logCmd.Flags().StringVar(&logOptions.Operation, "operation", "", "Give the type of the operation (Eg:Process/File/Network)")
+	logCmd.Flags().StringVar(&logOptions.LogType, "logType", "", "Log type you want (Eg:ContainerLog/HostLog) ")
+	logCmd.Flags().StringVar(&logOptions.ContainerName, "container", "", "name of the container ")
+	logCmd.Flags().StringVar(&logOptions.PodName, "pod", "", "name of the pod ")
+	logCmd.Flags().StringVar(&logOptions.Resource, "resource", "", "command used by the user")
+	logCmd.Flags().StringVar(&logOptions.Source, "source", "", "binary used by the system ")
+	logCmd.Flags().Uint32Var(&logOptions.Limit, "limit", 0, "number of logs you want to see")
+	logCmd.Flags().StringArrayVarP(&logOptions.Selector, "selector", "l", []string{}, "use the label to get the particular log")
 }

@@ -12,6 +12,12 @@ import (
 
 var (
 	scriptOptions vm.ScriptOptions
+	// HTTPIP : IP of the http request
+	HTTPIP string
+	// HTTPPort : Port of the http request
+	HTTPPort string
+	//IsKvmsEnv : Is kubearmor virtual machine env?
+	IsKvmsEnv bool
 )
 
 // vmCmd represents the vm command
@@ -24,10 +30,12 @@ var vmCmd = &cobra.Command{
 // vmScriptCmd represents the vm command for script download
 var vmScriptCmd = &cobra.Command{
 	Use:   "getscript",
-	Short: "download vm installation script for nonk8s control plane",
-	Long:  `download vm installation script for nonk8s control plane`,
+	Short: "download vm installation script for kvms control plane",
+	Long:  `download vm installation script for kvms control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := vm.GetScript(client, scriptOptions); err != nil {
+		ip := HTTPIP
+
+		if err := vm.GetScript(client, scriptOptions, ip, IsKvmsEnv); err != nil {
 			return err
 		}
 		return nil
@@ -41,9 +49,6 @@ var vmScriptCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(vmCmd)
 
-	// All subcommands
-	vmCmd.AddCommand(vmScriptCmd)
-
 	// Options for vm script download
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.Port, "port", "p", "32770", "Port of kvmservice")
 	vmScriptCmd.Flags().StringVarP(&scriptOptions.VMName, "kvm", "v", "", "Name of configured vm")
@@ -54,4 +59,12 @@ func init() {
 	if err != nil {
 		_ = fmt.Errorf("kvm option not supplied")
 	}
+
+	// options for vm generic commands related to HTTP Request
+	vmCmd.PersistentFlags().StringVar(&HTTPIP, "http-ip", "127.0.0.1", "IP of kvm-service")
+	vmCmd.PersistentFlags().StringVar(&HTTPPort, "http-port", "8000", "Port of kvm-service")
+	vmCmd.PersistentFlags().BoolVar(&IsKvmsEnv, "kvms", false, "Enable if kvms environment/control-plane")
+
+	// All subcommands
+	vmCmd.AddCommand(vmScriptCmd)
 }

@@ -15,7 +15,8 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.16
+
+          go-version: v1.18
 
       - name: Build karmor
         run: make
@@ -28,7 +29,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.16
+          go-version: v1.18
 
       - name: Check gofmt
         run: make gofmt
@@ -41,7 +42,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.16
+          go-version: v1.18
 
       - name: Run Gosec Security Scanner
         run: make gosec
@@ -56,3 +57,16 @@ jobs:
         uses: morphy2k/revive-action@v2
         with:
           path: "./..."
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: v1.18
+
+      - name: Run unit tests
+        run: make test

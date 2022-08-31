@@ -6,16 +6,30 @@ package log
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
+
+// EventInfo Event data signalled on EventChan
+type EventInfo struct {
+	Data []byte // json marshalled byte data for alert/log
+	Type string // "Alert"/"Log"
+}
+
+// Limitchan handles telemetry event output limit
+var Limitchan chan bool
+var i uint32
 
 // ============ //
 // == Common == //
@@ -26,28 +40,28 @@ func StrToFile(str, destFile string) {
 	if _, err := os.Stat(destFile); err != nil {
 		newFile, err := os.Create(filepath.Clean(destFile))
 		if err != nil {
-			fmt.Printf("Failed to create a file (%s, %s)\n", destFile, err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to create a file (%s, %s)\n", destFile, err.Error())
 			return
 		}
 		if err := newFile.Close(); err != nil {
-			fmt.Printf("Failed to close the file (%s, %s)\n", destFile, err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to close the file (%s, %s)\n", destFile, err.Error())
 		}
 	}
 
 	// #nosec
 	file, err := os.OpenFile(destFile, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Printf("Failed to open a file (%s, %s)\n", destFile, err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to open a file (%s, %s)\n", destFile, err.Error())
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			fmt.Printf("Failed to close the file (%s, %s)\n", destFile, err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to close the file (%s, %s)\n", destFile, err.Error())
 		}
 	}()
 
 	_, err = file.WriteString(str)
 	if err != nil {
-		fmt.Printf("Failed to write a string into the file (%s, %s)\n", destFile, err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to write a string into the file (%s, %s)\n", destFile, err.Error())
 	}
 }
 
@@ -62,6 +76,9 @@ type Feeder struct {
 
 	// server
 	server string
+
+	//limit
+	limit uint32
 
 	// connection
 	conn *grpc.ClientConn
@@ -83,12 +100,14 @@ type Feeder struct {
 }
 
 // NewClient Function
-func NewClient(server, msgPath, logPath, logFilter string) *Feeder {
+func NewClient(server, msgPath, logPath, logFilter string, limit uint32) *Feeder {
 	fd := &Feeder{}
 
 	fd.Running = true
 
 	fd.server = server
+
+	fd.limit = limit
 
 	conn, err := grpc.Dial(fd.server, grpc.WithInsecure())
 	if err != nil {
@@ -164,7 +183,7 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 	for fd.Running {
 		res, err := fd.msgStream.Recv()
 		if err != nil {
-			fmt.Printf("Failed to receive a message (%s)\n", err.Error())
+			fmt.Fprintf(os.Stderr, "Failed to receive a message (%s)\n", err.Error())
 			break
 		}
 
@@ -182,148 +201,259 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 
 		if msgPath == "stdout" {
 			fmt.Printf("%s", str)
-		} else {
+		} else if msgPath != "" {
 			StrToFile(str, msgPath)
 		}
 	}
 
-	fmt.Println("Stopped WatchMessages")
+	fmt.Fprintln(os.Stderr, "Stopped WatchMessages")
 
 	return nil
 }
 
+func regexMatcher(filter *regexp.Regexp, res string) bool {
+
+	match := filter.MatchString(res)
+	if !match {
+		return false
+	}
+	return true
+}
+
 // WatchAlerts Function
-func (fd *Feeder) WatchAlerts(logPath string, jsonFormat bool) error {
+func (fd *Feeder) WatchAlerts(o Options) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
-	for fd.Running {
-		res, err := fd.alertStream.Recv()
-		if err != nil {
-			fmt.Printf("Failed to receive an alert (%s)\n", err.Error())
-			break
+	if o.Limit > 0 {
+		for i = 0; i < o.Limit; i++ {
+			res, err := fd.alertStream.Recv()
+			if err != nil {
+				break
+			}
+
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Alert", o)
+
 		}
+		Limitchan <- true
 
-		str := ""
-
-		if jsonFormat {
-			arr, _ := json.Marshal(res)
-			str = fmt.Sprintf("%s\n", string(arr))
-		} else {
-			updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
-			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-
-			str = fmt.Sprintf("== Alert / %s ==\n", updatedTime)
-
-			str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-			str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
-
-			if res.NamespaceName != "" {
-				str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-				str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
-				str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
-				str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
+	} else {
+		for fd.Running {
+			res, err := fd.alertStream.Recv()
+			if err != nil {
+				break
 			}
 
-			if len(res.PolicyName) > 0 {
-				str = str + fmt.Sprintf("Policy Name: %s\n", res.PolicyName)
-			}
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Alert", o)
 
-			if len(res.Severity) > 0 {
-				str = str + fmt.Sprintf("Severity: %s\n", res.Severity)
-			}
-
-			if len(res.Tags) > 0 {
-				str = str + fmt.Sprintf("Tags: %s\n", res.Tags)
-			}
-
-			if len(res.Message) > 0 {
-				str = str + fmt.Sprintf("Message: %s\n", res.Message)
-			}
-
-			str = str + fmt.Sprintf("Type: %s\n", res.Type)
-			str = str + fmt.Sprintf("Source: %s\n", res.Source)
-			str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
-			str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
-
-			if len(res.Data) > 0 {
-				str = str + fmt.Sprintf("Data: %s\n", res.Data)
-			}
-
-			if len(res.Action) > 0 {
-				str = str + fmt.Sprintf("Action: %s\n", res.Action)
-			}
-
-			str = str + fmt.Sprintf("Result: %s\n", res.Result)
-		}
-
-		if logPath == "stdout" {
-			fmt.Printf("%s", str)
-		} else {
-			StrToFile(str, logPath)
 		}
 	}
 
-	fmt.Println("Stopped WatchAlerts")
+	fmt.Fprintln(os.Stderr, "Stopped WatchAlerts")
 
 	return nil
 }
 
 // WatchLogs Function
-func (fd *Feeder) WatchLogs(logPath string, jsonFormat bool) error {
+func (fd *Feeder) WatchLogs(o Options) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
-	for fd.Running {
-		res, err := fd.logStream.Recv()
-		if err != nil {
-			fmt.Printf("Failed to receive a log (%s)\n", err.Error())
-			break
-		}
-
-		str := ""
-
-		if jsonFormat {
-			arr, _ := json.Marshal(res)
-			str = fmt.Sprintf("%s\n", string(arr))
-		} else {
-			updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
-			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-
-			str = fmt.Sprintf("== Log / %s ==\n", updatedTime)
-
-			str = str + fmt.Sprintf("Cluster Name: %s\n", res.ClusterName)
-			str = str + fmt.Sprintf("Host Name: %s\n", res.HostName)
-
-			if res.NamespaceName != "" {
-				str = str + fmt.Sprintf("Namespace Name: %s\n", res.NamespaceName)
-				str = str + fmt.Sprintf("Pod Name: %s\n", res.PodName)
-				str = str + fmt.Sprintf("Container ID: %s\n", res.ContainerID)
-				str = str + fmt.Sprintf("Container Name: %s\n", res.ContainerName)
+	if o.Limit > 0 {
+		for i = 0; i < o.Limit; i++ {
+			res, err := fd.logStream.Recv()
+			if err != nil {
+				break
 			}
 
-			str = str + fmt.Sprintf("Type: %s\n", res.Type)
-			str = str + fmt.Sprintf("Source: %s\n", res.Source)
-			str = str + fmt.Sprintf("Operation: %s\n", res.Operation)
-			str = str + fmt.Sprintf("Resource: %s\n", res.Resource)
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Log", o)
 
-			if len(res.Data) > 0 {
-				str = str + fmt.Sprintf("Data: %s\n", res.Data)
+		}
+		Limitchan <- true
+	} else {
+		for fd.Running {
+			res, err := fd.logStream.Recv()
+			if err != nil {
+				break
 			}
 
-			str = str + fmt.Sprintf("Result: %s\n", res.Result)
-		}
+			t, _ := json.Marshal(res)
+			WatchTelemetryHelper(t, "Log", o)
 
-		if logPath == "stdout" {
-			fmt.Printf("%s", str)
-		} else {
-			StrToFile(str, logPath)
 		}
 	}
 
-	fmt.Println("Stopped WatchLogs")
+	fmt.Fprintln(os.Stderr, "Stopped WatchLogs")
 
 	return nil
+}
+
+// WatchTelemetryHelper handles Alerts and Logs
+func WatchTelemetryHelper(arr []byte, t string, o Options) {
+	var res map[string]interface{}
+	err := json.Unmarshal(arr, &res)
+	if err != nil {
+		return
+	}
+
+	// Filter Telemetry based on provided options
+	if len(o.Selector) != 0 {
+		val := selectLabels(o, res["Labels"].(string))
+		if val != nil {
+			return
+		}
+	}
+
+	if o.Namespace != "" {
+		ns, ok := res["NamespaceName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CNamespace, ns)
+		if !match {
+			return
+		}
+	}
+
+	if o.LogType != "" {
+		t, ok := res["Type"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CLogtype, t)
+		if !match {
+			return
+		}
+	}
+
+	if o.Operation != "" {
+		op, ok := res["Operation"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(COperation, op)
+		if !match {
+			return
+		}
+	}
+
+	if o.ContainerName != "" {
+		cn, ok := res["ContainerName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CContainerName, cn)
+		if !match {
+			return
+		}
+	}
+
+	if o.PodName != "" {
+		pn, ok := res["PodName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CPodName, pn)
+		if !match {
+			return
+		}
+	}
+
+	if o.Source != "" {
+		src, ok := res["Source"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CSource, src)
+		if !match {
+			return
+		}
+	}
+
+	if o.Resource != "" {
+		rs, ok := res["Resource"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CResource, rs)
+		if !match {
+			return
+		}
+	}
+
+	str := ""
+
+	// Pass Events to Channel for further handling
+	if o.EventChan != nil {
+		o.EventChan <- EventInfo{Data: arr, Type: t}
+	}
+
+	if o.JSON {
+		str = fmt.Sprintf("%s\n", string(arr))
+	} else {
+
+		if time, ok := res["UpdatedTime"]; ok {
+			updatedTime := strings.Replace(time.(string), "T", " ", -1)
+			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
+			str = fmt.Sprintf("== %s / %s ==\n", t, updatedTime)
+		} else {
+			str = fmt.Sprintf("== %s ==\n", t)
+		}
+
+		// Array of Keys to preserve order in Output
+		telKeys := []string{
+			"UpdatedTime",
+			"Timestamp",
+			"ClusterName",
+			"HostName",
+			"NamespaceName",
+			"PodName",
+			"Labels",
+			"ContainerName",
+			"ContainerID",
+			"ContainerImage",
+			"Type",
+			"PolicyName",
+			"Severity",
+			"Message",
+			"Source",
+			"Resource",
+			"Operation",
+			"Action",
+			"Data",
+			"Enforcer",
+			"Result",
+		}
+
+		var additionalKeys []string
+		// Looping through the Map to find additional keys not present in our array
+		for k := range res {
+			if !slices.Contains(telKeys, k) {
+				additionalKeys = append(additionalKeys, k)
+			}
+		}
+		sort.Strings(additionalKeys)
+		telKeys = append(telKeys, additionalKeys...)
+
+		for i := 2; i < len(telKeys); i++ { // Starting the loop from index 2 to skip printing timestamp again
+			k := telKeys[i]
+			// Check if fields are present in the structure and if present verifying that they are not empty
+			// Certain fields like Container* are not present in HostLogs, this check handles that and other edge cases
+			if v, ok := res[k]; ok && v != "" {
+				str = str + fmt.Sprintf("%s: %v\n", k, res[k])
+			}
+		}
+	}
+
+	if o.LogPath == "stdout" {
+		fmt.Printf("%s", str)
+	} else if o.LogPath != "" {
+		StrToFile(str, o.LogPath)
+	}
+
 }
 
 // DestroyClient Function
@@ -331,8 +461,15 @@ func (fd *Feeder) DestroyClient() error {
 	if err := fd.conn.Close(); err != nil {
 		return err
 	}
-
 	fd.WgClient.Wait()
-
 	return nil
+}
+
+func selectLabels(o Options, labels string) error {
+	for _, val := range o.Selector {
+		if val == labels {
+			return nil
+		}
+	}
+	return errors.New("Not found any flag")
 }

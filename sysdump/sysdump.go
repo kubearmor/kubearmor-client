@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
 
+// Package sysdump collects and dumps information for troubleshooting KubeArmor
 package sysdump
 
 import (
@@ -10,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -25,8 +27,13 @@ import (
 	"github.com/mholt/archiver/v3"
 )
 
+// Options options for sysdump
+type Options struct {
+	Filename string
+}
+
 // Collect Function
-func Collect(c *k8s.Client) error {
+func Collect(c *k8s.Client, o Options) error {
 	var errs errgroup.Group
 
 	d, err := os.MkdirTemp("", "karmor-sysdump")
@@ -62,7 +69,8 @@ func Collect(c *k8s.Client) error {
 	errs.Go(func() error {
 		v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor daemonset not found. (possible if kubearmor is running in process mode)\n")
+			return nil
 		}
 		if err := writeYaml(path.Join(d, "kubearmor-daemonset.yaml"), v); err != nil {
 			return err
@@ -74,7 +82,8 @@ func Collect(c *k8s.Client) error {
 	errs.Go(func() error {
 		v, err := c.KSPClientset.KubeArmorPolicies("").List(context.Background(), metav1.ListOptions{})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor CRD not found!\n")
+			return nil
 		}
 		if err := writeYaml(path.Join(d, "ksp.yaml"), v); err != nil {
 			return err
@@ -88,15 +97,18 @@ func Collect(c *k8s.Client) error {
 			LabelSelector: "kubearmor-app=kubearmor",
 		})
 		if err != nil {
-			return err
+			fmt.Printf("kubearmor pod not found. (possible if kubearmor is running in process mode)\n")
+			return nil
 		}
 
 		for _, p := range pods.Items {
 			// KubeArmor Logs
+			fmt.Printf("getting logs from %s\n", p.Name)
 			v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
 			s, err := v.Stream(context.Background())
 			if err != nil {
-				return err
+				fmt.Printf("failed getting logs from pod=%s err=%s\n", p.Name, err)
+				continue
 			}
 			defer s.Close()
 			var logs bytes.Buffer
@@ -135,21 +147,19 @@ func Collect(c *k8s.Client) error {
 			return err
 		}
 		for _, p := range pods.Items {
-			if p.Annotations["kubearmor-policy"] == "enabled" {
-				v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-				if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
-					return err
-				}
-				e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
-				if err != nil {
-					return err
-				}
-				if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
-					return err
-				}
+			v, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if err := writeYaml(path.Join(d, p.Namespace+"-pod-"+p.Name+".yaml"), v); err != nil {
+				return err
+			}
+			e, err := c.K8sClientset.CoreV1().Events(p.Namespace).Search(scheme.Scheme, v)
+			if err != nil {
+				return err
+			}
+			if err := writeYaml(path.Join(d, p.Namespace+"-pod-events-"+p.Name+".yaml"), e); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -157,7 +167,7 @@ func Collect(c *k8s.Client) error {
 
 	// AppArmor Gzip
 	errs.Go(func() error {
-		if err := copyFromPod("/etc/apparmor.d", path.Join(d, "apparmor.tar.gz"), c); err != nil {
+		if err := copyFromPod("/etc/apparmor.d", d, c); err != nil {
 			return err
 		}
 		return nil
@@ -174,7 +184,12 @@ func Collect(c *k8s.Client) error {
 		return dumpError
 	}
 
-	sysdumpFile := "karmor-sysdump-" + time.Now().Format(time.UnixDate) + ".zip"
+	sysdumpFile := ""
+	if o.Filename == "" {
+		sysdumpFile = "karmor-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
+	} else {
+		sysdumpFile = o.Filename
+	}
 
 	if err := archiver.Archive([]string{d}, sysdumpFile); err != nil {
 		return fmt.Errorf("failed to create zip file: %w", err)
@@ -210,48 +225,52 @@ func writeYaml(p string, o runtime.Object) error {
 	return writeToFile(p, b.String())
 }
 
-func copyFromPod(srcPath string, destPath string, c *k8s.Client) error {
+func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 	pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=kubearmor",
 	})
 	if err != nil {
-		return err
+		fmt.Printf("kubearmor not deployed in pod mode\n")
+		return nil
 	}
-	reader, outStream := io.Pipe()
-	cmdArr := []string{"tar", "cf", "-", srcPath}
-	req := c.K8sClientset.CoreV1().RESTClient().
-		Get().
-		Namespace("kube-system").
-		Resource("pods").
-		Name(pods.Items[0].Name).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: pods.Items[0].Spec.Containers[0].Name,
-			Command:   cmdArr,
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
-	if err != nil {
-		return err
-	}
-	go func() {
-		defer outStream.Close()
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdin:  os.Stdin,
-			Stdout: outStream,
-			Stderr: os.Stderr,
-			Tty:    false,
-		})
-	}()
-	buf, err := io.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(destPath, buf, 0600); err != nil {
-		return err
+	for _, pod := range pods.Items {
+		destPath := path.Join(d, fmt.Sprintf("%s_apparmor.tar.gz", pod.Name))
+		reader, outStream := io.Pipe()
+		cmdArr := []string{"tar", "cf", "-", srcPath}
+		req := c.K8sClientset.CoreV1().RESTClient().
+			Get().
+			Namespace("kube-system").
+			Resource("pods").
+			Name(pod.Name).
+			SubResource("exec").
+			VersionedParams(&corev1.PodExecOptions{
+				Container: pods.Items[0].Spec.Containers[0].Name,
+				Command:   cmdArr,
+				Stdin:     true,
+				Stdout:    true,
+				Stderr:    true,
+				TTY:       false,
+			}, scheme.ParameterCodec)
+		exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
+		if err != nil {
+			return err
+		}
+		go func() {
+			defer outStream.Close()
+			err = exec.Stream(remotecommand.StreamOptions{
+				Stdin:  os.Stdin,
+				Stdout: outStream,
+				Stderr: os.Stderr,
+				Tty:    false,
+			})
+		}()
+		buf, err := io.ReadAll(reader)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(destPath, buf, 0600); err != nil {
+			return err
+		}
 	}
 	return nil
 }

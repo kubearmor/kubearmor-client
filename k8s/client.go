@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
 
+// Package k8s contains helper functions to establlish connection and communicate with k8s apis
 package k8s
 
 import (
