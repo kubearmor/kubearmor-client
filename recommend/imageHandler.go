@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/clarketm/json"
+	"sigs.k8s.io/yaml"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -279,22 +280,35 @@ func (img *ImageInfo) readManifest(manifest string) {
 }
 
 type distroRule struct {
-	Distro string `json:"distro"`
-	Match  []struct {
-		Path string `json:"path"`
-	} `json:"match"`
+	Name  string `json:"name" yaml:"name"`
+	Match []struct {
+		Path string `json:"path" yaml:"path"`
+	} `json:"match" yaml:"match"`
 }
 
-//go:embed json/distro.json
-var distroJSON []byte
+//go:embed yaml/distro.yaml
+var distroYAML []byte
 
 var distroRules []distroRule
 
 func init() {
-	err := json.Unmarshal(distroJSON, &distroRules)
+	distroJSON, err := yaml.YAMLToJSON(distroYAML)
 	if err != nil {
-		color.Red("failed to unmarshal distro json rules")
-		log.WithError(err).Fatal("failed to unmarshal distro json rules")
+		color.Red("failed to convert distro rules yaml to json")
+		log.WithError(err).Fatal("failed to convert distro rules yaml to json")
+	}
+
+	var jsonRaw map[string]json.RawMessage
+	err = json.Unmarshal(distroJSON, &jsonRaw)
+	if err != nil {
+		color.Red("failed to unmarshal distro rules json")
+		log.WithError(err).Fatal("failed to unmarshal distro rules json")
+	}
+
+	err = json.Unmarshal(jsonRaw["distroRules"], &distroRules)
+	if err != nil {
+		color.Red("failed to unmarshal distro rules")
+		log.WithError(err).Fatal("failed to unmarshal distro rules")
 	}
 }
 
@@ -309,8 +323,8 @@ func (img *ImageInfo) getDistro() {
 			}
 		}
 		if len(d.Match) > 0 && match {
-			color.Green("Distribution %s", d.Distro)
-			img.Distro = d.Distro
+			color.Green("Distribution %s", d.Name)
+			img.Distro = d.Name
 			return
 		}
 	}

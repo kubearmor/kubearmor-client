@@ -1,0 +1,10 @@
+distroRules:
+- name: ubuntu
+  match:
+  - path: "/etc/dpkg/origins/ubuntu"
+- name: debian
+  match:
+  - path: "/etc/dpkg/origins/debian"
+- name: alpine
+  match:
+  - path: "/sbin/apk"

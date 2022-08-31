@@ -5,9 +5,11 @@ package recommend
 
 import (
 	_ "embed" // need for embedding
+
 	"errors"
 
 	"github.com/clarketm/json"
+	"sigs.k8s.io/yaml"
 
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
@@ -15,57 +17,70 @@ import (
 
 // MatchSpec spec to match for defining policy
 type MatchSpec struct {
-	Name         string      `json:"name"`
-	Precondition string      `json:"precondition"`
-	Description  Description `json:"description"`
-	Rules        Rules       `json:"rules"`
-	OnEvent      OnEvent     `json:"onEvent"`
+	Name         string      `json:"name" yaml:"name"`
+	Precondition string      `json:"precondition" yaml:"precondition"`
+	Description  Description `json:"description" yaml:"description"`
+	Rules        Rules       `json:"rules" yaml:"rules"`
+	OnEvent      OnEvent     `json:"onEvent" yaml:"onEvent"`
 }
 
 // Ref for the policy rules
 type Ref struct {
-	Name string   `json:"name"`
-	URL  []string `json:"url"`
+	Name string   `json:"name" yaml:"name"`
+	URL  []string `json:"url" yaml:"url"`
 }
 
 // Description detailed description for the policy rule
 type Description struct {
-	Refs     []Ref  `json:"refs"`
-	Tldr     string `json:"tldr"`
-	Detailed string `json:"detailed"`
+	Refs     []Ref  `json:"refs" yaml:"refs"`
+	Tldr     string `json:"tldr" yaml:"tldr"`
+	Detailed string `json:"detailed" yaml:"detailed"`
 }
 
 // PathRule specifics for the path/dir rule. Note that if the Path ends in "/" it is considered to be Directory rule
 type PathRule struct {
-	FromSource string   `json:"fromSource"`
-	Path       []string `json:"path"`
-	Recursive  bool     `json:"recursive"`
-	Owneronly  bool     `json:"owneronly"`
+	FromSource string   `json:"fromSource" yaml:"fromSource"`
+	Path       []string `json:"path" yaml:"path"`
+	Recursive  bool     `json:"recursive" yaml:"recursive"`
+	Owneronly  bool     `json:"owneronly" yaml:"owneronly"`
 }
 
 // Rules set of applicable rules. In the future, we might have other types of rules.
 type Rules struct {
-	PathRule PathRule `json:"pathRule"`
+	PathRule PathRule `json:"pathRule" yaml:"pathRule"`
 }
 
 // OnEvent the information that is emitted in the telemetry/alert when the matching event is witnessed
 type OnEvent struct {
-	Severity int      `json:"severity"`
-	Message  string   `json:"message"`
-	Tags     []string `json:"tags"`
-	Action   string   `json:"action"`
+	Severity int      `json:"severity" yaml:"severity"`
+	Message  string   `json:"message" yaml:"message"`
+	Tags     []string `json:"tags" yaml:"tags"`
+	Action   string   `json:"action" yaml:"action"`
 }
 
-var policyMatch []MatchSpec
+var policyRules []MatchSpec
 
-//go:embed json/rules.json
-var ruleSpecJSON []byte
+//go:embed yaml/rules.yaml
+var policyRulesYAML []byte
 
 func init() {
-	err := json.Unmarshal(ruleSpecJSON, &policyMatch)
+	policyRulesJSON, err := yaml.YAMLToJSON(policyRulesYAML)
 	if err != nil {
-		color.Red("failed to unmarshal json rules")
-		log.WithError(err).Fatal("failed to unmarshal json rules")
+		color.Red("failed to convert policy rules yaml to json")
+		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
+	}
+
+	var jsonRaw map[string]json.RawMessage
+	err = json.Unmarshal(policyRulesJSON, &jsonRaw)
+	if err != nil {
+		color.Red("failed to unmarshal policy rules json")
+		log.WithError(err).Fatal("failed to unmarshal policy rules json")
+	}
+
+	err = json.Unmarshal(jsonRaw["policyRules"], &policyRules)
+	if err != nil {
+		color.Red("failed to unmarshal policy rules")
+		log.WithError(err).Fatal("failed to unmarshal policy rules")
 	}
 }
 
@@ -73,10 +88,10 @@ func getNextRule(idx *int) (MatchSpec, error) {
 	if *idx < 0 {
 		(*idx)++
 	}
-	if *idx >= len(policyMatch) {
+	if *idx >= len(policyRules) {
 		return MatchSpec{}, errors.New("no rule at idx")
 	}
-	r := policyMatch[*idx]
+	r := policyRules[*idx]
 	(*idx)++
 	return r, nil
 }
