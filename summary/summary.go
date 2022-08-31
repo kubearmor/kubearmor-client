@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
+// Package summary shows observability data from discovery engine
 package summary
 
 import (
@@ -63,9 +64,9 @@ func Summary(o Options) error {
 		})
 		if err != nil {
 			return err
-		} else {
-			DisplaySummaryOutput(sumResp, o.RevDNSLookup)
 		}
+		DisplaySummaryOutput(sumResp, o.RevDNSLookup)
+
 	} else {
 		//Fetch Summary Logs
 		podNameResp, err := client.GetPodNames(context.Background(), data)
@@ -83,9 +84,9 @@ func Summary(o Options) error {
 			})
 			if err != nil {
 				return err
-			} else {
-				DisplaySummaryOutput(sumResp, o.RevDNSLookup)
 			}
+			DisplaySummaryOutput(sumResp, o.RevDNSLookup)
+
 		}
 	}
 	return nil

@@ -18,6 +18,7 @@ import (
 // Options for karmor recommend
 type Options struct {
 	Images     []string
+	Uselabels  []string
 	Tags       []string
 	Outdir     string
 	Reportfile string

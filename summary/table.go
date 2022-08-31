@@ -12,11 +12,15 @@ import (
 )
 
 var (
+	// SysProcHeader variable contains source process, destination process path, count, timestamp and status
 	SysProcHeader = []string{"Src Process", "Destination Process Path", "Count", "Last Updated Time", "Status"}
+	// SysFileHeader variable contains source process, destination file path, count, timestamp and status
 	SysFileHeader = []string{"Src Process", "Destination File Path", "Count", "Last Updated Time", "Status"}
-	SysNwHeader   = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels"}
+	// SysNwHeader variable contains protocol, command, POD/SVC/IP, Port, Namespace, and Labels
+	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels"}
 )
 
+// DisplaySummaryOutput function
 func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool) {
 
 	podInfo := resp.PodName + "/" + resp.Namespace + "/" + resp.ClusterName + "/" + resp.Label + "/" + resp.ContainerName
@@ -113,6 +117,7 @@ func dnsLookup(ip string, revDNSLookup bool) string {
 	return ip
 }
 
+// WriteTable function
 func WriteTable(header []string, data [][]string) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(header)
