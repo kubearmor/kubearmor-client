@@ -1,0 +1,128 @@
+policyRules:
+- name: cert-access
+  precondition: "/etc/ssl/.*"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1553/
+    tldr: Restrict access to trusted certificated bundles in the OS image
+    detailed: Operating systems maintain a list of trusted certificates (often called
+      trust bundles) in file system. These bundles decides which authorities are trusted.
+      Subverting these trust controls would essentially allow an adversary to operate
+      as a trusted entity. Adversaries may undermine security controls that will either
+      warn users of untrusted activity or prevent execution of untrusted programs.
+      Operating systems and security products may contain mechanisms to identify programs
+      or websites as possessing some level of trust. Examples of such features would
+      include a program being allowed to run because it is signed by a valid code
+      signing certificate, a program prompting the user with a warning because it
+      has an attribute set from being downloaded from the Internet, or getting an
+      indication that you are about to connect to an untrusted site.
+  rules:
+    pathRule:
+      path:
+      - "/etc/ssl/"
+      - "/etc/pki/"
+      - "/usr/local/share/ca-certificates/"
+      recursive: true
+  onEvent:
+    severity: 2
+    message: restrict access to certificate data
+    tags:
+    - PCI-DSS
+    - MITRE
+    action: Audit
+- name: sys-bin-protect
+  precondition: "/bin/.*"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1543/
+    tldr: create or modify system-level processes for persistence of malicious payloads
+    detailed: Adversaries may create or modify system-level processes to repeatedly
+      execute malicious payloads as part of persistence.
+  rules:
+    pathRule:
+      path:
+      - "/bin/"
+      - "/usr/bin/"
+      - "/usr/sbin/"
+      recursive: true
+  onEvent:
+    severity: 1
+    message: attempted access to system binaries
+    tags:
+    - CIS
+    - MITRE
+    action: Audit
+- name: password-protect
+  precondition: "/etc/passwd"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1555/
+    tldr: abuse common password storage locations to obtain user credentials
+    detailed: Adversaries may search for common password storage locations to obtain
+      user credentials. Passwords are stored in several places on a system, depending
+      on the operating system or application holding the credentials.
+  rules:
+    pathRule:
+      path:
+      - "/etc/passwd"
+      - "/etc/shadow"
+  onEvent:
+    severity: 1
+    message: attempted access to password files
+    tags:
+    - CIS
+    - MITRE
+    action: Audit
+- name: scheduler-protect
+  precondition: "/etc/crontab"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1053/
+    tldr: abuse task scheduling functionality to facilitate initial or recurring execution
+      of malicious code
+    detailed: |-
+      Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. Utilities exist within all major operating systems to schedule programs or scripts to be executed at a specified date and time.
+      Adversaries may use task scheduling to execute programs at system startup or on a scheduled basis for persistence. These mechanisms can also be abused to run a process under the context of a specified account (such as one with elevated permissions/privileges).
+  rules:
+    pathRule:
+      path:
+      - "/etc/crontab"
+      - "/etc/at.allow"
+      - "/etc/at.deny"
+  onEvent:
+    severity: 1
+    message: attempted access to cronjob settings
+    tags:
+    - MITRE
+    action: Audit
+- name: maint-tool-access
+  precondition: "/sbin/apk"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1553/
+    tldr: Restrict access to maintenance tools (apk, mii-tool, ...)
+    detailed: Container images might contain maintenance tools which should ideally
+      never be used in prod env, or if used, should be used only in certain time frames.
+      Examples include, dynamic package management tools, mii-tool, iptables etc
+  rules:
+    pathRule:
+      path:
+      - "/sbin/"
+      recursive: true
+  onEvent:
+    severity: 1
+    message: restricted maintenance tool access attempted
+    tags:
+    - PCI-DSS
+    - MITRE
+    action: Audit

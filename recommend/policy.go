@@ -37,7 +37,7 @@ func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
 
 			dirRule := types.KnoxMatchDirectories{
 				Dir:        path,
-				Recursive:  true,
+				Recursive:  pr.Recursive,
 				FromSource: fromSourceArr,
 			}
 			if pr.Owneronly {
