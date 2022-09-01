@@ -77,9 +77,14 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 
 	//	policy.Metadata["containername"] = img.RepoTags[0]
 	if ms.Name != "" {
-		policy.Metadata["name"] = ms.Name
+		policy.Metadata["name"] = strings.TrimPrefix(fmt.Sprintf("%s-%s-%s", options.UseNamespace, mkPathFromTag(img.RepoTags[0]), ms.Name), "-")
 	} else {
-		policy.Metadata["name"] = "ksp-" + mkPathFromTag(img.RepoTags[0])
+		policy.Metadata["name"] = "ksp-" + strings.TrimPrefix(fmt.Sprintf("%s-%s", options.UseNamespace, mkPathFromTag(img.RepoTags[0])), "-")
+	}
+
+	// Condition to set namespace, if user defined namespace value is available
+	if options.UseNamespace != "" {
+		policy.Metadata["namespace"] = options.UseNamespace
 	}
 
 	policy.Spec.Action = ms.OnEvent.Action
@@ -94,8 +99,8 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 	// add container selector
 	repotag := strings.Split(img.RepoTags[0], ":")
 	// If user defined labels are present, update the matchLabels with them or use default matchLabels
-	if len(options.Uselabels) > 0 {
-		for _, uselabel := range options.Uselabels {
+	if len(options.UseLabels) > 0 {
+		for _, uselabel := range options.UseLabels {
 			userLabel := strings.FieldsFunc(strings.TrimSpace(uselabel), MultiSplit)
 			policy.Spec.Selector.MatchLabels[userLabel[0]] = userLabel[1]
 		}
@@ -162,10 +167,10 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 			continue
 		}
 
-		poldir := fmt.Sprintf("%s/%s", options.Outdir, mkPathFromTag(img.RepoTags[0]))
+		poldir := fmt.Sprintf("%s/%s", options.OutDir, mkPathFromTag(img.RepoTags[0]))
 		_ = os.Mkdir(poldir, 0750)
 
-		outfile := fmt.Sprintf("%s/%s.yaml", poldir, ms.Name)
+		outfile := fmt.Sprintf("%s/%s.yaml", poldir, policy.Metadata["name"])
 		f, err := os.Create(filepath.Clean(outfile))
 		if err != nil {
 			log.WithError(err).Error(fmt.Sprintf("create file %s failed", outfile))

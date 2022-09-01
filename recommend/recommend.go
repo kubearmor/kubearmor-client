@@ -17,11 +17,12 @@ import (
 
 // Options for karmor recommend
 type Options struct {
-	Images     []string
-	Uselabels  []string
-	Tags       []string
-	Outdir     string
-	Reportfile string
+	Images       []string
+	UseLabels    []string
+	Tags         []string
+	UseNamespace string
+	OutDir       string
+	ReportFile   string
 }
 
 var options Options
@@ -56,7 +57,7 @@ func createOutDir(dir string) error {
 }
 
 func finalReport() {
-	repFile := filepath.Clean(filepath.Join(options.Outdir, options.Reportfile))
+	repFile := filepath.Clean(filepath.Join(options.OutDir, options.ReportFile))
 	_ = ReportRender(repFile)
 	color.Green("output report in %s ...", repFile)
 	if strings.Contains(repFile, ".html") {
@@ -74,12 +75,12 @@ func finalReport() {
 func Recommend(c *k8s.Client, o Options) error {
 	var err error
 
-	if err = createOutDir(o.Outdir); err != nil {
+	if err = createOutDir(o.OutDir); err != nil {
 		return err
 	}
 
-	if o.Reportfile != "" {
-		ReportInit(o.Reportfile)
+	if o.ReportFile != "" {
+		ReportInit(o.ReportFile)
 	}
 
 	o.Images = unique(o.Images)
