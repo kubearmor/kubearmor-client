@@ -22,5 +22,6 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 	listCmd.Flags().StringVarP(&listOptions.Namespace, "namespace", "n", "kube-system", "Specify the namespace")
+	listCmd.Flags().StringVarP(&listOptions.Output, "output", "o", "", "specify one of {json, default: table}}")
 
 }
