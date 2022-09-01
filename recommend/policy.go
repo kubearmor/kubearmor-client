@@ -56,12 +56,44 @@ func (r *SysRule) convertToKnoxRule() types.KnoxSys {
 	return knoxRule
 }
 
+// networkToKnoxRule function to include KubeArmor network rules
+func (r *NetRule) networkToKnoxRule() types.NetworkRule {
+	knoxNetRule := types.NetworkRule{}
+	fromSourceArr := []types.KnoxFromSource{}
+
+	if r.FromSource != "" {
+		if strings.HasSuffix(r.FromSource, "/") {
+			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
+				Dir: r.FromSource,
+			})
+		} else {
+			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
+				Path: r.FromSource,
+			})
+		}
+	}
+	for _, protocol := range r.Protocol {
+
+		protoRule := types.KnoxMatchProtocols{
+			Protocol:   protocol,
+			FromSource: fromSourceArr,
+		}
+		knoxNetRule.MatchProtocols = append(knoxNetRule.MatchProtocols, protoRule)
+
+	}
+
+	return knoxNetRule
+}
+
 func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
 	if r.FileRule != nil {
 		policy.Spec.File = r.FileRule.convertToKnoxRule()
 	}
 	if r.ProcessRule != nil {
 		policy.Spec.Process = r.ProcessRule.convertToKnoxRule()
+	}
+	if r.NetworkRule != nil {
+		policy.Spec.Network = r.NetworkRule.networkToKnoxRule()
 	}
 }
 
@@ -130,10 +162,7 @@ func MultiSplit(r rune) bool {
 
 func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
 	matches := checkForSpec(filepath.Join(ms.Precondition), img.FileList)
-	if len(matches) <= 0 {
-		return false
-	}
-	return true
+	return len(matches) > 0
 }
 
 func matchTags(ms MatchSpec) bool {

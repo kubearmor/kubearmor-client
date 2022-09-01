@@ -171,3 +171,33 @@ policyRules:
     tags:
     - MITRE
     action: Audit
+- name: nist-ca-3-net-icmp-audit
+  precondition: "/bin/busybox"
+  description:
+    refs:
+    - name: NIST-CA-3
+      url:
+      - https://csf.tools/reference/nist-sp-800-53/r5/ca/ca-3/
+    tldr: Audit ICMP protocol
+    detailed: Approve and manage the exchange of information between the system and 
+       other systems using Assignment (one or more) interconnection security agreements,
+       information exchange security agreements, memoranda of understanding or agreement, 
+       service level agreements, user agreements, nondisclosure agreements, 
+       [Assignment organization-defined type of agreement] Document, as part of 
+       each exchange agreement, the interface characteristics, security and privacy 
+       requirements, controls, and responsibilities for each system, and the impact level 
+       of the information communicated; and Review and update the agreements 
+       [Assignment organization-defined frequency].
+  rules:
+    networkRule:
+      protocol:
+      - "icmp"
+  onEvent:
+    severity: 1
+    message: Detected Network traffic using ICMP packets
+    tags:
+    - NIST
+    - NIST-800-CA-3
+    - NETWORK
+    - System-Interconnections
+    action: Audit
