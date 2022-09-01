@@ -2,24 +2,58 @@ package list
 
 import (
 	// tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
+
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
 
-	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	v1 "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/olekukonko/tablewriter"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 type Options struct {
 	Namespace string
+	Output    string
+}
+
+//HostPolicyBackup
+type HostPolicyBackup struct {
+	Metadata struct {
+		PolicyName string `json:"policyName"`
+	} `json:"metadata"`
+	Spec struct {
+		NodeSelector struct {
+			MatchLabels struct {
+				KubernetesIoHostname string `json:"kubernetes.io/hostname"`
+			} `json:"matchLabels"`
+			Identities []string `json:"identities"`
+		} `json:"nodeSelector"`
+		Process struct {
+		} `json:"process"`
+		File struct {
+			MatchPaths []struct {
+				Path       string `json:"path"`
+				FromSource []struct {
+					Path string `json:"path"`
+				} `json:"fromSource"`
+				Severity int    `json:"severity"`
+				Action   string `json:"action"`
+			} `json:"matchPaths"`
+		} `json:"file"`
+		Network struct {
+		} `json:"network"`
+		Capabilities struct {
+		} `json:"capabilities"`
+		Severity int    `json:"severity"`
+		Action   string `json:"action"`
+	} `json:"spec"`
 }
 
 func ListPolicies(c *k8s.Client, o Options) error {
@@ -32,17 +66,42 @@ func ListPolicies(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		err = printK8SPolicies(policies.Items, o.Namespace)
-		if err != nil {
-			return err
+		switch format := o.Output; format {
+		case "json":
+			result, err := json.MarshalIndent(policies.Items, "", "")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(result))
+			return nil
+		default:
+			err = printK8SPolicies(policies.Items, o.Namespace)
+			if err != nil {
+				return err
+			}
+
 		}
 	} else if env == "systemd" {
-		err := printSystemdPolices()
+		policies, err := getSystemdPolicies()
 		if err != nil {
 			return err
 		}
-	}
+		switch format := o.Output; format {
+		case "json":
+			result, err := json.MarshalIndent(policies, "", "")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(result))
+			return nil
+		default:
+			err := printSystemdPolices(policies)
+			if err != nil {
+				return err
+			}
+		}
 
+	}
 	return nil
 }
 
@@ -68,50 +127,49 @@ func printK8SPolicies(policies []v1.KubeArmorPolicy, namespace string) error {
 	return nil
 }
 
-func printSystemdPolices() error {
-	files, err := ioutil.ReadDir("/opt/kubearmor/policies/")
-	if err != nil {
-		if errors.Is(err, fs.ErrPermission) {
-			return errors.New("unable to read policy backups. Try running with elevated priviledges")
-		}
-		return err
-	}
-	if len(files) <= 0 {
-		fmt.Printf("Unable find host polices")
-		return nil
-	}
-	policies := []tp.K8sKubeArmorHostPolicy{}
-	for _, file := range files {
-		path := fmt.Sprintf("/opt/kubearmor/policies/%s", file.Name())
-		fileBytes, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		policy := tp.K8sKubeArmorHostPolicy{}
-		err = yaml.Unmarshal(fileBytes, &policy)
-		if err != nil {
-			return err
-		}
-		policies = append(policies, policy)
-
-	}
-
-	if err != nil {
-		fmt.Println(err)
-	}
+func printSystemdPolices(policies []HostPolicyBackup) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Policy Name"})
+	table.SetHeader([]string{"Policy Name", "Host"})
 	data := [][]string{}
-
 	for _, policy := range policies {
-		name := policy.Metadata.Name
-		data = append(data, []string{name})
+		name := policy.Metadata.PolicyName
+		host := policy.Spec.NodeSelector.MatchLabels.KubernetesIoHostname
+		data = append(data, []string{name, host})
 	}
 	for _, pol := range data {
 		table.Append(pol)
 	}
 	table.Render()
 	return nil
+}
+
+func getSystemdPolicies() ([]HostPolicyBackup, error) {
+	files, err := ioutil.ReadDir("/opt/kubearmor/policies")
+	if err != nil {
+		if errors.Is(err, fs.ErrPermission) {
+			return nil, errors.New("unable to read policy backups. Try running with elevated priviledges")
+		}
+		return []HostPolicyBackup{}, err
+	}
+	if len(files) <= 0 {
+		fmt.Printf("Unable find host polices")
+		return nil, err
+	}
+	policies := []HostPolicyBackup{}
+	for _, file := range files {
+		path := fmt.Sprintf("/opt/kubearmor/policies/%s", file.Name())
+		fileBytes, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		policy := HostPolicyBackup{}
+		err = json.Unmarshal(fileBytes, &policy)
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, policy)
+	}
+	return policies, nil
 }
 
 func CheckEnv(c *k8s.Client) (string, error) {
