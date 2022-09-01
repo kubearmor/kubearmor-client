@@ -45,10 +45,17 @@ type SysRule struct {
 	OwnerOnly  bool     `json:"ownerOnly" yaml:"ownerOnly"`
 }
 
+// NetRule specifies a KubeArmor network rule.
+type NetRule struct {
+	FromSource string   `json:"fromSource" yaml:"fromSource"`
+	Protocol   []string `json:"protocol" yaml:"protocol"`
+}
+
 // Rules set of applicable rules. In the future, we might have other types of rules.
 type Rules struct {
 	FileRule    *SysRule `json:"fileRule" yaml:"fileRule"`
 	ProcessRule *SysRule `json:"processRule" yaml:"processRule"`
+	NetworkRule *NetRule `json:"networkRule" yaml:"networkRule"`
 }
 
 // OnEvent the information that is emitted in the telemetry/alert when the matching event is witnessed
