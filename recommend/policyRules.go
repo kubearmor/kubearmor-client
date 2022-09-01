@@ -37,17 +37,18 @@ type Description struct {
 	Detailed string `json:"detailed" yaml:"detailed"`
 }
 
-// PathRule specifics for the path/dir rule. Note that if the Path ends in "/" it is considered to be Directory rule
-type PathRule struct {
+// SysRule specifics a file/process rule. Note that if the Path ends in "/" it is considered to be Directory rule
+type SysRule struct {
 	FromSource string   `json:"fromSource" yaml:"fromSource"`
 	Path       []string `json:"path" yaml:"path"`
 	Recursive  bool     `json:"recursive" yaml:"recursive"`
-	Owneronly  bool     `json:"owneronly" yaml:"owneronly"`
+	OwnerOnly  bool     `json:"ownerOnly" yaml:"ownerOnly"`
 }
 
 // Rules set of applicable rules. In the future, we might have other types of rules.
 type Rules struct {
-	PathRule PathRule `json:"pathRule" yaml:"pathRule"`
+	FileRule    *SysRule `json:"fileRule" yaml:"fileRule"`
+	ProcessRule *SysRule `json:"processRule" yaml:"processRule"`
 }
 
 // OnEvent the information that is emitted in the telemetry/alert when the matching event is witnessed

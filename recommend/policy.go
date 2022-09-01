@@ -18,39 +18,50 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
-	var fromSourceArr []types.KnoxFromSource
-	pr := r.PathRule
-	if pr.FromSource != "" {
-		if strings.HasSuffix(pr.FromSource, "/") {
+func (r *SysRule) convertToKnoxRule() types.KnoxSys {
+	knoxRule := types.KnoxSys{}
+	fromSourceArr := []types.KnoxFromSource{}
+
+	if r.FromSource != "" {
+		if strings.HasSuffix(r.FromSource, "/") {
 			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Dir: pr.FromSource,
+				Dir: r.FromSource,
 			})
 		} else {
 			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Path: pr.FromSource,
+				Path: r.FromSource,
 			})
 		}
 	}
-	for _, path := range pr.Path {
+	for _, path := range r.Path {
 		if strings.HasSuffix(path, "/") {
 
 			dirRule := types.KnoxMatchDirectories{
 				Dir:        path,
-				Recursive:  pr.Recursive,
+				Recursive:  r.Recursive,
 				FromSource: fromSourceArr,
+				OwnerOnly:  r.OwnerOnly,
 			}
-			if pr.Owneronly {
-				dirRule.OwnerOnly = true
-			}
-			policy.Spec.File.MatchDirectories = append(policy.Spec.File.MatchDirectories, dirRule)
+			knoxRule.MatchDirectories = append(knoxRule.MatchDirectories, dirRule)
 		} else {
 			pathRule := types.KnoxMatchPaths{
 				Path:       path,
 				FromSource: fromSourceArr,
+				OwnerOnly:  r.OwnerOnly,
 			}
-			policy.Spec.File.MatchPaths = append(policy.Spec.File.MatchPaths, pathRule)
+			knoxRule.MatchPaths = append(knoxRule.MatchPaths, pathRule)
 		}
+	}
+
+	return knoxRule
+}
+
+func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
+	if r.FileRule != nil {
+		policy.Spec.File = r.FileRule.convertToKnoxRule()
+	}
+	if r.ProcessRule != nil {
+		policy.Spec.Process = r.ProcessRule.convertToKnoxRule()
 	}
 }
 
