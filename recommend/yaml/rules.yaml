@@ -126,3 +126,48 @@ policyRules:
     - PCI-DSS
     - MITRE
     action: Audit
+- name: shell-access
+  precondition: "/bin/sh"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1059/
+    tldr: abuse shell access and execute arbitrary commands, scripts, or binaries
+    detailed: Containers comes with some built-in shell and scripting capabilities.
+      Adversaries may attempt to use the shell to execute arbitrary commands. 
+  rules:
+    processRule:
+      path:
+      - "/bin/sh"
+      - "/bin/bash"
+      - "/bin/dash"
+      - "/bin/ksh"
+      - "/bin/zsh"
+      - "/bin/tcsh"
+      - "/bin/csh"
+  onEvent:
+    severity: 1
+    message: attempted access to shell
+    tags:
+    - MITRE
+    action: Audit
+- name: ssh-access
+  precondition: "/usr/bin/ssh"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1021/
+    tldr: use ssh to gain access to host in the same network
+    detailed: To accomplish Lateral Movement, adversaries can use SSH to login into host in the same network. 
+  rules:
+    processRule:
+      path:
+      - "/usr/bin/ssh"
+  onEvent:
+    severity: 1
+    message: attempted access to SSH
+    tags:
+    - MITRE
+    action: Audit
