@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	v1 "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	"github.com/kubearmor/kubearmor-client/k8s"
@@ -157,7 +158,7 @@ func getSystemdPolicies() ([]HostPolicyBackup, error) {
 	}
 	policies := []HostPolicyBackup{}
 	for _, file := range files {
-		path := fmt.Sprintf("/opt/kubearmor/policies/%s", file.Name())
+		path := fmt.Sprintf("/opt/kubearmor/policies/%s", filepath.Clean(file.Name()))
 		fileBytes, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
