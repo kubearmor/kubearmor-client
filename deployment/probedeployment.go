@@ -15,7 +15,7 @@ import (
 var Karmorprobe = "karmor-probe"
 
 // GenerateDaemonSet Function
-func GenerateDaemonSet(namespace string) *appsv1.DaemonSet {
+func GenerateDaemonSet(namespace string, krnhdr bool) *appsv1.DaemonSet {
 
 	var label = map[string]string{
 		"kubearmor-app": Karmorprobe,
@@ -32,11 +32,6 @@ func GenerateDaemonSet(namespace string) *appsv1.DaemonSet {
 			MountPath: "/sys/kernel/security",
 			ReadOnly:  true,
 		},
-		{
-			Name:      "kernel-header", //kernel header (read-only)
-			MountPath: "/usr/src",
-			ReadOnly:  true,
-		},
 	}
 
 	var volumes = []corev1.Volume{
@@ -48,14 +43,39 @@ func GenerateDaemonSet(namespace string) *appsv1.DaemonSet {
 				},
 			},
 		},
-		{
-			Name: "kernel-header",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/usr/src",
+	}
+
+	if krnhdr {
+		volumeMounts = append(volumeMounts, []corev1.VolumeMount{
+			{
+				Name:      "lib-modules", //lib modules (read-only)
+				MountPath: "/lib/modules",
+				ReadOnly:  true,
+			},
+			{
+				Name:      "kernel-header", //kernel header (read-only)
+				MountPath: "/usr/src",
+				ReadOnly:  true,
+			},
+		}...)
+		volumes = append(volumes, []corev1.Volume{
+			{
+				Name: "lib-modules",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/lib/modules",
+					},
 				},
 			},
-		},
+			{
+				Name: "kernel-header",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/usr/src",
+					},
+				},
+			},
+		}...)
 	}
 
 	return &appsv1.DaemonSet{

@@ -5,6 +5,7 @@
 package probe
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -47,8 +48,8 @@ type Options struct {
 }
 
 // K8sInstaller for karmor install
-func probeDaemonInstaller(c *k8s.Client, o Options) error {
-	daemonset := deployment.GenerateDaemonSet(o.Namespace)
+func probeDaemonInstaller(c *k8s.Client, o Options, krnhdr bool) error {
+	daemonset := deployment.GenerateDaemonSet(o.Namespace, krnhdr)
 	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
@@ -59,7 +60,6 @@ func probeDaemonInstaller(c *k8s.Client, o Options) error {
 }
 
 func probeDaemonUninstaller(c *k8s.Client, o Options) error {
-	color.Yellow("\t Deleting Karmor Probe DaemonSet ...\n")
 	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), deployment.Karmorprobe, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -105,12 +105,46 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 		checkHostAuditSupport()
 		checkLsmSupport(getHostSupportedLSM())
 
-		if err := probeDaemonInstaller(c, o); err != nil {
+		if err := probeDaemonInstaller(c, o, true); err != nil {
 			return err
 		}
-		color.Yellow("\t Creating probe daemonset ...")
-		time.Sleep(2 * time.Second)
+		color.Yellow("\nCreating probe daemonset ...")
+
+	checkprobe:
+		for timeout := time.After(10 * time.Second); ; {
+			select {
+			case <-timeout:
+				color.Red("Failed to deploy probe daemonset ...")
+				color.Yellow("Cleaning Up Karmor Probe DaemonSet ...\n")
+				if err := probeDaemonUninstaller(c, o); err != nil {
+					return err
+				}
+				return nil
+			default:
+				time.Sleep(500 * time.Millisecond)
+				pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=" + deployment.Karmorprobe, FieldSelector: "status.phase!=Running"})
+				if len(pods.Items) == 0 {
+					break checkprobe
+				}
+				if pods.Items[0].Status.ContainerStatuses[0].State.Waiting != nil {
+					state := pods.Items[0].Status.ContainerStatuses[0].State.Waiting
+					// We redeploy without kernel header mounts
+					if state.Reason == "CreateContainerError" {
+						if strings.Contains(state.Message, "/usr/src") || strings.Contains(state.Message, "/lib/modules") {
+							color.Yellow("Recreating Probe Daemonset ...")
+							if err := probeDaemonUninstaller(c, o); err != nil {
+								return err
+							}
+							if err := probeDaemonInstaller(c, o, false); err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+		}
 		probeNode(c, o)
+		color.Yellow("\nDeleting Karmor Probe DaemonSet ...\n")
 		if err := probeDaemonUninstaller(c, o); err != nil {
 			return err
 		}
@@ -152,17 +186,23 @@ func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
 	if kernelVersionSupported(kernelVersion) && kernelHeaderPresent {
 		color.Green(" Supported (Kernel Version " + kernelVersion + ")")
 	} else if kernelVersionSupported(kernelVersion) {
-		color.Red(" Not Supported : Kernel header must be present")
+		color.Red(" Not Supported : BTF Information/Kernel Headers must be available")
 	} else {
-		color.Red(" Not Supported (Kernel Version " + kernelVersion + " \n\t Kernel version must be greater than 4.14) and kernel header must be present")
+		color.Red(" Not Supported (Kernel Version " + kernelVersion + " \n\t Kernel version must be greater than 4.14) and BTF Information/Kernel Headers must be available")
 	}
+}
+
+func checkBTFSupport() bool {
+	if _, err := os.Stat("/sys/kernel/btf/vmlinux"); !os.IsNotExist(err) {
+		return true
+	}
+	return false
 }
 
 func checkKernelHeaderPresent() bool {
 	//check if there's any directory /usr/src/$(uname -r)
 	var uname unix.Utsname
 	if err := unix.Uname(&uname); err == nil {
-
 		var path = ""
 		if _, err := os.Stat("/etc/redhat-release"); !os.IsNotExist(err) {
 			path = "/usr/src/" + string(uname.Release[:])
@@ -170,7 +210,6 @@ func checkKernelHeaderPresent() bool {
 			path = "/lib/modules/" + string(uname.Release[:]) + "/build"
 		} else if _, err := os.Stat("/lib/modules/" + string(uname.Release[:]) + "/source/Kconfig"); !os.IsNotExist(err) {
 			path = "/lib/modules/" + string(uname.Release[:]) + "/source"
-
 		} else {
 			path = "/usr/src/linux-headers-" + string(uname.Release[:])
 		}
@@ -183,7 +222,48 @@ func checkKernelHeaderPresent() bool {
 	return false
 }
 
-/** check if there's any file like $(uname -r) in directory /usr/src/  **/
+func execIntoPod(c *k8s.Client, podname, namespace, containername string, cmd string) (string, error) {
+	buf := &bytes.Buffer{}
+	errBuf := &bytes.Buffer{}
+	request := c.K8sClientset.CoreV1().RESTClient().
+		Post().
+		Namespace(namespace).
+		Resource("pods").
+		Name(podname).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Command: []string{"/bin/sh", "-c", cmd},
+			Stdin:   false,
+			Stdout:  true,
+			Stderr:  true,
+			TTY:     true,
+		}, scheme.ParameterCodec)
+	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", request.URL())
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: buf,
+		Stderr: errBuf,
+	})
+
+	if err != nil {
+		return "none", err
+	}
+
+	return buf.String(), nil
+}
+
+func findFileInDir(c *k8s.Client, podname, namespace, containername string, cmd string) bool {
+	s, err := execIntoPod(c, podname, namespace, containername, cmd)
+	if err != nil {
+		return false
+	}
+	if strings.Contains(s, "No such file or directory") || len(s) == 0 {
+		return false
+	}
+
+	return true
+}
+
+// Check for BTF Information or Kernel Headers Availability
 func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string, kernelVersion string) bool {
 	pods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=" + deployment.Karmorprobe,
@@ -193,52 +273,13 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string, ker
 		return false
 	}
 
-	srcPath := "/usr/src/"
-	fileName := "*" + kernelVersion + "*"
-	reader, outStream := io.Pipe()
-
-	cmdArr := []string{"find", srcPath, "-name", fileName}
-
-	req := c.K8sClientset.CoreV1().RESTClient().
-		Get().
-		Namespace(o.Namespace).
-		Resource("pods").
-		Name(pods.Items[0].Name).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: pods.Items[0].Spec.Containers[0].Name,
-			Command:   cmdArr,
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
-	if err != nil {
-		return false
+	if findFileInDir(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "find /sys/kernel/btf/ -name vmlinux") ||
+		findFileInDir(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "find -L /usr/src -maxdepth 2 -path \"*$(uname -r)*\" -name \"Kconfig\"") ||
+		findFileInDir(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "find -L /lib/modules/ -maxdepth 3 -path \"*$(uname -r)*\" -name \"Kconfig\"") {
+		return true
 	}
 
-	go func() {
-		defer outStream.Close()
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdin:  os.Stdin,
-			Stdout: outStream,
-			Stderr: os.Stderr,
-			Tty:    false,
-		})
-	}()
-
-	buf, err := io.ReadAll(reader)
-	if err != nil {
-		return false
-	}
-
-	s := string(buf)
-	if strings.Contains(s, "No such file or directory") || len(s) == 0 {
-		return false
-	}
-
-	return true
+	return false
 }
 
 func checkHostAuditSupport() {
@@ -254,7 +295,7 @@ func checkHostAuditSupport() {
 			color.Red(" Error")
 		}
 		fmt.Printf("\t Observability/Audit:")
-		checkAuditSupport(kernelVersion, checkKernelHeaderPresent())
+		checkAuditSupport(kernelVersion, checkBTFSupport() || checkKernelHeaderPresent())
 	} else {
 		color.Red(" Error")
 	}
@@ -270,45 +311,10 @@ func getNodeLsmSupport(c *k8s.Client, o Options, nodeName string) (string, error
 		return "none", err
 	}
 
-	reader, outStream := io.Pipe()
-	cmdArr := []string{"cat", srcPath}
-	req := c.K8sClientset.CoreV1().RESTClient().
-		Get().
-		Namespace(o.Namespace).
-		Resource("pods").
-		Name(pods.Items[0].Name).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: pods.Items[0].Spec.Containers[0].Name,
-			Command:   cmdArr,
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-
-	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
+	s, err := execIntoPod(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "cat "+srcPath)
 	if err != nil {
 		return "none", err
 	}
-
-	go func() {
-		defer outStream.Close()
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdin:  os.Stdin,
-			Stdout: outStream,
-			Stderr: os.Stderr,
-			Tty:    false,
-		})
-	}()
-
-	buf, err := io.ReadAll(reader)
-	if err != nil {
-		log.Printf("an error occured when reading file")
-		return "none", err
-	}
-
-	s := string(buf)
 	return s, nil
 }
 
@@ -324,9 +330,11 @@ func probeNode(c *k8s.Client, o Options) {
 			kernelVersion := item.Status.NodeInfo.KernelVersion
 			check2 := checkNodeKernelHeaderPresent(c, o, item.Name, kernelVersion)
 			checkAuditSupport(kernelVersion, check2)
-			lsm, _ := getNodeLsmSupport(c, o, item.Name)
+			lsm, err := getNodeLsmSupport(c, o, item.Name)
+			if err != nil {
+				color.Red(err.Error())
+			}
 			checkLsmSupport(lsm)
-
 		}
 	} else {
 		fmt.Println("No kubernetes environment found")
