@@ -1,6 +1,6 @@
 # karmor
 
-**karmor** is a client tool to help manage [KubeArmor](github.com/kubearmor/KubeArmor).
+**karmor** is a client tool to help manage [KubeArmor](https://github.com/kubearmor/KubeArmor).
 
 ## Installation
 
