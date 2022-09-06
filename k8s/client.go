@@ -27,16 +27,20 @@ type Client struct {
 	Config          *rest.Config
 }
 
+var (
+	// KubeConfig specifies the path of kubeconfig file
+	KubeConfig string
+	// ContextName specifies the name of kubeconfig context
+	ContextName string
+)
+
 // ConnectK8sClient Function
 func ConnectK8sClient() (*Client, error) {
-	var kubeconfig string
-	var contextName string
-
 	_ = kspAPI.AddToScheme(scheme.Scheme)
 
 	restClientGetter := genericclioptions.ConfigFlags{
-		Context:    &contextName,
-		KubeConfig: &kubeconfig,
+		Context:    &ContextName,
+		KubeConfig: &KubeConfig,
 	}
 	rawKubeConfigLoader := restClientGetter.ToRawKubeConfigLoader()
 
