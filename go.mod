@@ -11,7 +11,7 @@ replace (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220829105122-5e9d79d2b60a
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20220906112453-a79685a5de25
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cilium/cilium v1.10.13
 	github.com/clarketm/json v1.17.1

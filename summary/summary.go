@@ -6,6 +6,7 @@ package summary
 
 import (
 	"context"
+	"errors"
 	"os"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
@@ -13,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+var DefaultReqType = "process,file,network"
 
 // Options Structure
 type Options struct {
@@ -51,7 +54,7 @@ func Summary(o Options) error {
 	// create a client
 	conn, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return err
+		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n[0m")
 	}
 	defer conn.Close()
 
@@ -60,12 +63,12 @@ func Summary(o Options) error {
 	if data.PodName != "" {
 		sumResp, err := client.Summary(context.Background(), &opb.Request{
 			PodName: data.PodName,
-			Type:    "system",
+			Type:    o.Type,
 		})
 		if err != nil {
 			return err
 		}
-		DisplaySummaryOutput(sumResp, o.RevDNSLookup)
+		DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
 
 	} else {
 		//Fetch Summary Logs
@@ -80,12 +83,12 @@ func Summary(o Options) error {
 			}
 			sumResp, err := client.Summary(context.Background(), &opb.Request{
 				PodName: podname,
-				Type:    "system",
+				Type:    o.Type,
 			})
 			if err != nil {
 				return err
 			}
-			DisplaySummaryOutput(sumResp, o.RevDNSLookup)
+			DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
 
 		}
 	}
