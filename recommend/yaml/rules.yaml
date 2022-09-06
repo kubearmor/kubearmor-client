@@ -19,7 +19,7 @@ policyRules:
       has an attribute set from being downloaded from the Internet, or getting an
       indication that you are about to connect to an untrusted site.
   rules:
-    pathRule:
+    fileRule:
       path:
       - "/etc/ssl/"
       - "/etc/pki/"
@@ -43,7 +43,7 @@ policyRules:
     detailed: Adversaries may create or modify system-level processes to repeatedly
       execute malicious payloads as part of persistence.
   rules:
-    pathRule:
+    fileRule:
       path:
       - "/bin/"
       - "/usr/bin/"
@@ -68,7 +68,7 @@ policyRules:
       user credentials. Passwords are stored in several places on a system, depending
       on the operating system or application holding the credentials.
   rules:
-    pathRule:
+    fileRule:
       path:
       - "/etc/passwd"
       - "/etc/shadow"
@@ -92,7 +92,7 @@ policyRules:
       Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. Utilities exist within all major operating systems to schedule programs or scripts to be executed at a specified date and time.
       Adversaries may use task scheduling to execute programs at system startup or on a scheduled basis for persistence. These mechanisms can also be abused to run a process under the context of a specified account (such as one with elevated permissions/privileges).
   rules:
-    pathRule:
+    fileRule:
       path:
       - "/etc/crontab"
       - "/etc/at.allow"
@@ -115,7 +115,7 @@ policyRules:
       never be used in prod env, or if used, should be used only in certain time frames.
       Examples include, dynamic package management tools, mii-tool, iptables etc
   rules:
-    pathRule:
+    fileRule:
       path:
       - "/sbin/"
       recursive: true
@@ -124,5 +124,50 @@ policyRules:
     message: restricted maintenance tool access attempted
     tags:
     - PCI-DSS
+    - MITRE
+    action: Audit
+- name: shell-access
+  precondition: "/bin/sh"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1059/
+    tldr: abuse shell access and execute arbitrary commands, scripts, or binaries
+    detailed: Containers comes with some built-in shell and scripting capabilities.
+      Adversaries may attempt to use the shell to execute arbitrary commands. 
+  rules:
+    processRule:
+      path:
+      - "/bin/sh"
+      - "/bin/bash"
+      - "/bin/dash"
+      - "/bin/ksh"
+      - "/bin/zsh"
+      - "/bin/tcsh"
+      - "/bin/csh"
+  onEvent:
+    severity: 1
+    message: attempted access to shell
+    tags:
+    - MITRE
+    action: Audit
+- name: ssh-access
+  precondition: "/usr/bin/ssh"
+  description:
+    refs:
+    - name: MITRE-TTP
+      url:
+      - https://attack.mitre.org/techniques/T1021/
+    tldr: use ssh to gain access to host in the same network
+    detailed: To accomplish Lateral Movement, adversaries can use SSH to login into host in the same network. 
+  rules:
+    processRule:
+      path:
+      - "/usr/bin/ssh"
+  onEvent:
+    severity: 1
+    message: attempted access to SSH
+    tags:
     - MITRE
     action: Audit
