@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// DefaultReqType : default option for request type
 var DefaultReqType = "process,file,network"
 
 // Options Structure
