@@ -89,7 +89,7 @@ func ListPolicies(c *k8s.Client, o Options) error {
 		}
 		switch format := o.Output; format {
 		case "json":
-			result, err := json.MarshalIndent(policies, "", "")
+			result, err := json.Marshal(policies)
 			if err != nil {
 				return err
 			}
@@ -108,7 +108,7 @@ func ListPolicies(c *k8s.Client, o Options) error {
 
 func printK8SPolicies(policies []v1.KubeArmorPolicy, namespace string) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Policy Name", "Namespace"})
+	table.SetHeader([]string{"Policy Name", "Namespace", "Pods"})
 	data := [][]string{}
 
 	if len(policies) <= 0 {
@@ -118,7 +118,8 @@ func printK8SPolicies(policies []v1.KubeArmorPolicy, namespace string) error {
 	for _, policy := range policies {
 		name := policy.ObjectMeta.Name
 		ns := policy.ObjectMeta.Namespace
-		data = append(data, []string{name, ns})
+		pods := policy.Spec.Selector.MatchLabels["container"]
+		data = append(data, []string{name, ns, pods})
 	}
 
 	for _, pol := range data {
@@ -158,7 +159,7 @@ func getSystemdPolicies() ([]HostPolicyBackup, error) {
 	}
 	policies := []HostPolicyBackup{}
 	for _, file := range files {
-		path := fmt.Sprintf("/opt/kubearmor/policies/%s", filepath.Clean(file.Name()))
+		path := filepath.Join("/opt/kubearmor/policies/%s", filepath.Clean(file.Name()))
 		fileBytes, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
@@ -179,17 +180,17 @@ func CheckEnv(c *k8s.Client) (string, error) {
 	if err == nil {
 		return "systemd", nil
 	}
+	// check if kamor is running in K8s
+	_, err = c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.TODO(), "kubearmor-policy-manager", metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return "", errors.New("unable to find kubearmor in cluster. Try running karmor install")
+		}
+		return "", err
+	}
+
 	if errors.Is(err, os.ErrNotExist) {
 		return "", errors.New("unable to detect kubearmor installation")
-	} else {
-		// check if kamor is running in K8s
-		_, err := c.K8sClientset.AppsV1().Deployments("kube-system").Get(context.Background(), "kubearmor-policy-manager", metav1.GetOptions{})
-		if err != nil {
-			if kerr.IsNotFound(err) {
-				return "", errors.New("unable to find kubearmor in cluster. Try running karmor install")
-			}
-			return "", err
-		}
 	}
 	return "k8s", nil
 }
