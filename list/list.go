@@ -159,7 +159,7 @@ func getSystemdPolicies() ([]HostPolicyBackup, error) {
 	}
 	policies := []HostPolicyBackup{}
 	for _, file := range files {
-		path := filepath.Join("/opt/kubearmor/policies/%s", filepath.Clean(file.Name()))
+		path := filepath.Join("/opt/kubearmor/policies", filepath.Clean(file.Name()))
 		fileBytes, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
