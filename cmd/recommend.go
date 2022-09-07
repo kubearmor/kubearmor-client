@@ -19,7 +19,7 @@ var recommendCmd = &cobra.Command{
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		//Condition to check if at least one Container image name is passes as an argument
-		if len(recommendOptions.Images) < 1 {
+		if len(recommendOptions.Images) < 1 && len(recommendOptions.UseLabels) < 1 && recommendOptions.UseNamespace == "" {
 			return errors.New("at least one container image is required as an argument")
 		}
 		if err := recommend.Recommend(client, recommendOptions); err != nil {

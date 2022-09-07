@@ -74,7 +74,7 @@ func finalReport() {
 // Recommend handler for karmor cli tool
 func Recommend(c *k8s.Client, o Options) error {
 	var err error
-
+	options = o
 	if err = createOutDir(o.OutDir); err != nil {
 		return err
 	}
@@ -85,21 +85,31 @@ func Recommend(c *k8s.Client, o Options) error {
 
 	o.Images = unique(o.Images)
 	o.Tags = unique(o.Tags)
-	options = o
-	for _, img := range o.Images {
-		tempDir, err = os.MkdirTemp("", "karmor")
-		if err != nil {
-			log.WithError(err).Fatal("could not create temp dir")
+	if len(o.Images) > 1 {
+
+		for _, img := range o.Images {
+			tempDir, err = os.MkdirTemp("", "karmor")
+			if err != nil {
+				log.WithError(err).Fatal("could not create temp dir")
+			}
+			err = imageHandler(img)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"image": img,
+				}).Error("could not handle container image")
+			}
+			_ = os.RemoveAll(tempDir) // rm -rf tempDir
 		}
-		err = imageHandler(img)
+
+	} else {
+		err = RuntimePolicy(&o)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
-				"image": img,
-			}).Error("could not handle container image")
+				"labels":    o.UseLabels,
+				"namespace": o.UseNamespace,
+			}).Error("could not create runtime policy")
 		}
-		_ = os.RemoveAll(tempDir) // rm -rf tempDir
 	}
-
 	finalReport()
 	return nil
 }
