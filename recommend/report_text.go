@@ -5,6 +5,7 @@ package recommend
 
 import (
 	_ "embed" // need for embedding
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -32,6 +33,10 @@ func NewTextReport() TextReport {
 func (r TextReport) writeImageSummary(img *ImageInfo) {
 	t := tablewriter.NewWriter(r.outString)
 	t.SetBorder(false)
+	if img.Deployment != "" {
+		dp := fmt.Sprintf("%s/%s", img.Namespace, img.Deployment)
+		t.Append([]string{"Deployment", dp})
+	}
 	t.Append([]string{"Container", img.RepoTags[0]})
 	t.Append([]string{"OS", img.OS})
 	t.Append([]string{"Arch", img.Arch})
@@ -44,6 +49,7 @@ func (r TextReport) Start(img *ImageInfo) error {
 	r.writeImageSummary(img)
 	r.table.SetHeader([]string{"Policy", "Short Desc", "Severity", "Action", "Tags"})
 	r.table.SetAlignment(tablewriter.ALIGN_LEFT)
+	r.table.SetRowLine(true)
 	return nil
 }
 
@@ -59,13 +65,40 @@ func (r TextReport) SectionEnd(img *ImageInfo) error {
 func (r TextReport) Record(ms MatchSpec, policyName string) error {
 	var rec []string
 
-	rec = append(rec, policyName)
+	rec = append(rec, wrapPolicyName(policyName, 35))
 	rec = append(rec, ms.Description.Tldr)
 	rec = append(rec, strconv.Itoa(ms.OnEvent.Severity))
 	rec = append(rec, ms.OnEvent.Action)
 	rec = append(rec, strings.Join(ms.OnEvent.Tags[:], ","))
 	r.table.Append(rec)
 	return nil
+}
+
+func wrapPolicyName(name string, limit int) string {
+	line := ""
+	lines := []string{}
+
+	strArr := strings.Split(name, "-")
+
+	strArrLen := len(strArr)
+	for i, str := range strArr {
+		var newLine string
+		if (i + 1) != strArrLen {
+			newLine = line + str + "-"
+		} else {
+			newLine = line + str
+		}
+
+		if len(newLine) <= limit {
+			line = newLine
+		} else {
+			lines = append(lines, line)
+			line = strings.TrimPrefix(newLine, line)
+		}
+	}
+	lines = append(lines, line)
+
+	return strings.Join(lines, "\n")
 }
 
 // Render output the table

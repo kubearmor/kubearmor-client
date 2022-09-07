@@ -4,6 +4,7 @@
 package recommend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -13,16 +14,28 @@ import (
 	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Options for karmor recommend
 type Options struct {
-	Images       []string
-	UseLabels    []string
-	Tags         []string
-	UseNamespace string
-	OutDir       string
-	ReportFile   string
+	Images     []string
+	Labels     []string
+	Tags       []string
+	Namespace  string
+	OutDir     string
+	ReportFile string
+}
+
+// LabelMap is an alias for map[string]string
+type LabelMap = map[string]string
+
+// Deployment contains brief information about a k8s deployment
+type Deployment struct {
+	Name      string
+	Namespace string
+	Labels    LabelMap
+	Images    []string
 }
 
 var options Options
@@ -73,6 +86,7 @@ func finalReport() {
 
 // Recommend handler for karmor cli tool
 func Recommend(c *k8s.Client, o Options) error {
+	deployments := []Deployment{}
 	var err error
 
 	if err = createOutDir(o.OutDir); err != nil {
@@ -83,23 +97,94 @@ func Recommend(c *k8s.Client, o Options) error {
 		ReportInit(o.ReportFile)
 	}
 
-	o.Images = unique(o.Images)
+	labelMap := labelArrayToLabelMap(o.Labels)
+
+	if len(o.Images) == 0 {
+		// recommendation based on k8s manifest
+		dps, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, dp := range dps.Items {
+			if matchLabels(labelMap, dp.Spec.Selector.MatchLabels) {
+				images := []string{}
+				for _, container := range dp.Spec.Template.Spec.Containers {
+					images = append(images, container.Image)
+				}
+
+				deployments = append(deployments, Deployment{
+					Name:      dp.Name,
+					Namespace: dp.Namespace,
+					Labels:    dp.Spec.Selector.MatchLabels,
+					Images:    images,
+				})
+			}
+		}
+	} else {
+		deployments = append(deployments, Deployment{
+			Namespace: o.Namespace,
+			Labels:    labelMap,
+			Images:    o.Images,
+		})
+	}
+
+	// o.Images = unique(o.Images)
 	o.Tags = unique(o.Tags)
 	options = o
-	for _, img := range o.Images {
+
+	for _, dp := range deployments {
+		err := handleDeployment(dp)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	finalReport()
+	return nil
+}
+
+func handleDeployment(dp Deployment) error {
+	var err error
+	for _, img := range dp.Images {
 		tempDir, err = os.MkdirTemp("", "karmor")
 		if err != nil {
-			log.WithError(err).Fatal("could not create temp dir")
+			log.WithError(err).Error("could not create temp dir")
 		}
-		err = imageHandler(img)
+		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"image": img,
 			}).Error("could not handle container image")
 		}
-		_ = os.RemoveAll(tempDir) // rm -rf tempDir
+		_ = os.RemoveAll(tempDir)
 	}
 
-	finalReport()
 	return nil
+}
+
+func matchLabels(filter, selector LabelMap) bool {
+	match := true
+	for k, v := range filter {
+		if selector[k] != v {
+			match = false
+			break
+		}
+	}
+	return match
+}
+
+func labelArrayToLabelMap(labels []string) LabelMap {
+	labelMap := LabelMap{}
+	for _, label := range labels {
+		kvPair := strings.FieldsFunc(label, labelSplitter)
+		if len(kvPair) != 2 {
+			continue
+		}
+		labelMap[kvPair[0]] = kvPair[1]
+	}
+	return labelMap
+}
+
+func labelSplitter(r rune) bool {
+	return r == ':' || r == '='
 }

@@ -39,8 +39,8 @@ operation) of containers at the system level.
 }
 
 func init() {
-	rootCmd.Flags().StringVar(&k8s.KubeConfig, "kubeconfig", "", "Path to the kubeconfig file to use")
-	rootCmd.Flags().StringVar(&k8s.ContextName, "context", "", "Name of the kubeconfig context to use")
+	rootCmd.PersistentFlags().StringVar(&k8s.KubeConfig, "kubeconfig", "", "Path to the kubeconfig file to use")
+	rootCmd.PersistentFlags().StringVar(&k8s.ContextName, "context", "", "Name of the kubeconfig context to use")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

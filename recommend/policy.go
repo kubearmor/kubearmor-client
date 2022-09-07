@@ -118,16 +118,10 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 		},
 	}
 
-	//	policy.Metadata["containername"] = img.RepoTags[0]
-	if ms.Name != "" {
-		policy.Metadata["name"] = strings.TrimPrefix(fmt.Sprintf("%s-%s-%s", options.UseNamespace, mkPathFromTag(img.RepoTags[0]), ms.Name), "-")
-	} else {
-		policy.Metadata["name"] = "ksp-" + strings.TrimPrefix(fmt.Sprintf("%s-%s", options.UseNamespace, mkPathFromTag(img.RepoTags[0])), "-")
-	}
+	policy.Metadata["name"] = img.getPolicyName(ms.Name)
 
-	// Condition to set namespace, if user defined namespace value is available
-	if options.UseNamespace != "" {
-		policy.Metadata["namespace"] = options.UseNamespace
+	if img.Namespace != "" {
+		policy.Metadata["namespace"] = img.Namespace
 	}
 
 	policy.Spec.Action = ms.OnEvent.Action
@@ -139,25 +133,15 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 		policy.Spec.Tags = ms.OnEvent.Tags
 	}
 
-	// add container selector
-	repotag := strings.Split(img.RepoTags[0], ":")
-	// If user defined labels are present, update the matchLabels with them or use default matchLabels
-	if len(options.UseLabels) > 0 {
-		for _, uselabel := range options.UseLabels {
-			userLabel := strings.FieldsFunc(strings.TrimSpace(uselabel), MultiSplit)
-			policy.Spec.Selector.MatchLabels[userLabel[0]] = userLabel[1]
-		}
+	if len(img.Labels) > 0 {
+		policy.Spec.Selector.MatchLabels = img.Labels
 	} else {
+		repotag := strings.Split(img.RepoTags[0], ":")
 		policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
 	}
 
 	addPolicyRule(&policy, ms.Rules)
 	return policy, nil
-}
-
-// MultiSplit function: to split string using multiple delimiters
-func MultiSplit(r rune) bool {
-	return r == ':' || r == '='
 }
 
 func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
@@ -207,19 +191,18 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 			continue
 		}
 
-		poldir := fmt.Sprintf("%s/%s", options.OutDir, mkPathFromTag(img.RepoTags[0]))
-		_ = os.Mkdir(poldir, 0750)
+		outFile := img.getPolicyFile(ms.Name)
+		_ = os.MkdirAll(filepath.Dir(outFile), 0750)
 
-		outfile := fmt.Sprintf("%s/%s.yaml", poldir, policy.Metadata["name"])
-		f, err := os.Create(filepath.Clean(outfile))
+		f, err := os.Create(filepath.Clean(outFile))
 		if err != nil {
-			log.WithError(err).Error(fmt.Sprintf("create file %s failed", outfile))
+			log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
 			continue
 		}
 
 		arr, _ := json.Marshal(policy)
-		yamlarr, _ := yaml.JSONToYAML(arr)
-		if _, err := f.WriteString(string(yamlarr)); err != nil {
+		yamlArr, _ := yaml.JSONToYAML(arr)
+		if _, err := f.WriteString(string(yamlArr)); err != nil {
 			log.WithError(err).Error("WriteString failed")
 		}
 		if err := f.Sync(); err != nil {
@@ -228,8 +211,8 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 		if err := f.Close(); err != nil {
 			log.WithError(err).Error("file close failed")
 		}
-		_ = ReportRecord(ms, outfile)
-		color.Green("created policy %s ...", outfile)
+		_ = ReportRecord(ms, outFile)
+		color.Green("created policy %s ...", outFile)
 	}
 	_ = ReportSectEnd(img)
 }
