@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
+	"github.com/rs/zerolog/log"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -22,6 +23,11 @@ var (
 
 // DisplaySummaryOutput function
 func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType string) {
+
+	if len(resp.ProcessData) <= 0 && len(resp.FileData) <= 0 && len(resp.InNwData) <= 0 && len(resp.OutNwData) <= 0 {
+		log.Error().Msgf("no summary data available")
+		return
+	}
 
 	podInfo := resp.PodName + "/" + resp.Namespace + "/" + resp.ClusterName + "/" + resp.Label + "/" + resp.ContainerName
 

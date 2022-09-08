@@ -28,6 +28,7 @@ type Options struct {
 	ContainerName string
 	Type          string
 	RevDNSLookup  bool
+	Aggregation   bool
 }
 
 // Summary : Get summary on pods
@@ -50,6 +51,7 @@ func Summary(o Options) error {
 		PodName:       o.PodName,
 		ClusterName:   o.ClusterName,
 		ContainerName: o.ContainerName,
+		Aggregate:     o.Aggregation,
 	}
 
 	// create a client
@@ -63,8 +65,9 @@ func Summary(o Options) error {
 
 	if data.PodName != "" {
 		sumResp, err := client.Summary(context.Background(), &opb.Request{
-			PodName: data.PodName,
-			Type:    o.Type,
+			PodName:   data.PodName,
+			Type:      o.Type,
+			Aggregate: o.Aggregation,
 		})
 		if err != nil {
 			return err
@@ -83,8 +86,9 @@ func Summary(o Options) error {
 				continue
 			}
 			sumResp, err := client.Summary(context.Background(), &opb.Request{
-				PodName: podname,
-				Type:    o.Type,
+				PodName:   podname,
+				Type:      o.Type,
+				Aggregate: o.Aggregation,
 			})
 			if err != nil {
 				return err
