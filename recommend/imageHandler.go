@@ -34,13 +34,16 @@ var tempDir string     // temporary directory used by karmor to save image etc
 
 // ImageInfo contains image information
 type ImageInfo struct {
-	Name     string
-	RepoTags []string
-	Arch     string
-	Distro   string
-	OS       string
-	FileList []string
-	DirList  []string
+	Name       string
+	RepoTags   []string
+	Arch       string
+	Distro     string
+	OS         string
+	FileList   []string
+	DirList    []string
+	Namespace  string
+	Deployment string
+	Labels     LabelMap
 }
 
 func getAuthStr() string {
@@ -279,6 +282,49 @@ func (img *ImageInfo) readManifest(manifest string) {
 	}
 }
 
+func (img *ImageInfo) getPolicyDir() string {
+	var policyDir string
+
+	if img.Deployment == "" {
+		// policy recommendation for container images
+		if img.Namespace == "" {
+			policyDir = mkPathFromTag(img.RepoTags[0])
+		} else {
+			policyDir = fmt.Sprintf("%s-%s", img.Namespace, mkPathFromTag(img.RepoTags[0]))
+		}
+	} else {
+		// policy recommendation based on k8s manifest
+		policyDir = fmt.Sprintf("%s-%s", img.Namespace, img.Deployment)
+	}
+	return filepath.Join(options.OutDir, policyDir)
+}
+
+func (img *ImageInfo) getPolicyFile(spec string) string {
+	var policyFile string
+
+	if img.Deployment != "" {
+		// policy recommendation based on k8s manifest
+		policyFile = fmt.Sprintf("%s-%s.yaml", mkPathFromTag(img.RepoTags[0]), spec)
+	} else {
+		policyFile = fmt.Sprintf("%s.yaml", spec)
+	}
+
+	return filepath.Join(img.getPolicyDir(), policyFile)
+}
+
+func (img *ImageInfo) getPolicyName(spec string) string {
+	var policyName string
+
+	if img.Deployment == "" {
+		// policy recommendation for container images
+		policyName = fmt.Sprintf("%s-%s", mkPathFromTag(img.RepoTags[0]), spec)
+	} else {
+		// policy recommendation based on k8s manifest
+		policyName = fmt.Sprintf("%s-%s-%s", img.Deployment, mkPathFromTag(img.RepoTags[0]), spec)
+	}
+	return policyName
+}
+
 type distroRule struct {
 	Name  string `json:"name" yaml:"name"`
 	Match []struct {
@@ -343,9 +389,12 @@ func (img *ImageInfo) getImageInfo() {
 	img.getDistro()
 }
 
-func getImageDetails(imageName string) error {
+func getImageDetails(namespace, deployment string, labels LabelMap, imageName string) error {
 	img := ImageInfo{
-		Name: imageName,
+		Name:       imageName,
+		Namespace:  namespace,
+		Deployment: deployment,
+		Labels:     labels,
 	}
 
 	// step 1: save the image to a tar file
@@ -362,7 +411,7 @@ func getImageDetails(imageName string) error {
 	return nil
 }
 
-func imageHandler(imageName string) error {
+func imageHandler(namespace, deployment string, labels LabelMap, imageName string) error {
 	log.WithFields(log.Fields{
 		"image": imageName,
 	}).Info("pulling image")
@@ -371,7 +420,7 @@ func imageHandler(imageName string) error {
 		return err
 	}
 
-	err = getImageDetails(imageName)
+	err = getImageDetails(namespace, deployment, labels, imageName)
 	if err != nil {
 		return err
 	}
