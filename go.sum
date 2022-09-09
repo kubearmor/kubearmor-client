@@ -119,6 +119,8 @@ github.com/accuknox/auto-policy-discovery/src v0.0.0-20220906112453-a79685a5de25
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20220906112453-a79685a5de25/go.mod h1:R5eU8iW3k7lPwrycZ0zpe4s0X76IpjJxpHCkSyd7CpY=
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20220908062018-731641ea2a8d h1:47SNjljio848XPh4E59WzIYGUIi36TjrI9ZurR4dslg=
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20220908062018-731641ea2a8d/go.mod h1:R5eU8iW3k7lPwrycZ0zpe4s0X76IpjJxpHCkSyd7CpY=
+github.com/accuknox/auto-policy-discovery/src v0.0.0-20220909105533-27ee0d74dfc3 h1:VvViB+GBBoQpUZCveX2l+wmJ4buwKZjKsYpcQoGArsk=
+github.com/accuknox/auto-policy-discovery/src v0.0.0-20220909105533-27ee0d74dfc3/go.mod h1:R5eU8iW3k7lPwrycZ0zpe4s0X76IpjJxpHCkSyd7CpY=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
