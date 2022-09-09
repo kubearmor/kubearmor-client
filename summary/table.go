@@ -23,6 +23,10 @@ var (
 // DisplaySummaryOutput function
 func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType string) {
 
+	if len(resp.ProcessData) <= 0 && len(resp.FileData) <= 0 && len(resp.InNwData) <= 0 && len(resp.OutNwData) <= 0 {
+		return
+	}
+
 	podInfo := resp.PodName + "/" + resp.Namespace + "/" + resp.ClusterName + "/" + resp.Label + "/" + resp.ContainerName
 
 	fmt.Printf("\nPodInfo : [%s]\n", podInfo)
