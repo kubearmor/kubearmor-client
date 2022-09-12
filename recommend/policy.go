@@ -9,9 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/clarketm/json"
-
 	"github.com/accuknox/auto-policy-discovery/src/types"
+	"github.com/clarketm/json"
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/utils/strings/slices"
@@ -22,17 +21,20 @@ func (r *SysRule) convertToKnoxRule() types.KnoxSys {
 	knoxRule := types.KnoxSys{}
 	fromSourceArr := []types.KnoxFromSource{}
 
-	if r.FromSource != "" {
-		if strings.HasSuffix(r.FromSource, "/") {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Dir: r.FromSource,
-			})
-		} else {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Path: r.FromSource,
-			})
+	for _, eachSource := range r.FromSource {
+		if eachSource != "" {
+			if strings.HasSuffix(eachSource, "/") {
+				fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
+					Dir: eachSource,
+				})
+			} else {
+				fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
+					Path: eachSource,
+				})
+			}
 		}
 	}
+
 	for _, path := range r.Path {
 		if strings.HasSuffix(path, "/") {
 
@@ -161,6 +163,40 @@ func matchTags(ms MatchSpec) bool {
 	return false
 }
 
+func (img *ImageInfo) writePolicyFile(ms MatchSpec) {
+	policy, err := img.createPolicy(ms)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"image": img, "spec": ms,
+		}).Error("create policy failed, skipping")
+
+	}
+
+	outFile := img.getPolicyFile(ms.Name)
+	_ = os.MkdirAll(filepath.Dir(outFile), 0750)
+
+	f, err := os.Create(filepath.Clean(outFile))
+	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
+
+	}
+
+	arr, _ := json.Marshal(policy)
+	yamlArr, _ := yaml.JSONToYAML(arr)
+	if _, err := f.WriteString(string(yamlArr)); err != nil {
+		log.WithError(err).Error("WriteString failed")
+	}
+	if err := f.Sync(); err != nil {
+		log.WithError(err).Error("file sync failed")
+	}
+	if err := f.Close(); err != nil {
+		log.WithError(err).Error("file close failed")
+	}
+	_ = ReportRecord(ms, outFile)
+	color.Green("created policy %s ...", outFile)
+
+}
+
 func (img *ImageInfo) getPolicyFromImageInfo() {
 	if img.OS != "linux" {
 		color.Red("non-linux platforms are not supported, yet.")
@@ -171,7 +207,16 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 		log.WithError(err).Error("report start failed")
 		return
 	}
-	ms, err := getNextRule(&idx)
+	var ms MatchSpec
+	var err error
+
+	err = createRuntimePolicy(img)
+	if err != nil {
+		log.WithError(err).Error("Failed to create runtime policy")
+		return
+	}
+
+	ms, err = getNextRule(&idx)
 	for ; err == nil; ms, err = getNextRule(&idx) {
 		// matches preconditions
 
@@ -182,37 +227,8 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 		if !img.checkPreconditions(ms) {
 			continue
 		}
-
-		policy, err := img.createPolicy(ms)
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"image": img, "spec": ms,
-			}).Error("create policy failed, skipping")
-			continue
-		}
-
-		outFile := img.getPolicyFile(ms.Name)
-		_ = os.MkdirAll(filepath.Dir(outFile), 0750)
-
-		f, err := os.Create(filepath.Clean(outFile))
-		if err != nil {
-			log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
-			continue
-		}
-
-		arr, _ := json.Marshal(policy)
-		yamlArr, _ := yaml.JSONToYAML(arr)
-		if _, err := f.WriteString(string(yamlArr)); err != nil {
-			log.WithError(err).Error("WriteString failed")
-		}
-		if err := f.Sync(); err != nil {
-			log.WithError(err).Error("file sync failed")
-		}
-		if err := f.Close(); err != nil {
-			log.WithError(err).Error("file close failed")
-		}
-		_ = ReportRecord(ms, outFile)
-		color.Green("created policy %s ...", outFile)
+		img.writePolicyFile(ms)
 	}
+
 	_ = ReportSectEnd(img)
 }

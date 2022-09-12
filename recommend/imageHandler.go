@@ -408,6 +408,7 @@ func getImageDetails(namespace, deployment string, labels LabelMap, imageName st
 
 	// step 4: get policy from image info
 	img.getPolicyFromImageInfo()
+
 	return nil
 }
 

@@ -106,7 +106,8 @@ func Recommend(c *k8s.Client, o Options) error {
 			return err
 		}
 		for _, dp := range dps.Items {
-			if matchLabels(labelMap, dp.Spec.Selector.MatchLabels) {
+
+			if matchLabels(labelMap, dp.Spec.Template.Labels) {
 				images := []string{}
 				for _, container := range dp.Spec.Template.Spec.Containers {
 					images = append(images, container.Image)
@@ -115,7 +116,7 @@ func Recommend(c *k8s.Client, o Options) error {
 				deployments = append(deployments, Deployment{
 					Name:      dp.Name,
 					Namespace: dp.Namespace,
-					Labels:    dp.Spec.Selector.MatchLabels,
+					Labels:    dp.Spec.Template.Labels,
 					Images:    images,
 				})
 			}
@@ -144,6 +145,7 @@ func Recommend(c *k8s.Client, o Options) error {
 }
 
 func handleDeployment(dp Deployment) error {
+
 	var err error
 	for _, img := range dp.Images {
 		tempDir, err = os.MkdirTemp("", "karmor")
