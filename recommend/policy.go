@@ -102,6 +102,8 @@ func mkPathFromTag(tag string) string {
 		"/", "-",
 		":", "-",
 		"\\", "-",
+		".", "-",
+		"@", "-",
 	)
 	return r.Replace(tag)
 }
