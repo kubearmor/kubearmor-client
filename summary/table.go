@@ -27,9 +27,7 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 		return
 	}
 
-	podInfo := resp.PodName + "/" + resp.Namespace + "/" + resp.ClusterName + "/" + resp.Label + "/" + resp.ContainerName
-
-	fmt.Printf("\nPodInfo : [%s]\n", podInfo)
+	writePodInfoToTable(resp.PodName, resp.Namespace, resp.ClusterName, resp.ContainerName, resp.Label)
 
 	if strings.Contains(requestType, "process") {
 		if len(resp.ProcessData) > 0 {
@@ -132,6 +130,30 @@ func WriteTable(header []string, data [][]string) {
 	table.SetHeader(header)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	for _, v := range data {
+		table.Append(v)
+	}
+	table.Render()
+}
+
+func writePodInfoToTable(podname, namespace, clustername, containername, labels string) {
+
+	fmt.Printf("\n")
+
+	podinfo := [][]string{
+		{"Pod Name", podname},
+		{"Namespace Name", namespace},
+		{"Cluster Name", clustername},
+		{"Container Name", containername},
+		{"Labels", labels},
+	}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetBorder(false)
+	table.SetTablePadding("\t")
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	for _, v := range podinfo {
 		table.Append(v)
 	}
 	table.Render()
