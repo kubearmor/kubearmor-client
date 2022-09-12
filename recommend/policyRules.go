@@ -39,7 +39,7 @@ type Description struct {
 
 // SysRule specifics a file/process rule. Note that if the Path ends in "/" it is considered to be Directory rule
 type SysRule struct {
-	FromSource string   `json:"fromSource" yaml:"fromSource"`
+	FromSource []string `json:"fromSource" yaml:"fromSource"`
 	Path       []string `json:"path" yaml:"path"`
 	Recursive  bool     `json:"recursive" yaml:"recursive"`
 	OwnerOnly  bool     `json:"ownerOnly" yaml:"ownerOnly"`
