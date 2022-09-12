@@ -277,8 +277,15 @@ func (img *ImageInfo) readManifest(manifest string) {
 	}
 	img.Arch = cfgres["architecture"].(string)
 	img.OS = cfgres["os"].(string)
-	for _, tag := range man["RepoTags"].([]interface{}) {
-		img.RepoTags = append(img.RepoTags, tag.(string))
+
+	if man["RepoTags"] == nil {
+		// If the image name contains sha256 digest,
+		// then manifest["RepoTags"] will be `nil`.
+		img.RepoTags = append(img.RepoTags, shortenImageNameWithSha256(img.Name))
+	} else {
+		for _, tag := range man["RepoTags"].([]interface{}) {
+			img.RepoTags = append(img.RepoTags, tag.(string))
+		}
 	}
 }
 
@@ -426,4 +433,13 @@ func imageHandler(namespace, deployment string, labels LabelMap, imageName strin
 	}
 
 	return nil
+}
+
+// shortenImageNameWithSha256 truncates the sha256 digest in image name
+func shortenImageNameWithSha256(name string) string {
+	if strings.Contains(name, "@sha256:") {
+		// shorten sha256 to first 8 chars
+		return name[:len(name)-56]
+	}
+	return name
 }

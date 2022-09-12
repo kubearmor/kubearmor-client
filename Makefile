@@ -15,6 +15,10 @@ GIT_INFO := $(shell govvv -flags -pkg $(PKG))
 build:
 	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "-w -s ${GIT_INFO}" -o karmor
 
+.PHONY: debug
+debug:
+	cd $(CURDIR); go mod tidy; CGO_ENABLED=0 go build -ldflags "${GIT_INFO}" -o karmor
+
 .PHONY: install
 install: build
 	install -m 0755 karmor $(DESTDIR)$(INSTALLDIR)
