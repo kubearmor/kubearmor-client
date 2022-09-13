@@ -5,6 +5,9 @@ package recommend
 
 import (
 	_ "embed" // need for embedding
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"errors"
 
@@ -68,11 +71,14 @@ type OnEvent struct {
 
 var policyRules []MatchSpec
 
-//go:embed yaml/rules.yaml
-var policyRulesYAML []byte
+func updateRulesYAML() {
 
-func init() {
-	policyRulesJSON, err := yaml.YAMLToJSON(policyRulesYAML)
+	yamlFile, err := os.ReadFile(filepath.Clean(fmt.Sprintf("%s/.cache/karmor/rules.yaml", userHome())))
+	if err != nil {
+		color.Red("failed to read rules.yaml")
+		log.WithError(err).Fatal("failed to read rules.yaml")
+	}
+	policyRulesJSON, err := yaml.YAMLToJSON(yamlFile)
 	if err != nil {
 		color.Red("failed to convert policy rules yaml to json")
 		log.WithError(err).Fatal("failed to convert policy rules yaml to json")

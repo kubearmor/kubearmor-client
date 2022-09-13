@@ -27,10 +27,7 @@ const ghrepo = "kubearmor/kubearmor-client"
 
 func isValidVersion(ver string) bool {
 	_, err := semver.Make(ver)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func confirmUserAction(action string) bool {
@@ -59,7 +56,7 @@ func getLatest() (*selfupdate.Release, error) {
 	return latest, nil
 }
 
-//IsLatest - check if the current binary is the latest
+// IsLatest - check if the current binary is the latest
 func IsLatest(curver string) (bool, string) {
 	if curver != "" && !isValidVersion(curver) {
 		return true, ""

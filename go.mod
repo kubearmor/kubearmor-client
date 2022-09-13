@@ -49,6 +49,8 @@ require (
 
 require k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
 
+require github.com/cavaliergopher/grab/v3 v3.0.1
+
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -94,6 +96,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v30 v30.1.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect

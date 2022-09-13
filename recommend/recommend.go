@@ -25,6 +25,7 @@ type Options struct {
 	Namespace  string
 	OutDir     string
 	ReportFile string
+	Update     bool
 }
 
 // LabelMap is an alias for map[string]string
@@ -86,8 +87,25 @@ func finalReport() {
 
 // Recommend handler for karmor cli tool
 func Recommend(c *k8s.Client, o Options) error {
+
 	deployments := []Deployment{}
 	var err error
+	if o.Update {
+		ver, err := downloadAndUnzipRelease()
+		if err != nil {
+			return err
+		}
+		log.WithFields(log.Fields{
+			"Current Version": ver,
+		}).Info("policy-templates updated")
+		return nil
+	}
+	err = isTemplates()
+	if err != nil {
+		return err
+	}
+
+	updateRulesYAML()
 
 	if err = createOutDir(o.OutDir); err != nil {
 		return err

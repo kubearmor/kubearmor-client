@@ -115,10 +115,6 @@ github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdko
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/StackExchange/wmi v1.2.1 h1:VIkavFPXSjcnS+O8yTq7NI32k0R5Aj+v39y29VYDOSA=
 github.com/StackExchange/wmi v1.2.1/go.mod h1:rcmrprowKIVzvc+NUiLncP2uuArMWLCbu9SBzvHz7e8=
-github.com/accuknox/auto-policy-discovery/src v0.0.0-20220906112453-a79685a5de25 h1:qKWzxf5lfdu26m1zh6f5uskkxxmsjFw40vMBFq/7QCo=
-github.com/accuknox/auto-policy-discovery/src v0.0.0-20220906112453-a79685a5de25/go.mod h1:R5eU8iW3k7lPwrycZ0zpe4s0X76IpjJxpHCkSyd7CpY=
-github.com/accuknox/auto-policy-discovery/src v0.0.0-20220908062018-731641ea2a8d h1:47SNjljio848XPh4E59WzIYGUIi36TjrI9ZurR4dslg=
-github.com/accuknox/auto-policy-discovery/src v0.0.0-20220908062018-731641ea2a8d/go.mod h1:R5eU8iW3k7lPwrycZ0zpe4s0X76IpjJxpHCkSyd7CpY=
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20220909105533-27ee0d74dfc3 h1:VvViB+GBBoQpUZCveX2l+wmJ4buwKZjKsYpcQoGArsk=
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20220909105533-27ee0d74dfc3/go.mod h1:R5eU8iW3k7lPwrycZ0zpe4s0X76IpjJxpHCkSyd7CpY=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
@@ -171,6 +167,8 @@ github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnweb
 github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM=
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
 github.com/buger/jsonparser v0.0.0-20180808090653-f4dd9f5a6b44/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
+github.com/cavaliergopher/grab/v3 v3.0.1 h1:4z7TkBfmPjmLAAmkkAZNX/6QJ1nNFdv3SdIHXju0Fr4=
+github.com/cavaliergopher/grab/v3 v3.0.1/go.mod h1:1U/KNnD+Ft6JJiYoYBAimKH2XrYptb8Kl3DFGmsjpq4=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/census-instrumentation/opencensus-proto v0.3.0/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/certifi/gocertifi v0.0.0-20191021191039-0944d244cd40/go.mod h1:sGbDF6GwGcLpkNXPUTkMRoywsNa/ol15pxFe6ERfguA=
@@ -532,6 +530,8 @@ github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.7/go.mod h1:n+brtR0CgQNWTVd5ZUFpTBC8YFBDLK/h/bpaJ8/DtOE=
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/google/go-github v17.0.0+incompatible h1:N0LgJ1j65A7kfXrZnUDaYCs/Sf4rEjNlfyDHW9dolSY=
+github.com/google/go-github v17.0.0+incompatible/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
 github.com/google/go-github/v30 v30.1.0 h1:VLDx+UolQICEOKu2m4uAoMti1SxuEBAl7RSEG16L+Oo=
 github.com/google/go-github/v30 v30.1.0/go.mod h1:n8jBpHl45a/rlBUtRJMOG4GhNADUQFEufcolZ95JfU8=
 github.com/google/go-querystring v1.0.0 h1:Xkwi/a1rcvNg1PPYe5vI8GbeBY/jrVuDX5ASuANWTrk=
