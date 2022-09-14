@@ -30,7 +30,8 @@ func isValidVersion(ver string) bool {
 	return err == nil
 }
 
-func confirmUserAction(action string) bool {
+// ConfirmUserAction function returns boolean flag based on user input
+func ConfirmUserAction(action string) bool {
 	fmt.Printf("%s (y/n): ", action)
 	input, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil || (input != "y\n" && input != "n\n") {
@@ -111,7 +112,7 @@ func SelfUpdate(c *k8s.Client) error {
 	fmt.Printf("current karmor version %s\n", ver)
 	if !isValidVersion(ver) {
 		fmt.Println("version does not match the pattern. Maybe using a locally built karmor!")
-		if !confirmUserAction("Do you want to update it?") {
+		if !ConfirmUserAction("Do you want to update it?") {
 			return nil
 		}
 		return doSelfUpdate("")
