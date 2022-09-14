@@ -18,82 +18,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func (r *SysRule) convertToKnoxRule() types.KnoxSys {
-	knoxRule := types.KnoxSys{}
-	fromSourceArr := []types.KnoxFromSource{}
-
-	if r.FromSource != "" {
-		if strings.HasSuffix(r.FromSource, "/") {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Dir: r.FromSource,
-			})
-		} else {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Path: r.FromSource,
-			})
-		}
+func addPolicyRule(policy *PolicyFile, r Rules) {
+	if r.File.MatchPaths != nil {
+		policy.Spec.File = r.File
 	}
-	for _, path := range r.Path {
-		if strings.HasSuffix(path, "/") {
-
-			dirRule := types.KnoxMatchDirectories{
-				Dir:        path,
-				Recursive:  r.Recursive,
-				FromSource: fromSourceArr,
-				OwnerOnly:  r.OwnerOnly,
-			}
-			knoxRule.MatchDirectories = append(knoxRule.MatchDirectories, dirRule)
-		} else {
-			pathRule := types.KnoxMatchPaths{
-				Path:       path,
-				FromSource: fromSourceArr,
-				OwnerOnly:  r.OwnerOnly,
-			}
-			knoxRule.MatchPaths = append(knoxRule.MatchPaths, pathRule)
-		}
+	if r.Process.MatchPaths != nil {
+		policy.Spec.Process = r.Process
 	}
-
-	return knoxRule
-}
-
-// networkToKnoxRule function to include KubeArmor network rules
-func (r *NetRule) networkToKnoxRule() types.NetworkRule {
-	knoxNetRule := types.NetworkRule{}
-	fromSourceArr := []types.KnoxFromSource{}
-
-	if r.FromSource != "" {
-		if strings.HasSuffix(r.FromSource, "/") {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Dir: r.FromSource,
-			})
-		} else {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Path: r.FromSource,
-			})
-		}
-	}
-	for _, protocol := range r.Protocol {
-
-		protoRule := types.KnoxMatchProtocols{
-			Protocol:   protocol,
-			FromSource: fromSourceArr,
-		}
-		knoxNetRule.MatchProtocols = append(knoxNetRule.MatchProtocols, protoRule)
-
-	}
-
-	return knoxNetRule
-}
-
-func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
-	if r.FileRule != nil {
-		policy.Spec.File = r.FileRule.convertToKnoxRule()
-	}
-	if r.ProcessRule != nil {
-		policy.Spec.Process = r.ProcessRule.convertToKnoxRule()
-	}
-	if r.NetworkRule != nil {
-		policy.Spec.Network = r.NetworkRule.networkToKnoxRule()
+	if r.Network.MatchProtocols != nil {
+		policy.Spec.Network = r.Network
 	}
 }
 
@@ -108,12 +41,12 @@ func mkPathFromTag(tag string) string {
 	return r.Replace(tag)
 }
 
-func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) {
-	policy := types.KubeArmorPolicy{
+func (img *ImageInfo) createPolicy(ms MatchSpec) (PolicyFile, error) {
+	policy := PolicyFile{
 		APIVersion: "security.kubearmor.com/v1",
 		Kind:       "KubeArmorPolicy",
 		Metadata:   map[string]string{},
-		Spec: types.KnoxSystemSpec{
+		Spec: Rules{
 			Severity: 1, // by default
 			Selector: types.Selector{
 				MatchLabels: map[string]string{}},
@@ -126,13 +59,13 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 		policy.Metadata["namespace"] = img.Namespace
 	}
 
-	policy.Spec.Action = ms.OnEvent.Action
-	policy.Spec.Severity = ms.OnEvent.Severity
-	if ms.OnEvent.Message != "" {
-		policy.Spec.Message = ms.OnEvent.Message
+	policy.Spec.Action = ms.Spec.Action
+	policy.Spec.Severity = ms.Spec.Severity
+	if ms.Spec.Message != "" {
+		policy.Spec.Message = ms.Spec.Message
 	}
-	if len(ms.OnEvent.Tags) > 0 {
-		policy.Spec.Tags = ms.OnEvent.Tags
+	if len(ms.Spec.Tags) > 0 {
+		policy.Spec.Tags = ms.Spec.Tags
 	}
 
 	if len(img.Labels) > 0 {
@@ -142,7 +75,7 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 		policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
 	}
 
-	addPolicyRule(&policy, ms.Rules)
+	addPolicyRule(&policy, ms.Spec)
 	return policy, nil
 }
 
@@ -156,7 +89,7 @@ func matchTags(ms MatchSpec) bool {
 		return true
 	}
 	for _, t := range options.Tags {
-		if slices.Contains(ms.OnEvent.Tags, t) {
+		if slices.Contains(ms.Spec.Tags, t) {
 			return true
 		}
 	}

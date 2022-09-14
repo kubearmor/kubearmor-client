@@ -5,15 +5,13 @@ package recommend
 
 import (
 	_ "embed" // need for embedding
-	"fmt"
-	"os"
-	"path/filepath"
 
 	"errors"
 
 	"github.com/clarketm/json"
 	"sigs.k8s.io/yaml"
 
+	"github.com/accuknox/auto-policy-discovery/src/types"
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 )
@@ -23,8 +21,8 @@ type MatchSpec struct {
 	Name         string      `json:"name" yaml:"name"`
 	Precondition string      `json:"precondition" yaml:"precondition"`
 	Description  Description `json:"description" yaml:"description"`
-	Rules        Rules       `json:"rules" yaml:"rules"`
-	OnEvent      OnEvent     `json:"onEvent" yaml:"onEvent"`
+	Yaml         string      `json:"yaml" yaml:"yaml"`
+	Spec         Rules       `json:"spec,omitempty" yaml:"spec,omitempty"`
 }
 
 // Ref for the policy rules
@@ -42,56 +40,51 @@ type Description struct {
 
 // SysRule specifics a file/process rule. Note that if the Path ends in "/" it is considered to be Directory rule
 type SysRule struct {
-	FromSource string   `json:"fromSource" yaml:"fromSource"`
-	Path       []string `json:"path" yaml:"path"`
-	Recursive  bool     `json:"recursive" yaml:"recursive"`
-	OwnerOnly  bool     `json:"ownerOnly" yaml:"ownerOnly"`
+	Severity         int                          `json:"severity" yaml:"severity"`
+	Message          string                       `json:"message" yaml:"message"`
+	Tags             []string                     `json:"tags" yaml:"tags"`
+	Action           string                       `json:"action" yaml:"action"`
+	MatchPaths       []types.KnoxMatchPaths       `json:"matchPaths,omitempty" yaml:"matchPaths,omitempty"`
+	MatchDirectories []types.KnoxMatchDirectories `json:"matchDirectories,omitempty" yaml:"matchDirectories,omitempty"`
 }
 
 // NetRule specifies a KubeArmor network rule.
 type NetRule struct {
-	FromSource string   `json:"fromSource" yaml:"fromSource"`
-	Protocol   []string `json:"protocol" yaml:"protocol"`
+	Severity       int                        `json:"severity" yaml:"severity"`
+	Message        string                     `json:"message" yaml:"message"`
+	Tags           []string                   `json:"tags" yaml:"tags"`
+	Action         string                     `json:"action" yaml:"action"`
+	MatchProtocols []types.KnoxMatchProtocols `json:"matchProtocols,omitempty" yaml:"matchProtocols,omitempty"`
+}
+
+type PolicyFile struct {
+	APIVersion string            `json:"apiVersion,omitempty" yaml:"apiVersion,omitempty"`
+	Kind       string            `json:"kind,omitempty" yaml:"kind,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	Spec       Rules             `json:"spec,omitempty" yaml:"spec,omitempty"`
 }
 
 // Rules set of applicable rules. In the future, we might have other types of rules.
 type Rules struct {
-	FileRule    *SysRule `json:"fileRule" yaml:"fileRule"`
-	ProcessRule *SysRule `json:"processRule" yaml:"processRule"`
-	NetworkRule *NetRule `json:"networkRule" yaml:"networkRule"`
-}
-
-// OnEvent the information that is emitted in the telemetry/alert when the matching event is witnessed
-type OnEvent struct {
-	Severity int      `json:"severity" yaml:"severity"`
-	Message  string   `json:"message" yaml:"message"`
-	Tags     []string `json:"tags" yaml:"tags"`
-	Action   string   `json:"action" yaml:"action"`
+	Severity int            `json:"severity,omitempty" yaml:"severity,omitempty"`
+	Tags     []string       `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Message  string         `json:"message,omitempty" yaml:"message,omitempty"`
+	Selector types.Selector `json:"selector,omitempty" yaml:"selector,omitempty"`
+	Process  SysRule        `json:"process,omitempty" yaml:"process,omitempty"`
+	File     SysRule        `json:"file,omitempty" yaml:"file,omitempty"`
+	Network  NetRule        `json:"network,omitempty" yaml:"network,omitempty"`
+	Action   string         `json:"action,omitempty" yaml:"action,omitempty"`
 }
 
 var policyRules []MatchSpec
 
-func updateRulesYAML() {
-
-	yamlFile, err := os.ReadFile(filepath.Clean(fmt.Sprintf("%s/.cache/karmor/rules.yaml", userHome())))
-	if err != nil {
-		color.Red("failed to read rules.yaml")
-		log.WithError(err).Fatal("failed to read rules.yaml")
-	}
+func updateRulesYAML(yamlFile []byte) {
 	policyRulesJSON, err := yaml.YAMLToJSON(yamlFile)
 	if err != nil {
 		color.Red("failed to convert policy rules yaml to json")
 		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
 	}
-
-	var jsonRaw map[string]json.RawMessage
-	err = json.Unmarshal(policyRulesJSON, &jsonRaw)
-	if err != nil {
-		color.Red("failed to unmarshal policy rules json")
-		log.WithError(err).Fatal("failed to unmarshal policy rules json")
-	}
-
-	err = json.Unmarshal(jsonRaw["policyRules"], &policyRules)
+	err = json.Unmarshal(policyRulesJSON, &policyRules)
 	if err != nil {
 		color.Red("failed to unmarshal policy rules")
 		log.WithError(err).Fatal("failed to unmarshal policy rules")

@@ -95,17 +95,17 @@ func isLatest() error {
 }
 
 func removeData(file string) error {
-	err := os.Remove(file)
+	err := os.RemoveAll(file)
 	return err
 }
 
 func downloadAndUnzipRelease() (string, error) {
+	path := fmt.Sprintf("%s/.cache/karmor/", userHome())
 	latestRelease, err := latestRelease()
 	if err != nil {
 		return "", err
 	}
-	path := fmt.Sprintf("%s/.cache/karmor/", userHome())
-	_ = os.RemoveAll(path)
+	_ = removeData(path)
 	err = os.MkdirAll(filepath.Dir(path), 0750)
 	if err != nil {
 		return "", err
@@ -113,6 +113,7 @@ func downloadAndUnzipRelease() (string, error) {
 	downloadURL := fmt.Sprintf("%s%s.zip", url, *latestRelease.TagName)
 	resp, err := grab.Get(path, downloadURL)
 	if err != nil {
+		_ = removeData(path)
 		return "", err
 	}
 	err = unZip(resp.Filename, path)
@@ -162,22 +163,6 @@ func unZip(source, dest string) error {
 	return nil
 }
 
-func writeInitial(f *os.File) error {
-	stat, err := f.Stat()
-	if err != nil {
-		return err
-	}
-	if stat.Size() == 0 {
-		if _, err := f.WriteString("policyRules:\n"); err != nil {
-			log.WithError(err).Error("WriteString failed")
-		}
-		if err := f.Sync(); err != nil {
-			log.WithError(err).Error("file sync failed")
-		}
-	}
-	return nil
-}
-
 func updatePolicyRules(filePath string) error {
 	var files []string
 	err := filepath.Walk(filePath, func(path string, info os.FileInfo, err error) error {
@@ -196,14 +181,32 @@ func updatePolicyRules(filePath string) error {
 	if err != nil {
 		log.WithError(err).Error(fmt.Sprintf("create file %s failed", fmt.Sprintf("%s/.cache/karmor/rules.yaml", userHome())))
 	}
-	err = writeInitial(f)
-	if err != nil {
-		return err
-	}
+
+	idx := 0
 	for _, file := range files {
 		yamlFile, err := os.ReadFile(filepath.Clean(file))
 		if err != nil {
 			return err
+		}
+		updateRulesYAML(yamlFile)
+		ms, err := getNextRule(&idx)
+		tempYaml := yamlFile
+		for ; err == nil; ms, err = getNextRule(&idx) {
+			if ms.Yaml != "" {
+				newYaml, err := os.ReadFile(filepath.Clean(fmt.Sprintf("%s%s", strings.TrimSuffix(file, "metadata.yaml"), ms.Yaml)))
+				if err != nil {
+					return err
+				}
+				skipCount := len(ms.Yaml) + 6
+				tempYaml = tempYaml[strings.Index(string(tempYaml), "yaml:")+skipCount:]
+				dataVal := strings.TrimSpace(string(tempYaml))
+				yamlFile = yamlFile[:strings.Index(string(yamlFile), "yaml:")-1]
+				for _, eachLine := range strings.Split(string(newYaml[strings.Index(string(newYaml), "spec:"):]), "\n") {
+					yamlFile = append(yamlFile, []byte(fmt.Sprintf(" %s\n", eachLine))...)
+				}
+				yamlFile = []byte(strings.TrimSpace(string(yamlFile)))
+				yamlFile = append(yamlFile, []byte(fmt.Sprintf("\n%s", dataVal))...)
+			}
 		}
 		if _, err := f.WriteString(string(yamlFile)); err != nil {
 			log.WithError(err).Error("WriteString failed")
@@ -211,9 +214,9 @@ func updatePolicyRules(filePath string) error {
 		if err := f.Sync(); err != nil {
 			log.WithError(err).Error("file sync failed")
 		}
-		if err := f.Close(); err != nil {
-			log.WithError(err).Error("file close failed")
-		}
+	}
+	if err := f.Close(); err != nil {
+		log.WithError(err).Error("file close failed")
 	}
 	return nil
 }

@@ -104,9 +104,11 @@ func Recommend(c *k8s.Client, o Options) error {
 	if err != nil {
 		return err
 	}
-
-	updateRulesYAML()
-
+	yamlFile, err := os.ReadFile(filepath.Clean(fmt.Sprintf("%s/.cache/karmor/rules.yaml", userHome())))
+	if err != nil {
+		return err
+	}
+	updateRulesYAML(yamlFile)
 	if err = createOutDir(o.OutDir); err != nil {
 		return err
 	}
