@@ -7,7 +7,6 @@ import (
 	_ "embed" // need for embedding
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
@@ -67,9 +66,9 @@ func (r TextReport) Record(ms MatchSpec, policyName string) error {
 
 	rec = append(rec, wrapPolicyName(policyName, 35))
 	rec = append(rec, ms.Description.Tldr)
-	rec = append(rec, strconv.Itoa(ms.OnEvent.Severity))
-	rec = append(rec, ms.OnEvent.Action)
-	rec = append(rec, strings.Join(ms.OnEvent.Tags[:], ","))
+	rec = append(rec, fmt.Sprintf("%d", ms.Spec.Severity))
+	rec = append(rec, string(ms.Spec.Action))
+	rec = append(rec, strings.Join(ms.Spec.Tags[:], ","))
 	r.table.Append(rec)
 	return nil
 }

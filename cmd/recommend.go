@@ -4,7 +4,10 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/kubearmor/kubearmor-client/recommend"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -22,9 +25,26 @@ var recommendCmd = &cobra.Command{
 		return nil
 	},
 }
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Updates policy-template cache",
+	Long:  "Updates the local cache of policy-templates ($HOME/.cache/karmor)",
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if d, err := recommend.DownloadAndUnzipRelease(); err != nil {
+			fmt.Println(d)
+			return err
+		}
+		log.WithFields(log.Fields{
+			"Current Version": recommend.CurrentVersion,
+		}).Info("policy-templates updated")
+		return nil
+	},
+}
 
 func init() {
 	rootCmd.AddCommand(recommendCmd)
+	recommendCmd.AddCommand(updateCmd)
 
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Images, "image", "i", []string{}, "Container image list (comma separated)")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Labels, "labels", "l", []string{}, "User defined labels for policy (comma separated)")

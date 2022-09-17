@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
+	log "github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -66,35 +68,50 @@ func createRuntimePolicy(img *ImageInfo) error {
 		sumResp = append(sumResp, resp)
 	}
 
-	ms, err := checkProcessFileData(sumResp)
-	if err != nil {
-		return err
+	ms := checkProcessFileData(sumResp, img.Distro)
+	if ms != nil {
+		img.writePolicyFile(*ms)
 	}
-	img.writePolicyFile(ms)
 	return nil
 }
 
-func checkProcessFileData(sumResp []*opb.Response) (MatchSpec, error) {
-	var filePaths SysRule
-	ms := MatchSpec{}
-	ms.OnEvent.Severity = 1
-	ms.Description.Tldr = "Kubernetes serviceaccount folder access should be limited "
-	ms.Name = "audit-serviceaccount-runtime"
-	ms.OnEvent.Tags = []string{"KUBERNETES", "SERVICE ACCOUNT", "RUNTIME POLICY"}
-	ms.OnEvent.Message = "serviceaccount access detected"
-	ms.OnEvent.Action = "Audit"
+func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
+	var filePaths pol.FileType
+	fromSourceArr := []pol.MatchSourceType{}
+	ms := MatchSpec{
+		Name: "audit-serviceaccount-runtime",
+		Description: Description{
+			Tldr: "Kubernetes serviceaccount folder access should be limited",
+		},
+	}
 	for _, eachResp := range sumResp {
 		for _, fileData := range eachResp.FileData {
 			if strings.HasPrefix(fileData.ProcName, saPath[0]) || strings.HasPrefix(fileData.ProcName, saPath[1]) {
-				filePaths.FromSource = append(filePaths.FromSource, fileData.ParentProcName)
+				fromSourceArr = append(fromSourceArr, pol.MatchSourceType{
+					Path: pol.MatchPathType(fileData.ParentProcName),
+				})
 			}
 		}
 	}
-	filePaths.Path = saPath
-	filePaths.Recursive = true
+	if len(fromSourceArr) < 1 {
+		log.Info("No serviceaccount access detected. Skipping runtime policy creation on ", distro)
+		return nil
 
-	ms.Rules = Rules{
-		FileRule: &filePaths,
 	}
-	return ms, nil
+	filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
+		Directory:  pol.MatchDirectoryType(saPath[0]),
+		FromSource: fromSourceArr,
+	})
+	filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
+		Directory:  pol.MatchDirectoryType(saPath[1]),
+		FromSource: fromSourceArr,
+	})
+	ms.Spec = pol.KubeArmorPolicySpec{
+		Action:   "Allow",
+		Message:  "serviceaccount access detected",
+		Tags:     []string{"KUBERNETES", "SERVICE ACCOUNT", "RUNTIME POLICY"},
+		Severity: 1,
+		File:     filePaths,
+	}
+	return &ms
 }

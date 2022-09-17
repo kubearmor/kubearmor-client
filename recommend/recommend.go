@@ -89,6 +89,12 @@ func Recommend(c *k8s.Client, o Options) error {
 	deployments := []Deployment{}
 	var err error
 
+	yamlFile, _ := os.ReadFile(filepath.Join(getCachePath(), "rules.yaml"))
+	CurrentVersion = updateRulesYAML(yamlFile)
+	if !isLatest() {
+		log.Warn("\033[1;33mA new version of policy-templates is available. Use `karmor recommend update` to get recommendations based on the latest policy-templates.\033[0m")
+	}
+
 	if err = createOutDir(o.OutDir); err != nil {
 		return err
 	}

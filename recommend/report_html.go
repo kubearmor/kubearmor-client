@@ -10,7 +10,6 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -146,9 +145,9 @@ func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
 		Rec: []Col{
 			{Name: policyName},
 			{Name: ms.Description.Tldr},
-			{Name: strconv.Itoa(ms.OnEvent.Severity)},
-			{Name: ms.OnEvent.Action},
-			{Name: strings.Join(ms.OnEvent.Tags[:], ",")},
+			{Name: fmt.Sprintf("%d", ms.Spec.Severity)},
+			{Name: string(ms.Spec.Action)},
+			{Name: strings.Join(ms.Spec.Tags[:], ",")},
 		},
 		Policy:      string(policy),
 		Description: ms.Description.Detailed,

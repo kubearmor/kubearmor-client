@@ -12,16 +12,17 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/fatih/color"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 )
 
 // MatchSpec spec to match for defining policy
 type MatchSpec struct {
-	Name         string      `json:"name" yaml:"name"`
-	Precondition string      `json:"precondition" yaml:"precondition"`
-	Description  Description `json:"description" yaml:"description"`
-	Rules        Rules       `json:"rules" yaml:"rules"`
-	OnEvent      OnEvent     `json:"onEvent" yaml:"onEvent"`
+	Name         string                  `json:"name" yaml:"name"`
+	Precondition []string                `json:"precondition" yaml:"precondition"`
+	Description  Description             `json:"description" yaml:"description"`
+	Yaml         string                  `json:"yaml" yaml:"yaml"`
+	Spec         pol.KubeArmorPolicySpec `json:"spec,omitempty" yaml:"spec,omitempty"`
 }
 
 // Ref for the policy rules
@@ -37,59 +38,33 @@ type Description struct {
 	Detailed string `json:"detailed" yaml:"detailed"`
 }
 
-// SysRule specifics a file/process rule. Note that if the Path ends in "/" it is considered to be Directory rule
-type SysRule struct {
-	FromSource []string `json:"fromSource" yaml:"fromSource"`
-	Path       []string `json:"path" yaml:"path"`
-	Recursive  bool     `json:"recursive" yaml:"recursive"`
-	OwnerOnly  bool     `json:"ownerOnly" yaml:"ownerOnly"`
-}
-
-// NetRule specifies a KubeArmor network rule.
-type NetRule struct {
-	FromSource string   `json:"fromSource" yaml:"fromSource"`
-	Protocol   []string `json:"protocol" yaml:"protocol"`
-}
-
-// Rules set of applicable rules. In the future, we might have other types of rules.
-type Rules struct {
-	FileRule    *SysRule `json:"fileRule" yaml:"fileRule"`
-	ProcessRule *SysRule `json:"processRule" yaml:"processRule"`
-	NetworkRule *NetRule `json:"networkRule" yaml:"networkRule"`
-}
-
-// OnEvent the information that is emitted in the telemetry/alert when the matching event is witnessed
-type OnEvent struct {
-	Severity int      `json:"severity" yaml:"severity"`
-	Message  string   `json:"message" yaml:"message"`
-	Tags     []string `json:"tags" yaml:"tags"`
-	Action   string   `json:"action" yaml:"action"`
-}
-
 var policyRules []MatchSpec
 
 //go:embed yaml/rules.yaml
 var policyRulesYAML []byte
 
-func init() {
-	policyRulesJSON, err := yaml.YAMLToJSON(policyRulesYAML)
+func updateRulesYAML(yamlFile []byte) string {
+	policyRules = []MatchSpec{}
+	if len(yamlFile) < 30 {
+		yamlFile = policyRulesYAML
+	}
+	policyRulesJSON, err := yaml.YAMLToJSON(yamlFile)
 	if err != nil {
 		color.Red("failed to convert policy rules yaml to json")
 		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
 	}
-
 	var jsonRaw map[string]json.RawMessage
 	err = json.Unmarshal(policyRulesJSON, &jsonRaw)
 	if err != nil {
 		color.Red("failed to unmarshal policy rules json")
 		log.WithError(err).Fatal("failed to unmarshal policy rules json")
 	}
-
 	err = json.Unmarshal(jsonRaw["policyRules"], &policyRules)
 	if err != nil {
 		color.Red("failed to unmarshal policy rules")
 		log.WithError(err).Fatal("failed to unmarshal policy rules")
 	}
+	return string(jsonRaw["version"])
 }
 
 func getNextRule(idx *int) (MatchSpec, error) {
