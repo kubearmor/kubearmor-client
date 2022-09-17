@@ -1,6 +1,8 @@
+version: v0.0.1
 policyRules:
 - name: cert-access
-  precondition: "/etc/ssl/.*"
+  precondition: 
+  - /etc/ssl/.*
   description:
     refs:
     - name: MITRE-TTP
@@ -18,22 +20,22 @@ policyRules:
       signing certificate, a program prompting the user with a warning because it
       has an attribute set from being downloaded from the Internet, or getting an
       indication that you are about to connect to an untrusted site.
-  rules:
-    fileRule:
-      path:
-      - "/etc/ssl/"
-      - "/etc/pki/"
-      - "/usr/local/share/ca-certificates/"
-      recursive: true
-  onEvent:
+  spec:
     severity: 2
     message: restrict access to certificate data
     tags:
     - PCI-DSS
     - MITRE
     action: Audit
+    file:
+      matchDirectories:
+      - dir: "/etc/ssl/"
+      - dir: "/etc/pki/"
+      - dir: "/usr/local/share/ca-certificates/"
+      recursive: true
 - name: sys-bin-protect
-  precondition: "/bin/.*"
+  precondition: 
+  - /bin/.*
   description:
     refs:
     - name: MITRE-TTP
@@ -42,22 +44,22 @@ policyRules:
     tldr: create or modify system-level processes for persistence of malicious payloads
     detailed: Adversaries may create or modify system-level processes to repeatedly
       execute malicious payloads as part of persistence.
-  rules:
-    fileRule:
-      path:
-      - "/bin/"
-      - "/usr/bin/"
-      - "/usr/sbin/"
-      recursive: true
-  onEvent:
+  spec:
     severity: 1
     message: attempted access to system binaries
     tags:
     - CIS
     - MITRE
     action: Audit
+    file:
+      matchDirectories:
+      - dir: "/bin/"
+      - dir: "/usr/bin/"
+      - dir: "/usr/sbin/"
+      recursive: true
 - name: password-protect
-  precondition: "/etc/passwd"
+  precondition: 
+  - /etc/passwd
   description:
     refs:
     - name: MITRE-TTP
@@ -67,20 +69,20 @@ policyRules:
     detailed: Adversaries may search for common password storage locations to obtain
       user credentials. Passwords are stored in several places on a system, depending
       on the operating system or application holding the credentials.
-  rules:
-    fileRule:
-      path:
-      - "/etc/passwd"
-      - "/etc/shadow"
-  onEvent:
+  spec:
     severity: 1
     message: attempted access to password files
     tags:
     - CIS
     - MITRE
     action: Audit
+    file:
+      matchPaths:
+      - path: "/etc/passwd"
+      - path: "/etc/shadow"
 - name: scheduler-protect
-  precondition: "/etc/crontab"
+  precondition: 
+  - /etc/crontab
   description:
     refs:
     - name: MITRE-TTP
@@ -91,20 +93,20 @@ policyRules:
     detailed: |-
       Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. Utilities exist within all major operating systems to schedule programs or scripts to be executed at a specified date and time.
       Adversaries may use task scheduling to execute programs at system startup or on a scheduled basis for persistence. These mechanisms can also be abused to run a process under the context of a specified account (such as one with elevated permissions/privileges).
-  rules:
-    fileRule:
-      path:
-      - "/etc/crontab"
-      - "/etc/at.allow"
-      - "/etc/at.deny"
-  onEvent:
+  spec:
     severity: 1
     message: attempted access to cronjob settings
     tags:
     - MITRE
     action: Audit
+    file:
+      matchPaths:
+      - path: "/etc/crontab"
+      - path: "/etc/at.allow"
+      - path: "/etc/at.deny"
 - name: maint-tool-access
-  precondition: "/sbin/apk"
+  precondition: 
+  - /sbin/apk
   description:
     refs:
     - name: MITRE-TTP
@@ -114,20 +116,20 @@ policyRules:
     detailed: Container images might contain maintenance tools which should ideally
       never be used in prod env, or if used, should be used only in certain time frames.
       Examples include, dynamic package management tools, mii-tool, iptables etc
-  rules:
-    fileRule:
-      path:
-      - "/sbin/"
-      recursive: true
-  onEvent:
+  spec:
     severity: 1
     message: restricted maintenance tool access attempted
     tags:
     - PCI-DSS
     - MITRE
     action: Audit
+    file:
+      matchDirectories:
+      - dir: "/sbin/"
+      recursive: true 
 - name: shell-access
-  precondition: "/bin/sh"
+  precondition: 
+  - /bin/sh
   description:
     refs:
     - name: MITRE-TTP
@@ -136,24 +138,24 @@ policyRules:
     tldr: abuse shell access and execute arbitrary commands, scripts, or binaries
     detailed: Containers comes with some built-in shell and scripting capabilities.
       Adversaries may attempt to use the shell to execute arbitrary commands. 
-  rules:
-    processRule:
-      path:
-      - "/bin/sh"
-      - "/bin/bash"
-      - "/bin/dash"
-      - "/bin/ksh"
-      - "/bin/zsh"
-      - "/bin/tcsh"
-      - "/bin/csh"
-  onEvent:
+  spec:
     severity: 1
     message: attempted access to shell
     tags:
     - MITRE
     action: Audit
+    process:
+      matchPaths:
+      - path: "/bin/sh"
+      - path: "/bin/bash"
+      - path: "/bin/dash"
+      - path: "/bin/ksh"
+      - path: "/bin/zsh"
+      - path: "/bin/tcsh"
+      - path: "/bin/csh"
 - name: ssh-access
-  precondition: "/usr/bin/ssh"
+  precondition: 
+  - /usr/bin/ssh
   description:
     refs:
     - name: MITRE-TTP
@@ -161,18 +163,18 @@ policyRules:
       - https://attack.mitre.org/techniques/T1021/
     tldr: use ssh to gain access to host in the same network
     detailed: To accomplish Lateral Movement, adversaries can use SSH to login into host in the same network. 
-  rules:
-    processRule:
-      path:
-      - "/usr/bin/ssh"
-  onEvent:
+  spec:
     severity: 1
     message: attempted access to SSH
     tags:
     - MITRE
     action: Audit
+    process:
+      matchPaths:
+      - path: "/usr/bin/ssh"
 - name: nist-ca-3-net-icmp-audit
-  precondition: "/bin/busybox"
+  precondition: 
+  - /bin/busybox
   description:
     refs:
     - name: NIST-CA-3
@@ -188,11 +190,7 @@ policyRules:
        requirements, controls, and responsibilities for each system, and the impact level 
        of the information communicated; and Review and update the agreements 
        [Assignment organization-defined frequency].
-  rules:
-    networkRule:
-      protocol:
-      - "icmp"
-  onEvent:
+  spec:
     severity: 1
     message: Detected Network traffic using ICMP packets
     tags:
@@ -201,3 +199,7 @@ policyRules:
     - NETWORK
     - System-Interconnections
     action: Audit
+    network:
+      matchProtocol:
+      - protocol: "icmp"
+    

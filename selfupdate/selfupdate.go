@@ -27,13 +27,11 @@ const ghrepo = "kubearmor/kubearmor-client"
 
 func isValidVersion(ver string) bool {
 	_, err := semver.Make(ver)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
-func confirmUserAction(action string) bool {
+// ConfirmUserAction - returns true if user inputs `y`
+func ConfirmUserAction(action string) bool {
 	fmt.Printf("%s (y/n): ", action)
 	input, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil || (input != "y\n" && input != "n\n") {
@@ -59,7 +57,7 @@ func getLatest() (*selfupdate.Release, error) {
 	return latest, nil
 }
 
-//IsLatest - check if the current binary is the latest
+// IsLatest - check if the current binary is the latest
 func IsLatest(curver string) (bool, string) {
 	if curver != "" && !isValidVersion(curver) {
 		return true, ""
@@ -114,7 +112,7 @@ func SelfUpdate(c *k8s.Client) error {
 	fmt.Printf("current karmor version %s\n", ver)
 	if !isValidVersion(ver) {
 		fmt.Println("version does not match the pattern. Maybe using a locally built karmor!")
-		if !confirmUserAction("Do you want to update it?") {
+		if !ConfirmUserAction("Do you want to update it?") {
 			return nil
 		}
 		return doSelfUpdate("")

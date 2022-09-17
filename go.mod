@@ -47,7 +47,11 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
+require (
+	github.com/cavaliergopher/grab/v3 v3.0.1
+	github.com/google/go-github v17.0.0+incompatible
+	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
+)
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect

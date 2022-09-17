@@ -217,6 +217,10 @@ func saveImageToTar(imageName string) string {
 
 func checkForSpec(spec string, fl []string) []string {
 	var matches []string
+	if !strings.HasSuffix(spec, "*") {
+		spec = fmt.Sprintf("%s$", spec)
+	}
+
 	re := regexp.MustCompile(spec)
 	for _, name := range fl {
 		if re.Match([]byte(name)) {

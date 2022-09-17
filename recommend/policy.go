@@ -9,93 +9,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/accuknox/auto-policy-discovery/src/types"
 	"github.com/clarketm/json"
 	"github.com/fatih/color"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/yaml"
 )
 
-func (r *SysRule) convertToKnoxRule() types.KnoxSys {
-	knoxRule := types.KnoxSys{}
-	fromSourceArr := []types.KnoxFromSource{}
+func addPolicyRule(policy *pol.KubeArmorPolicy, r pol.KubeArmorPolicySpec) {
 
-	for _, eachSource := range r.FromSource {
-		if eachSource != "" {
-			if strings.HasSuffix(eachSource, "/") {
-				fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-					Dir: eachSource,
-				})
-			} else {
-				fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-					Path: eachSource,
-				})
-			}
-		}
+	if len(r.File.MatchDirectories) != 0 || len(r.File.MatchPaths) != 0 {
+		policy.Spec.File = r.File
 	}
-
-	for _, path := range r.Path {
-		if strings.HasSuffix(path, "/") {
-
-			dirRule := types.KnoxMatchDirectories{
-				Dir:        path,
-				Recursive:  r.Recursive,
-				FromSource: fromSourceArr,
-				OwnerOnly:  r.OwnerOnly,
-			}
-			knoxRule.MatchDirectories = append(knoxRule.MatchDirectories, dirRule)
-		} else {
-			pathRule := types.KnoxMatchPaths{
-				Path:       path,
-				FromSource: fromSourceArr,
-				OwnerOnly:  r.OwnerOnly,
-			}
-			knoxRule.MatchPaths = append(knoxRule.MatchPaths, pathRule)
-		}
+	if len(r.Process.MatchDirectories) != 0 || len(r.Process.MatchPaths) != 0 {
+		policy.Spec.Process = r.Process
 	}
-
-	return knoxRule
-}
-
-// networkToKnoxRule function to include KubeArmor network rules
-func (r *NetRule) networkToKnoxRule() types.NetworkRule {
-	knoxNetRule := types.NetworkRule{}
-	fromSourceArr := []types.KnoxFromSource{}
-
-	if r.FromSource != "" {
-		if strings.HasSuffix(r.FromSource, "/") {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Dir: r.FromSource,
-			})
-		} else {
-			fromSourceArr = append(fromSourceArr, types.KnoxFromSource{
-				Path: r.FromSource,
-			})
-		}
-	}
-	for _, protocol := range r.Protocol {
-
-		protoRule := types.KnoxMatchProtocols{
-			Protocol:   protocol,
-			FromSource: fromSourceArr,
-		}
-		knoxNetRule.MatchProtocols = append(knoxNetRule.MatchProtocols, protoRule)
-
-	}
-
-	return knoxNetRule
-}
-
-func addPolicyRule(policy *types.KubeArmorPolicy, r Rules) {
-	if r.FileRule != nil {
-		policy.Spec.File = r.FileRule.convertToKnoxRule()
-	}
-	if r.ProcessRule != nil {
-		policy.Spec.Process = r.ProcessRule.convertToKnoxRule()
-	}
-	if r.NetworkRule != nil {
-		policy.Spec.Network = r.NetworkRule.networkToKnoxRule()
+	if len(r.Network.MatchProtocols) != 0 {
+		policy.Spec.Network = r.Network
 	}
 }
 
@@ -110,31 +41,30 @@ func mkPathFromTag(tag string) string {
 	return r.Replace(tag)
 }
 
-func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) {
-	policy := types.KubeArmorPolicy{
-		APIVersion: "security.kubearmor.com/v1",
-		Kind:       "KubeArmorPolicy",
-		Metadata:   map[string]string{},
-		Spec: types.KnoxSystemSpec{
+func (img *ImageInfo) createPolicy(ms MatchSpec) (pol.KubeArmorPolicy, error) {
+	policy := pol.KubeArmorPolicy{
+		Spec: pol.KubeArmorPolicySpec{
 			Severity: 1, // by default
-			Selector: types.Selector{
+			Selector: pol.SelectorType{
 				MatchLabels: map[string]string{}},
 		},
 	}
+	policy.APIVersion = "security.kubearmor.com/v1"
+	policy.Kind = "KubeArmorPolicy"
 
-	policy.Metadata["name"] = img.getPolicyName(ms.Name)
+	policy.ObjectMeta.Name = img.getPolicyName(ms.Name)
 
 	if img.Namespace != "" {
-		policy.Metadata["namespace"] = img.Namespace
+		policy.ObjectMeta.Namespace = img.Namespace
 	}
 
-	policy.Spec.Action = ms.OnEvent.Action
-	policy.Spec.Severity = ms.OnEvent.Severity
-	if ms.OnEvent.Message != "" {
-		policy.Spec.Message = ms.OnEvent.Message
+	policy.Spec.Action = ms.Spec.Action
+	policy.Spec.Severity = ms.Spec.Severity
+	if ms.Spec.Message != "" {
+		policy.Spec.Message = ms.Spec.Message
 	}
-	if len(ms.OnEvent.Tags) > 0 {
-		policy.Spec.Tags = ms.OnEvent.Tags
+	if len(ms.Spec.Tags) > 0 {
+		policy.Spec.Tags = ms.Spec.Tags
 	}
 
 	if len(img.Labels) > 0 {
@@ -144,13 +74,16 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (types.KubeArmorPolicy, error) 
 		policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
 	}
 
-	addPolicyRule(&policy, ms.Rules)
+	addPolicyRule(&policy, ms.Spec)
 	return policy, nil
 }
 
 func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
-	matches := checkForSpec(filepath.Join(ms.Precondition), img.FileList)
-	return len(matches) > 0
+	var matches []string
+	for _, preCondition := range ms.Precondition {
+		matches = append(matches, checkForSpec(filepath.Join(preCondition), img.FileList)...)
+	}
+	return len(matches) >= len(ms.Precondition)
 }
 
 func matchTags(ms MatchSpec) bool {
@@ -158,7 +91,7 @@ func matchTags(ms MatchSpec) bool {
 		return true
 	}
 	for _, t := range options.Tags {
-		if slices.Contains(ms.OnEvent.Tags, t) {
+		if slices.Contains(ms.Spec.Tags, t) {
 			return true
 		}
 	}
@@ -214,8 +147,7 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 
 	err = createRuntimePolicy(img)
 	if err != nil {
-		log.WithError(err).Error("Failed to create runtime policy")
-		return
+		log.Infof("Failed to create runtime policy for %s/%s/%s. err=%s", img.Namespace, img.Deployment, img.Name, err)
 	}
 
 	ms, err = getNextRule(&idx)
