@@ -24,7 +24,7 @@ type Options struct {
 	Output    string
 }
 
-//HostPolicyBackup
+// HostPolicyBackup
 type HostPolicyBackup struct {
 	Metadata struct {
 		PolicyName string `json:"policyName"`
@@ -63,20 +63,28 @@ func ListPolicies(c *k8s.Client, o Options) error {
 		return err
 	}
 	if env == "k8s" {
-		policies, err := c.KSPClientset.KubeArmorPolicies(o.Namespace).List(context.Background(), metav1.ListOptions{})
+		nsList, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
+		policyList := v1.KubeArmorPolicyList{}
+		for _, namespace := range nsList.Items {
+			policies, err := c.KSPClientset.KubeArmorPolicies(namespace.Name).List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+			policyList.Items = append(policyList.Items, policies.Items...)
+		}
 		switch format := o.Output; format {
 		case "json":
-			result, err := json.MarshalIndent(policies.Items, "", "")
+			result, err := json.MarshalIndent(policyList.Items, "", "")
 			if err != nil {
 				return err
 			}
 			fmt.Println(string(result))
 			return nil
 		default:
-			err = printK8SPolicies(policies.Items, o.Namespace)
+			err = printK8SPolicies(policyList.Items)
 			if err != nil {
 				return err
 			}
@@ -106,13 +114,12 @@ func ListPolicies(c *k8s.Client, o Options) error {
 	return nil
 }
 
-func printK8SPolicies(policies []v1.KubeArmorPolicy, namespace string) error {
+func printK8SPolicies(policies []v1.KubeArmorPolicy) error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Policy Name", "Namespace", "Pods"})
 	data := [][]string{}
-
 	if len(policies) <= 0 {
-		fmt.Printf("No policies found in %s", namespace)
+		fmt.Println("No policies found in your cluster")
 		return nil
 	}
 	for _, policy := range policies {
