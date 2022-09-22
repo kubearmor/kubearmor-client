@@ -69,7 +69,7 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 
 	if strings.Contains(requestType, "network") {
 		if len(resp.InNwData) > 0 {
-			fmt.Printf("\nIncoming Server connection\n")
+			fmt.Printf("\nIngress connections\n")
 			// Display server conn data
 			inNwRowData := [][]string{}
 			for _, inNwData := range resp.InNwData {
@@ -88,7 +88,7 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 		}
 
 		if len(resp.OutNwData) > 0 {
-			fmt.Printf("\nOutgoing Server connection\n")
+			fmt.Printf("\nEgress connections\n")
 			// Display server conn data
 			outNwRowData := [][]string{}
 			for _, outNwData := range resp.OutNwData {
