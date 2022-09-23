@@ -12,7 +12,6 @@ import (
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
-	log "github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -93,18 +92,15 @@ func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
 			}
 		}
 	}
-	if len(fromSourceArr) < 1 {
-		log.Info("No serviceaccount access detected. Skipping runtime policy creation on ", distro)
-		return nil
-
-	}
 	filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
 		Directory:  pol.MatchDirectoryType(saPath[0]),
 		FromSource: fromSourceArr,
+		Recursive:  true,
 	})
 	filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
 		Directory:  pol.MatchDirectoryType(saPath[1]),
 		FromSource: fromSourceArr,
+		Recursive:  true,
 	})
 	ms.Spec = pol.KubeArmorPolicySpec{
 		Action:   "Allow",
@@ -112,6 +108,11 @@ func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
 		Tags:     []string{"KUBERNETES", "SERVICE ACCOUNT", "RUNTIME POLICY"},
 		Severity: 1,
 		File:     filePaths,
+	}
+	if len(fromSourceArr) < 1 {
+		ms.Spec.Action = "Block"
+		ms.Name = "block-serviceaccount-runtime"
+		ms.Spec.Message = "serviceaccount access blocked"
 	}
 	return &ms
 }

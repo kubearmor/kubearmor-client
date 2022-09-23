@@ -30,6 +30,9 @@ const (
 // CurrentVersion stores the current version of policy-template
 var CurrentVersion string
 
+// LatestVersion stores the latest version of policy-template
+var LatestVersion string
+
 func getCachePath() string {
 	cache := fmt.Sprintf("%s/%s", userHome(), cache)
 	return cache
@@ -72,14 +75,14 @@ func CurrentRelease() string {
 }
 
 func isLatest() bool {
-	latest := latestRelease()
+	LatestVersion = latestRelease()
 
-	if latest == "" {
+	if LatestVersion == "" {
 		// error while fetching latest release tag
 		// assume the current release is the latest one
 		return true
 	}
-	return (CurrentVersion == latest)
+	return (CurrentVersion == LatestVersion)
 }
 
 func removeData(file string) error {
@@ -94,14 +97,14 @@ func init() {
 // DownloadAndUnzipRelease downloads the latest version of policy-templates
 func DownloadAndUnzipRelease() (string, error) {
 
-	latestRelease := latestRelease()
+	LatestVersion = latestRelease()
 
 	_ = removeData(getCachePath())
 	err := os.MkdirAll(filepath.Dir(getCachePath()), 0750)
 	if err != nil {
 		return "", err
 	}
-	downloadURL := fmt.Sprintf("%s%s.zip", url, latestRelease)
+	downloadURL := fmt.Sprintf("%s%s.zip", url, LatestVersion)
 	resp, err := grab.Get(getCachePath(), downloadURL)
 	if err != nil {
 		_ = removeData(getCachePath())
@@ -117,7 +120,7 @@ func DownloadAndUnzipRelease() (string, error) {
 	}
 	_ = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"))
 	CurrentVersion = CurrentRelease()
-	return latestRelease, nil
+	return LatestVersion, nil
 }
 
 func unZip(source, dest string) error {
