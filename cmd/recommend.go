@@ -4,8 +4,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kubearmor/kubearmor-client/recommend"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -31,8 +29,7 @@ var updateCmd = &cobra.Command{
 	Long:  "Updates the local cache of policy-templates ($HOME/.cache/karmor)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if d, err := recommend.DownloadAndUnzipRelease(); err != nil {
-			fmt.Println(d)
+		if _, err := recommend.DownloadAndUnzipRelease(); err != nil {
 			return err
 		}
 		log.WithFields(log.Fields{

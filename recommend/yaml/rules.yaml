@@ -30,9 +30,11 @@ policyRules:
     file:
       matchDirectories:
       - dir: "/etc/ssl/"
+        recursive: true
       - dir: "/etc/pki/"
+        recursive: true
       - dir: "/usr/local/share/ca-certificates/"
-      recursive: true
+        recursive: true
 - name: sys-bin-protect
   precondition: 
   - /bin/.*
