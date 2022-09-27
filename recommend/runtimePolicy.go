@@ -48,6 +48,7 @@ func createRuntimePolicy(img *ImageInfo) error {
 	podData, err := client.GetPodNames(context.Background(), &opb.Request{
 		Label:     labels,
 		NameSpace: img.Namespace,
+		Aggregate: true,
 	})
 	if err != nil {
 		return err
@@ -60,6 +61,7 @@ func createRuntimePolicy(img *ImageInfo) error {
 			Label:     labels,
 			NameSpace: img.Namespace,
 			Type:      "file",
+			Aggregate: true,
 		})
 		if err != nil {
 			return err
@@ -76,11 +78,17 @@ func createRuntimePolicy(img *ImageInfo) error {
 
 func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
 	var filePaths pol.FileType
+	ref := Ref{
+		Name: "MITRE Unsecured Credentials: Container API",
+		URL:  []string{"https://attack.mitre.org/techniques/T1552/007/"},
+	}
 	fromSourceArr := []pol.MatchSourceType{}
 	ms := MatchSpec{
-		Name: "audit-serviceaccount-runtime",
+		Name: "allow-serviceaccount-runtime",
 		Description: Description{
-			Tldr: "Kubernetes serviceaccount folder access should be limited",
+			Refs:     []Ref{ref},
+			Tldr:     "Kubernetes serviceaccount folder access should be limited",
+			Detailed: "Adversaries may gather credentials via APIs within a containers environment. APIs in these environments, such as the Docker API and Kubernetes APIs, allow a user to remotely manage their container resources and cluster components. An adversary may access the Docker API to collect logs that contain credentials to cloud, container, and various other resources in the environment. An adversary with sufficient permissions, such as via a pod's service account, may also use the Kubernetes API to retrieve credentials from the Kubernetes API server. These credentials may include those needed for Docker API authentication or secrets from Kubernetes cluster components.",
 		},
 	}
 	for _, eachResp := range sumResp {

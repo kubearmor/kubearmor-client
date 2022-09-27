@@ -40,6 +40,8 @@ func (r TextReport) writeImageSummary(img *ImageInfo) {
 	t.Append([]string{"OS", img.OS})
 	t.Append([]string{"Arch", img.Arch})
 	t.Append([]string{"Distro", img.Distro})
+	t.Append([]string{"Output Directory", fmt.Sprintf("%s/%s-%s/", options.OutDir, img.Namespace, img.Deployment)})
+	t.Append([]string{"policy-template version", CurrentVersion})
 	t.Render()
 }
 
@@ -63,7 +65,7 @@ func (r TextReport) SectionEnd(img *ImageInfo) error {
 // Record addition of new text table row
 func (r TextReport) Record(ms MatchSpec, policyName string) error {
 	var rec []string
-
+	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
 	rec = append(rec, wrapPolicyName(policyName, 35))
 	rec = append(rec, ms.Description.Tldr)
 	rec = append(rec, fmt.Sprintf("%d", ms.Spec.Severity))

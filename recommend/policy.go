@@ -147,7 +147,7 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 
 	err = createRuntimePolicy(img)
 	if err != nil {
-		log.Infof("Failed to create runtime policy for %s/%s/%s. err=%s", img.Namespace, img.Deployment, img.Name, err)
+		log.Infof("No runtime policy generated for %s/%s/%s", img.Namespace, img.Deployment, img.Name)
 	}
 
 	ms, err = getNextRule(&idx)
