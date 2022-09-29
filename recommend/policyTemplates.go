@@ -183,7 +183,6 @@ func updatePolicyRules(filePath string) error {
 	var version string
 
 	for _, file := range files {
-
 		idx := 0
 		yamlFile, err = os.ReadFile(filepath.Clean(file))
 		if err != nil {
@@ -196,7 +195,7 @@ func updatePolicyRules(filePath string) error {
 				newPolicyFile := pol.KubeArmorPolicy{}
 				newYaml, err := os.ReadFile(filepath.Clean(fmt.Sprintf("%s%s", strings.TrimSuffix(file, "metadata.yaml"), ms.Yaml)))
 				if err != nil {
-					return err
+					newYaml, _ = os.ReadFile(filepath.Clean(fmt.Sprintf("%s/%s", filePath, ms.Yaml)))
 				}
 				err = yaml.Unmarshal(newYaml, &newPolicyFile)
 				if err != nil {
@@ -208,7 +207,6 @@ func updatePolicyRules(filePath string) error {
 			completePolicy = append(completePolicy, ms)
 		}
 	}
-
 	yamlFile, err = yaml.Marshal(completePolicy)
 	if err != nil {
 		return err

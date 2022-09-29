@@ -118,6 +118,8 @@ func (r HTMLReport) Start(img *ImageInfo) error {
 		ImgInfo: []Info{
 			{Key: "Container", Val: img.RepoTags[0]},
 			{Key: "OS/Arch/Distro", Val: img.OS + "/" + img.Arch + "/" + img.Distro},
+			{Key: "Output Directory", Val: options.OutDir + "/" + img.Namespace + "-" + img.Deployment + "/"},
+			{Key: "policy-template version", Val: CurrentVersion},
 		},
 	}
 	_ = r.section.Execute(r.outString, seci)
@@ -140,6 +142,7 @@ func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
 	if err != nil {
 		log.WithError(err).Error(fmt.Sprintf("failed to read policy %s", policyName))
 	}
+	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
 	reci := RecordInfo{
 		RowID: fmt.Sprintf("row%d", *r.RecordCnt),
 		Rec: []Col{
