@@ -75,5 +75,5 @@ func init() {
 	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
 
 	// gRPC endpoint flag to communicate with KubeArmor. Available across subcommands.
-	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, " grpc", "", "gRPC server information")
+	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "grpc", "", "gRPC server information")
 }
