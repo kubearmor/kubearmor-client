@@ -28,7 +28,6 @@ clean:
 test:
 	cd $(CURDIR); go test -v ./...
 
-
 .PHONY: protobuf
 vm-protobuf:
 	cd $(CURDIR)/vm/protobuf; protoc --proto_path=. --go_opt=paths=source_relative --go_out=plugins=grpc:. vm.proto
