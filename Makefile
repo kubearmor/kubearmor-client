@@ -5,7 +5,6 @@ CURDIR     := $(shell pwd)
 INSTALLDIR := $(shell go env GOPATH)/bin/
 
 ifeq (, $(shell which govvv))
-
 $(shell go install github.com/ahmetb/govvv@latest)
 endif
 
