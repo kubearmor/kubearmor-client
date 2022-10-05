@@ -17,7 +17,7 @@ var (
 	// SysFileHeader variable contains source process, destination file path, count, timestamp and status
 	SysFileHeader = []string{"Src Process", "Destination File Path", "Count", "Last Updated Time", "Status"}
 	// SysNwHeader variable contains protocol, command, POD/SVC/IP, Port, Namespace, and Labels
-	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels"}
+	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels", "Count", "Last Updated Time"}
 )
 
 // DisplaySummaryOutput function
@@ -81,6 +81,8 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				inNwStrSlice = append(inNwStrSlice, inNwData.Port)
 				inNwStrSlice = append(inNwStrSlice, inNwData.Namespace)
 				inNwStrSlice = append(inNwStrSlice, inNwData.Labels)
+				inNwStrSlice = append(inNwStrSlice, inNwData.Count)
+				inNwStrSlice = append(inNwStrSlice, inNwData.UpdatedTime)
 				inNwRowData = append(inNwRowData, inNwStrSlice)
 			}
 			WriteTable(SysNwHeader, inNwRowData)
@@ -100,6 +102,8 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				outNwStrSlice = append(outNwStrSlice, outNwData.Port)
 				outNwStrSlice = append(outNwStrSlice, outNwData.Namespace)
 				outNwStrSlice = append(outNwStrSlice, outNwData.Labels)
+				outNwStrSlice = append(outNwStrSlice, outNwData.Count)
+				outNwStrSlice = append(outNwStrSlice, outNwData.UpdatedTime)
 				outNwRowData = append(outNwRowData, outNwStrSlice)
 			}
 			WriteTable(SysNwHeader, outNwRowData)
