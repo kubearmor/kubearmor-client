@@ -50,6 +50,8 @@ require (
 require (
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/kubearmor/koach/protobuf v0.0.0-20221006175256-c5ba76dacded
+	github.com/rodaine/table v1.0.1
 	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
 )
 
