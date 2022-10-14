@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"strings"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
@@ -43,6 +44,15 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				procStrSlice = append(procStrSlice, procData.Status)
 				procRowData = append(procRowData, procStrSlice)
 			}
+			sort.Slice(procRowData[:], func(i, j int) bool {
+				for x := range procRowData[i] {
+					if procRowData[i][x] == procRowData[j][x] {
+						continue
+					}
+					return procRowData[i][x] < procRowData[j][x]
+				}
+				return false
+			})
 			WriteTable(SysProcHeader, procRowData)
 			fmt.Printf("\n")
 		}
@@ -62,6 +72,15 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				fileStrSlice = append(fileStrSlice, fileData.Status)
 				fileRowData = append(fileRowData, fileStrSlice)
 			}
+			sort.Slice(fileRowData[:], func(i, j int) bool {
+				for x := range fileRowData[i] {
+					if fileRowData[i][x] == fileRowData[j][x] {
+						continue
+					}
+					return fileRowData[i][x] < fileRowData[j][x]
+				}
+				return false
+			})
 			WriteTable(SysFileHeader, fileRowData)
 			fmt.Printf("\n")
 		}
