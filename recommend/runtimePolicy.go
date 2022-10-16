@@ -71,13 +71,14 @@ func createRuntimePolicy(img *ImageInfo) error {
 
 	ms := checkProcessFileData(sumResp, img.Distro)
 	if ms != nil {
-		img.writePolicyFile(*ms)
+		img.writePolicyFile(ms)
 	}
 	return nil
 }
 
 func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
 	var filePaths pol.FileType
+	var procesPath pol.ProcessType
 	ref := Ref{
 		Name: "MITRE Unsecured Credentials: Container API",
 		URL:  []string{"https://attack.mitre.org/techniques/T1552/007/"},
@@ -113,14 +114,45 @@ func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
 	ms.Spec = pol.KubeArmorPolicySpec{
 		Action:   "Allow",
 		Message:  "serviceaccount access detected",
-		Tags:     []string{"KUBERNETES", "SERVICE ACCOUNT", "RUNTIME POLICY"},
+		Tags:     []string{"MITRE_T1552.007_container_api", "MITRE"},
 		Severity: 1,
 		File:     filePaths,
 	}
+
 	if len(fromSourceArr) < 1 {
 		ms.Spec.Action = "Block"
 		ms.Name = "block-serviceaccount-runtime"
 		ms.Spec.Message = "serviceaccount access blocked"
+		ms.Description.Refs = []Ref{
+			{
+				URL:  []string{"https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#use-the-default-service-account-to-access-the-api-server", "https://attack.mitre.org/techniques/T1552/007/"},
+				Name: "Set automount for Service Account tokens to false",
+			},
+		}
+		ms.Description.Tldr = "Set automount for Service Account tokens to false"
+		ms.Description.Detailed = "When you create a pod, if you do not specify a service account, it is automatically assigned the default service account in the same namespace. If you get the raw json or yaml for a pod you have created (for example, kubectl get pods/<podname> -o yaml), you can see the spec.serviceAccountName field has been automatically set. You can access the API from inside a pod using automatically mounted service account credentials, as described in Accessing the Cluster. The API permissions of the service account depend on the authorization plugin and policy in use. An adversary can make use of this automounted credentials to compromise the entire system. You can opt out of automounting API credentials on /var/run/secrets/kubernetes.io/serviceaccount/token for a service account by setting automountServiceAccountToken: false on the ServiceAccount"
+	} else {
+		filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
+			Directory: pol.MatchDirectoryType(saPath[0]),
+			Recursive: true,
+			Action:    "Block",
+		})
+		filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
+			Directory: pol.MatchDirectoryType(saPath[1]),
+			Recursive: true,
+			Action:    "Block",
+		})
+		filePaths.MatchDirectories = append(filePaths.MatchDirectories, pol.FileDirectoryType{
+			Directory: "/",
+			Recursive: true,
+		})
+		procesPath.MatchDirectories = append(procesPath.MatchDirectories, pol.ProcessDirectoryType{
+			Directory: "/",
+			Recursive: true,
+		})
+		ms.Spec.Process = procesPath
+		ms.Spec.File = filePaths
+
 	}
 	return &ms
 }

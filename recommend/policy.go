@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func addPolicyRule(policy *pol.KubeArmorPolicy, r pol.KubeArmorPolicySpec) {
+func addPolicyRule(policy *pol.KubeArmorPolicy, r *pol.KubeArmorPolicySpec) {
 
 	if len(r.File.MatchDirectories) != 0 || len(r.File.MatchPaths) != 0 {
 		policy.Spec.File = r.File
@@ -41,7 +41,7 @@ func mkPathFromTag(tag string) string {
 	return r.Replace(tag)
 }
 
-func (img *ImageInfo) createPolicy(ms MatchSpec) (pol.KubeArmorPolicy, error) {
+func (img *ImageInfo) createPolicy(ms *MatchSpec) (pol.KubeArmorPolicy, error) {
 	policy := pol.KubeArmorPolicy{
 		Spec: pol.KubeArmorPolicySpec{
 			Severity: 1, // by default
@@ -74,11 +74,11 @@ func (img *ImageInfo) createPolicy(ms MatchSpec) (pol.KubeArmorPolicy, error) {
 		policy.Spec.Selector.MatchLabels["kubearmor.io/container.name"] = repotag[0]
 	}
 
-	addPolicyRule(&policy, ms.Spec)
+	addPolicyRule(&policy, &ms.Spec)
 	return policy, nil
 }
 
-func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
+func (img *ImageInfo) checkPreconditions(ms *MatchSpec) bool {
 	var matches []string
 	for _, preCondition := range ms.Precondition {
 		matches = append(matches, checkForSpec(filepath.Join(preCondition), img.FileList)...)
@@ -86,7 +86,7 @@ func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
 	return len(matches) >= len(ms.Precondition)
 }
 
-func matchTags(ms MatchSpec) bool {
+func matchTags(ms *MatchSpec) bool {
 	if len(options.Tags) <= 0 {
 		return true
 	}
@@ -98,7 +98,7 @@ func matchTags(ms MatchSpec) bool {
 	return false
 }
 
-func (img *ImageInfo) writePolicyFile(ms MatchSpec) {
+func (img *ImageInfo) writePolicyFile(ms *MatchSpec) {
 	policy, err := img.createPolicy(ms)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
@@ -154,14 +154,14 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 	for ; err == nil; ms, err = getNextRule(&idx) {
 		// matches preconditions
 
-		if !matchTags(ms) {
+		if !matchTags(&ms) {
 			continue
 		}
 
-		if !img.checkPreconditions(ms) {
+		if !img.checkPreconditions(&ms) {
 			continue
 		}
-		img.writePolicyFile(ms)
+		img.writePolicyFile(&ms)
 	}
 
 	_ = ReportSectEnd(img)

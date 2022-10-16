@@ -159,13 +159,16 @@ func unZip(source, dest string) error {
 }
 
 func updatePolicyRules(filePath string) error {
-	var files []string
+	var files, tagsFile []string
 	err := filepath.Walk(filePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && info.Name() == "metadata.yaml" {
 			files = append(files, path)
+		}
+		if !info.IsDir() && info.Name() == "tags.yaml" {
+			tagsFile = append(tagsFile, path)
 		}
 		return nil
 	})
@@ -204,6 +207,22 @@ func updatePolicyRules(filePath string) error {
 				ms.Yaml = ""
 				ms.Spec = newPolicyFile.Spec
 			}
+			newTags := []string{}
+			for _, tagFile := range tagsFile {
+				tagsData, err := os.ReadFile(filepath.Clean(tagFile))
+				if err != nil {
+					return err
+				}
+				tagData := updateTagsData(tagsData)
+				for _, tags := range tagData {
+					for _, nextTags := range ms.Spec.Tags {
+						if tags == nextTags {
+							newTags = append(newTags, tags)
+						}
+					}
+				}
+			}
+			ms.Spec.Tags = newTags
 			completePolicy = append(completePolicy, ms)
 		}
 	}

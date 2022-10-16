@@ -47,7 +47,7 @@ func ReportStart(img *ImageInfo) error {
 }
 
 // ReportRecord called once per policy
-func ReportRecord(ms MatchSpec, policyName string) error {
+func ReportRecord(ms *MatchSpec, policyName string) error {
 	switch v := Handler.(type) {
 	case HTMLReport:
 		return v.Record(ms, policyName)

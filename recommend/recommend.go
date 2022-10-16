@@ -25,6 +25,7 @@ type Options struct {
 	Namespace  string
 	OutDir     string
 	ReportFile string
+	Config     string
 }
 
 // LabelMap is an alias for map[string]string
@@ -89,7 +90,16 @@ func Recommend(c *k8s.Client, o Options) error {
 	deployments := []Deployment{}
 	var err error
 	if !isLatest() {
-		log.Warn("\033[1;33mpolicy-templates ", LatestVersion, " is available. Use `karmor recommend update` to get recommendations based on the latest policy-templates.\033[0m")
+		log.WithFields(log.Fields{
+			"Current Version": CurrentVersion,
+		}).Info("Found outdated version of policy-templates")
+		log.Info("Downloading latest version [", LatestVersion, "]")
+		if _, err := DownloadAndUnzipRelease(); err != nil {
+			return err
+		}
+		log.WithFields(log.Fields{
+			"Updated Version": CurrentVersion,
+		}).Info("policy-templates updated")
 	}
 
 	if err = createOutDir(o.OutDir); err != nil {
@@ -155,7 +165,7 @@ func handleDeployment(dp Deployment) error {
 		if err != nil {
 			log.WithError(err).Error("could not create temp dir")
 		}
-		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img)
+		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img, options.Config)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"image": img,

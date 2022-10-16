@@ -107,6 +107,7 @@ func NewHTMLReport() HTMLReport {
 
 // Start of HTML report section
 func (r HTMLReport) Start(img *ImageInfo) error {
+
 	seci := SectionInfo{
 		HdrCols: []Col{
 			{Name: "Policy"},
@@ -118,7 +119,7 @@ func (r HTMLReport) Start(img *ImageInfo) error {
 		ImgInfo: []Info{
 			{Key: "Container", Val: img.RepoTags[0]},
 			{Key: "OS/Arch/Distro", Val: img.OS + "/" + img.Arch + "/" + img.Distro},
-			{Key: "Output Directory", Val: options.OutDir + "/" + img.Namespace + "-" + img.Deployment + "/"},
+			{Key: "Output Directory", Val: img.getPolicyDir()},
 			{Key: "policy-template version", Val: CurrentVersion},
 		},
 	}
@@ -136,7 +137,7 @@ type RecordInfo struct {
 }
 
 // Record addition of new HTML table row
-func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
+func (r HTMLReport) Record(ms *MatchSpec, policyName string) error {
 	*r.RecordCnt = *r.RecordCnt + 1
 	policy, err := os.ReadFile(filepath.Clean(policyName))
 	if err != nil {

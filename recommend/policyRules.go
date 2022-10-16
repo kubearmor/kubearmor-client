@@ -38,6 +38,13 @@ type Description struct {
 	Detailed string `json:"detailed" yaml:"detailed"`
 }
 
+// TagsData for storing tags data
+type TagsData struct {
+	Tags []string `json:"tags" yaml:"tags"`
+}
+
+var tagData TagsData
+
 var policyRules []MatchSpec
 
 //go:embed yaml/rules.yaml
@@ -65,6 +72,22 @@ func updateRulesYAML(yamlFile []byte) string {
 		log.WithError(err).Fatal("failed to unmarshal policy rules")
 	}
 	return string(jsonRaw["version"])
+}
+
+// updateTagsData creates an array of tags from tags.yaml file and returns them
+func updateTagsData(tagsFile []byte) []string {
+	tagsJSON, err := yaml.YAMLToJSON(tagsFile)
+	if err != nil {
+		color.Red("failed to convert policy rules yaml to json")
+		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
+	}
+	err = json.Unmarshal(tagsJSON, &tagData)
+	if err != nil {
+		color.Red("failed to unmarshal policy rules")
+		log.WithError(err).Fatal("failed to unmarshal policy rules")
+	}
+	return tagData.Tags
+
 }
 
 func getNextRule(idx *int) (MatchSpec, error) {
