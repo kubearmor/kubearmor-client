@@ -56,7 +56,7 @@ var StopChan chan struct{}
 var sigChan chan os.Signal
 var unblockSignal = false
 var matchLabels = map[string]string{"kubearmor-app": "kubearmor-relay"}
-var port = 32767
+var port int64 = 32767
 
 // GetOSSigChannel Function
 func GetOSSigChannel() chan os.Signal {
@@ -127,9 +127,8 @@ func StartObserver(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		gRPC = "localhost:" + strconv.Itoa(pf.LocalPort)
+		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 	}
-	fmt.Fprintln(os.Stderr, "gRPC server: "+gRPC)
 
 	if o.MsgPath == "none" && o.LogPath == "none" {
 		flag.PrintDefaults()

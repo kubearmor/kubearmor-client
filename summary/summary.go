@@ -21,7 +21,7 @@ import (
 // DefaultReqType : default option for request type
 var DefaultReqType = "process,file,network"
 var matchLabels = map[string]string{"container": "knoxautopolicy"}
-var port = 9089
+var port int64 = 9089
 
 // Options Structure
 type Options struct {
@@ -50,7 +50,7 @@ func Summary(c *k8s.Client, o Options) error {
 			if err != nil {
 				return err
 			}
-			gRPC = "localhost:" + strconv.Itoa(pf.LocalPort)
+			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 		}
 	}
 
