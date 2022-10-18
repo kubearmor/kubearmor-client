@@ -56,6 +56,7 @@ var StopChan chan struct{}
 var sigChan chan os.Signal
 var unblockSignal = false
 var matchLabels = map[string]string{"kubearmor-app": "kubearmor-relay"}
+var port = 32767
 
 // GetOSSigChannel Function
 func GetOSSigChannel() chan os.Signal {
@@ -115,13 +116,20 @@ func closeStopChan() {
 
 // StartObserver Function
 func StartObserver(c *k8s.Client, o Options) error {
-	gRPC := "localhost:32767"
+	gRPC := ""
 
 	if o.GRPC != "" {
 		gRPC = o.GRPC
 	} else if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
 		gRPC = val
+	} else {
+		pf, err := utils.InitiatePortForward(c, port, port, matchLabels)
+		if err != nil {
+			return err
+		}
+		gRPC = "localhost:" + strconv.Itoa(pf.LocalPort)
 	}
+	fmt.Fprintln(os.Stderr, "gRPC server: "+gRPC)
 
 	if o.MsgPath == "none" && o.LogPath == "none" {
 		flag.PrintDefaults()
@@ -133,18 +141,11 @@ func StartObserver(c *k8s.Client, o Options) error {
 		return nil
 	}
 
-	// create a client
+	// create client
 	logClient := NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter, o.Limit)
-	for logClient == nil {
-		pf, err := utils.InitiatePortForward(c, 32767, 32767, matchLabels)
-		if err != nil {
-			return err
-		}
-		gRPC = "localhost:" + strconv.Itoa(pf.LocalPort)
-		logClient = NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter, o.Limit)
+	if logClient == nil {
+		return errors.New("unable to create log client")
 	}
-
-	fmt.Fprintln(os.Stderr, "gRPC server: "+gRPC)
 
 	fmt.Fprintf(os.Stderr, "Created a gRPC client (%s)\n", gRPC)
 
