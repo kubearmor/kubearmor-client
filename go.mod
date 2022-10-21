@@ -13,7 +13,7 @@ replace (
 require (
 	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221004060846-9c120a7390e8
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/cilium/cilium v1.10.13
+	github.com/cilium/cilium v1.10.14
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
