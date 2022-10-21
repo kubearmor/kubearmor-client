@@ -180,8 +180,8 @@ github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
-github.com/cilium/cilium v1.10.13 h1:ostbTIDt600dKjLyj3I2XdUPdWqwHh/dEHviMVCOv4A=
-github.com/cilium/cilium v1.10.13/go.mod h1:+Sa7T3n0zwB6wENdFhKT/GLa5unuviOOQXKsVlAk22s=
+github.com/cilium/cilium v1.10.14 h1:ihzJB2EleGC6KqUWs4uOb+8SojjA4iXudvUEnBRS0g8=
+github.com/cilium/cilium v1.10.14/go.mod h1:+Sa7T3n0zwB6wENdFhKT/GLa5unuviOOQXKsVlAk22s=
 github.com/cilium/customvet v0.0.0-20201209211516-9852765c1ac4/go.mod h1:MEn5V1CejgUNFP3Y1JKmBC6Mb9TuK53ecHG9lffctFg=
 github.com/cilium/deepequal-gen v0.0.0-20200406125435-ad6a9003139e/go.mod h1:c4R5wxGyXhbM6zyKeRKNIc9aab5EZi4z4oOSZvUMvZA=
 github.com/cilium/ebpf v0.5.1-0.20210421150058-a4ee356536f3/go.mod h1:4tRaxcgiL706VnOzHOdBlY8IEAIdxINsQBcU4xJJXRs=
