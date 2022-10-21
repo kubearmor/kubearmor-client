@@ -1,55 +1,62 @@
 package profile
 
-import (
-	"fmt"
-	"os"
+// import (
+// 	"fmt"
+// 	"os"
+// 	"os/exec"
+// 	"time"
+// )
 
-	tea "github.com/charmbracelet/bubbletea"
-	pb "github.com/kubearmor/KubeArmor/protobuf"
-)
+// // . "github.com/kubearmor/KubeArmor/tests/util"
+// type name struct {
+// 	resource []string
+// 	res      []string
+// 	freq     map[string]int
+// }
 
-type model struct {
-	logs []pb.Log
-}
+// func clrscr() {
+// 	cmd := exec.Command("clear") //Linux example, its tested
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Run()
+// }
 
-func initialModel() model {
-	profile, _ := KarmorProfileStart("all")
-	return model{
-		logs: profile,
-	}
-}
+// func Start() {
+// 	var n name
+// 	// var err error
+// 	go GetLogs()
+// 	for {
+// 		// time.Sleep(3 * time.Second)
+// 		i := len(Telemetry)
+// 		if i <= 0 {
+// 			time.Sleep(10 * time.Millisecond)
+// 			continue
+// 		}
+// 		// b, err := json.MarshalIndent(Telemetry, "", "  ")
+// 		// if err != nil {
+// 		// 	fmt.Println("error:", err)
+// 		// }
+// 		// fmt.Printf(string(b))
+// 		for _, item := range Telemetry {
+// 			if item.Operation == "File" {
+// 				n.resource = append(n.resource, item.Resource)
+// 			}
+// 		}
 
-func (m model) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	return nil
-}
+// 		n.freq = make(map[string]int)
+// 		for _, name := range n.resource {
+// 			n.freq[name] = n.freq[name] + 1
+// 		}
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+// 		for key, _ := range n.freq {
+// 			n.res = append(n.res, key)
+// 			// fmt.Printf("%s %d\n", key, element)
+// 		}
+// 		fmt.Printf("%v", n.resource)
 
-	// Is it a key press?
-	case tea.KeyMsg:
+// 		// time.Sleep(10 * time.Second)
+// 		// break
+// 	}
 
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
+// 	fmt.Printf("%+v", n.res)
 
-		// These keys should exit the program.
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		}
-	}
-	return m, nil
-}
-
-func (m model) View() string {
-	s := "test"
-	return s
-}
-
-func KarmorStart() {
-	p := tea.NewProgram(initialModel())
-	if err := p.Start(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
-	}
-}
+// }

@@ -1,7 +1,10 @@
 package profile
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"sync"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	. "github.com/kubearmor/KubeArmor/tests/util"
@@ -11,50 +14,64 @@ import (
 )
 
 var eventChan chan klog.EventInfo
+var Telemetry []pb.Log
+var TelMutex sync.RWMutex
 
-func GetLogs() ([]pb.Log, error) {
+func GetLogs() error {
+	var err error
+	err = KubearmorPortForward()
+	if err != nil {
+		return err
+	}
+	KarmorProfileStart("all")
 	if eventChan == nil {
 		log.Error("event channel not set. Did you call KarmorQueueLog()?")
-		return nil, errors.New("event channel not set")
+		return errors.New("event channel not set")
 	}
-	logs := []pb.Log{}
 
+	log.Println("Starting to read 1")
 	for eventChan != nil {
+		// fmt.Printf("event before\n")
 		evtin := <-eventChan
+		// fmt.Printf("event after\n")
 		if evtin.Type == "Log" {
 			log := pb.Log{}
 			protojson.Unmarshal(evtin.Data, &log)
-			logs = append(logs, log)
-			// b, err := json.MarshalIndent(logs, "", "  ")
-			// if err != nil {
-			// 	fmt.Println("error:", err)
-			// }
+			// TelMutex.Lock()
+			Telemetry = append(Telemetry, log)
+			// TelMutex.Unlock()
+			b, err := json.MarshalIndent(Telemetry, "", "  ")
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			fmt.Printf(string(b))
 		} else {
 			log.Errorf("UNKNOWN EVT type %s", evtin.Type)
 		}
 		// }
 	}
-	return logs, nil
+
+	return err
 }
 
-func KarmorProfileStart(logFilter string) ([]pb.Log, error) {
+func KarmorProfileStart(logFilter string) error {
 	if eventChan == nil {
 		eventChan = make(chan klog.EventInfo)
 	}
-	KubearmorPortForward()
-	logs := []pb.Log{}
+	var err error
 	go func() {
-		err := klog.StartObserver(klog.Options{
+		err = klog.StartObserver(klog.Options{
 			LogFilter: logFilter,
 			MsgPath:   "none",
 			EventChan: eventChan,
 		})
 		if err != nil {
-			log.Errorf("failed to start observer. Error=%s", err.Error())
+			return
 		}
-		logs, _ = GetLogs()
+
 	}()
-	return logs, nil
+	log.Println("Ending to log")
+	return err
 }
 
 // Stops the Observer
