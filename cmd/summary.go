@@ -16,7 +16,7 @@ var summaryCmd = &cobra.Command{
 	Short: "Observability from discovery engine",
 	Long:  `Discovery engine keeps the telemetry information from the policy enforcement engines and the karmor connects to it to provide this as observability data`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := summary.Summary(summaryOptions); err != nil {
+		if err := summary.Summary(client, summaryOptions); err != nil {
 			return err
 		}
 		return nil

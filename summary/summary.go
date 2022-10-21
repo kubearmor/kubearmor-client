@@ -8,8 +8,11 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strconv"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
+	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/utils"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,6 +20,8 @@ import (
 
 // DefaultReqType : default option for request type
 var DefaultReqType = "process,file,network"
+var matchLabels = map[string]string{"container": "knoxautopolicy"}
+var port int64 = 9089
 
 // Options Structure
 type Options struct {
@@ -32,7 +37,7 @@ type Options struct {
 }
 
 // Summary : Get summary on pods
-func Summary(o Options) error {
+func Summary(c *k8s.Client, o Options) error {
 	gRPC := ""
 
 	if o.GRPC != "" {
@@ -41,7 +46,11 @@ func Summary(o Options) error {
 		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 			gRPC = val
 		} else {
-			gRPC = "localhost:9089"
+			pf, err := utils.InitiatePortForward(c, port, port, matchLabels)
+			if err != nil {
+				return err
+			}
+			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 		}
 	}
 

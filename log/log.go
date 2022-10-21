@@ -11,8 +11,12 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/utils"
 )
 
 type regexType *regexp.Regexp
@@ -51,6 +55,8 @@ type Options struct {
 var StopChan chan struct{}
 var sigChan chan os.Signal
 var unblockSignal = false
+var matchLabels = map[string]string{"kubearmor-app": "kubearmor-relay"}
+var port int64 = 32767
 
 // GetOSSigChannel Function
 func GetOSSigChannel() chan os.Signal {
@@ -109,16 +115,20 @@ func closeStopChan() {
 }
 
 // StartObserver Function
-func StartObserver(o Options) error {
-	gRPC := "localhost:32767"
+func StartObserver(c *k8s.Client, o Options) error {
+	gRPC := ""
 
 	if o.GRPC != "" {
 		gRPC = o.GRPC
 	} else if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
 		gRPC = val
+	} else {
+		pf, err := utils.InitiatePortForward(c, port, port, matchLabels)
+		if err != nil {
+			return err
+		}
+		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 	}
-
-	fmt.Fprintln(os.Stderr, "gRPC server: "+gRPC)
 
 	if o.MsgPath == "none" && o.LogPath == "none" {
 		flag.PrintDefaults()
@@ -130,11 +140,12 @@ func StartObserver(o Options) error {
 		return nil
 	}
 
-	// create a client
+	// create client
 	logClient := NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter, o.Limit)
 	if logClient == nil {
-		return errors.New("failed to connect to the gRPC server\nPossible troubleshooting:\n- Check if Kubearmor is running\n- Create a portforward to KubeArmor relay service using\n\t\033[1mkubectl -n kube-system port-forward service/kubearmor --address 0.0.0.0 --address :: 32767:32767\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
+		return errors.New("unable to create log client")
 	}
+
 	fmt.Fprintf(os.Stderr, "Created a gRPC client (%s)\n", gRPC)
 
 	// do healthcheck
@@ -151,6 +162,7 @@ func StartObserver(o Options) error {
 
 	err := regexCompile(o)
 	if err != nil {
+		fmt.Print(err)
 		return err
 	}
 

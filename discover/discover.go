@@ -9,8 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/clarketm/json"
+	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/yaml"
 
@@ -30,8 +33,11 @@ type Options struct {
 	Fromsource  string
 }
 
+var matchLabels = map[string]string{"container": "knoxautopolicy"}
+var port int64 = 9089
+
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
-func ConvertPolicy(o Options) error {
+func ConvertPolicy(c *k8s.Client, o Options) error {
 	gRPC := ""
 
 	if o.GRPC != "" {
@@ -40,7 +46,11 @@ func ConvertPolicy(o Options) error {
 		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 			gRPC = val
 		} else {
-			gRPC = "localhost:9089"
+			pf, err := utils.InitiatePortForward(c, port, port, matchLabels)
+			if err != nil {
+				return err
+			}
+			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 		}
 	}
 
@@ -137,7 +147,7 @@ func ConvertPolicy(o Options) error {
 }
 
 // Policy discovers Cilium or KubeArmor policies
-func Policy(o Options) error {
+func Policy(c *k8s.Client, o Options) error {
 	if o.Policy == "cilium" {
 		o.Policy = "network"
 	} else if o.Policy == "kubearmor" {
@@ -146,7 +156,7 @@ func Policy(o Options) error {
 		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are cilium and kubearmor\n")
 	}
 
-	if err := ConvertPolicy(o); err != nil {
+	if err := ConvertPolicy(c, o); err != nil {
 		return err
 	}
 	return nil

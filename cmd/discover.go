@@ -16,7 +16,7 @@ var discoverCmd = &cobra.Command{
 	Short: "Discover applicable policies",
 	Long:  `Discover applicable policies`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := discover.Policy(discoverOptions); err != nil {
+		if err := discover.Policy(client, discoverOptions); err != nil {
 			return err
 		}
 		return nil
