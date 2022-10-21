@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -134,7 +135,7 @@ func (pf *PortForwardOpt) getLocalPort() (int64, error) {
 			if err := listener.Close(); err != nil {
 				return -1, err
 			}
-			fmt.Printf("local port to be used for port forwarding %s: %d \n", pf.PodName, port)
+			fmt.Fprintf(os.Stderr, "local port to be used for port forwarding %s: %d \n", pf.PodName, port)
 			return port, nil
 		}
 
