@@ -19,7 +19,6 @@ var TelMutex sync.RWMutex
 
 func GetLogs() error {
 	var err error
-	// err = KubearmorPortForward()
 	KarmorProfileStart("all")
 	if err != nil {
 		return err
@@ -29,7 +28,6 @@ func GetLogs() error {
 		return errors.New("event channel not set")
 	}
 
-	log.Println("Starting to read 1")
 	for eventChan != nil {
 		// fmt.Printf("event before\n")
 		evtin := <-eventChan
@@ -37,9 +35,9 @@ func GetLogs() error {
 		if evtin.Type == "Log" {
 			log := pb.Log{}
 			protojson.Unmarshal(evtin.Data, &log)
-			// TelMutex.Lock()
+			TelMutex.Lock()
 			Telemetry = append(Telemetry, log)
-			// TelMutex.Unlock()
+			TelMutex.Unlock()
 			// b, err := json.MarshalIndent(Telemetry, "", "  ")
 			// if err != nil {
 			// 	fmt.Println("error:", err)
@@ -59,7 +57,6 @@ func KarmorProfileStart(logFilter string) error {
 	}
 	var err error
 	client, err = k8s.ConnectK8sClient()
-	// fmt.Printf("%v", client.K8sClientset)
 	if err != nil {
 
 		return err
@@ -69,12 +66,11 @@ func KarmorProfileStart(logFilter string) error {
 			LogFilter: logFilter,
 			MsgPath:   "none",
 			EventChan: eventChan,
+			// Namespace: "wordpress-mysql",
 		})
 		if err != nil {
 			return
 		}
-
 	}()
-	log.Println("Ending to log")
 	return err
 }

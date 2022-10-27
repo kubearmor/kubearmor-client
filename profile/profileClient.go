@@ -1,16 +1,16 @@
 package profile
 
 import (
-	"fmt"
 	"log"
-	"math/rand"
+	"os"
 	"strings"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/common-nighthawk/go-figure"
 	"github.com/evertras/bubble-table/table"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	klog "github.com/kubearmor/kubearmor-client/log"
 )
 
 const (
@@ -18,82 +18,50 @@ const (
 	columnKeyStatus = "status"
 )
 
-type responseMsg struct{}
+type responseMsg klog.EventInfo
 
-func listenForActivity(sub chan struct{}) tea.Cmd {
+func waitForActivity() tea.Cmd {
 	return func() tea.Msg {
-		for {
-			time.Sleep(time.Millisecond * time.Duration(rand.Int63n(900)+100))
-			sub <- struct{}{}
-		}
+		return responseMsg(<-eventChan)
 	}
 }
-
-func waitForActivity(sub chan struct{}) tea.Cmd {
-	return func() tea.Msg {
-		return responseMsg(<-sub)
-	}
-}
-
-type tel []pb.Log
 
 type Model struct {
 	table table.Model
-	sub   chan struct{}
-	data  []pb.Log
 }
 
 type SomeData struct {
 	freq map[string]int
 }
 
-// func NewSomeData(res string) *tel {
-// 	s := &tel{
-// 		Resource: res,
-// 	}
-
-// 	return s
-// }
-
 func NewModel() Model {
 	return Model{
-		table: table.New(generateColumns(0)),
-		sub:   make(chan struct{}),
+		table: table.New(generateColumns()),
 	}
 }
 
-// This data is stored somewhere else, maybe on a client or some other thing
-func refreshDataCmd() tea.Msg {
-	// This could come from some API or something
-	return []*tel{
-		(*tel)(&Telemetry),
-	}
-}
-
-// Generate columns based on how many are critical to show some summary
-func generateColumns(numCritical int) []table.Column {
-	// Show how many critical there are
-	statusStr := fmt.Sprintf("Count")
-	statusCol := table.NewColumn(columnKeyStatus, statusStr, 10)
-
-	// if numCritical > 3 {
-	// 	// This normally applies the critical style to everything in the column,
-	// 	// but in this case we apply a row style which overrides it anyway.
-	// 	statusCol = statusCol.WithStyle(styleCritical)
-	// }
+func generateColumns() []table.Column {
+	statusCol := table.NewColumn(columnKeyStatus, "Count", 10).WithStyle(
+		lipgloss.NewStyle().
+			Faint(true).
+			Foreground(lipgloss.Color("#09ff00")).
+			Align(lipgloss.Center))
 
 	return []table.Column{
-		table.NewColumn(columnKeyID, "Resource", 10),
+		table.NewColumn(columnKeyID, "Resource", 40).WithStyle(
+			lipgloss.NewStyle().
+				Align(lipgloss.Center)),
 		statusCol,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
+	// temp := os.Stderr
+	os.Stderr = nil
 	go GetLogs()
+	// os.Stderr = temp
 	return tea.Batch(
-		refreshDataCmd,
-		listenForActivity(m.sub),
-		waitForActivity(m.sub),
+		waitForActivity(),
 	)
 }
 
@@ -114,15 +82,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "u":
 		}
-
 	case responseMsg:
-		m.data = append(m.data, Telemetry...)
-		numCritical := 0
-		// Reapply the new data and the new columns based on critical count
-		m.table = m.table.WithRows(generateRowsFromData(m.data)).WithColumns(generateColumns(numCritical))
+		TelMutex.RLock()
+		m.table = m.table.WithRows(generateRowsFromData(Telemetry)).WithColumns(generateColumns())
+		TelMutex.RUnlock()
+		m.table = m.table.SortByDesc(columnKeyStatus)
 
-		// This can be from any source, but for demo purposes let's party!
-		return m, waitForActivity(m.sub)
+		return m, waitForActivity()
+		// })
+
 	}
 
 	return m, tea.Batch(cmds...)
@@ -130,12 +98,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	body := strings.Builder{}
-	// fmt.Printf("%d\n", len(m.data))
-	// body.WriteString(
-	// 	fmt.Sprintf(
-	// 		"Table demo with updating data!",
-	// 	))
-
 	pad := lipgloss.NewStyle().Padding(1)
 
 	body.WriteString(pad.Render(m.table.View()))
@@ -148,7 +110,6 @@ func generateRowsFromData(data []pb.Log) []table.Row {
 	var s SomeData
 	s.freq = make(map[string]int)
 
-	// for _, file := range
 	for _, entry := range data {
 		if entry.Operation == "File" {
 			s.freq[entry.Resource] = s.freq[entry.Resource] + 1
@@ -169,7 +130,8 @@ func generateRowsFromData(data []pb.Log) []table.Row {
 }
 
 func Start() {
-
+	myFigure := figure.NewFigure("Karmor", "", true)
+	myFigure.Print()
 	p := tea.NewProgram(NewModel())
 
 	if err := p.Start(); err != nil {

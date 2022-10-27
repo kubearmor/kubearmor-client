@@ -51,6 +51,7 @@ require (
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/charmbracelet/bubbletea v0.22.1
 	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/evertras/bubble-table v0.14.6
 	github.com/google/go-github v17.0.0+incompatible
 	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
