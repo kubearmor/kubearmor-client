@@ -25,6 +25,8 @@ var summaryCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(summaryCmd)
+
+	summaryCmd.Flags().StringVar(&summaryOptions.GRPC, "gRPC", "", "gRPC server information")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Labels, "labels", "l", "", "Labels")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Namespace, "namespace", "n", "", "Namespace")
 	summaryCmd.Flags().StringVarP(&summaryOptions.PodName, "pod", "p", "", "PodName")
