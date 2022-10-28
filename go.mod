@@ -50,6 +50,7 @@ require (
 require (
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
 )
 

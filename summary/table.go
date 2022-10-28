@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
+	"github.com/mgutz/ansi"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -30,6 +31,10 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 
 	writePodInfoToTable(resp.PodName, resp.Namespace, resp.ClusterName, resp.ContainerName, resp.Label)
 
+	// Colored Status for Allow and Deny
+	agc := ansi.ColorFunc("green")
+	arc := ansi.ColorFunc("red")
+
 	if strings.Contains(requestType, "process") {
 		if len(resp.ProcessData) > 0 {
 			procRowData := [][]string{}
@@ -41,7 +46,11 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				procStrSlice = append(procStrSlice, procData.ProcName)
 				procStrSlice = append(procStrSlice, procData.Count)
 				procStrSlice = append(procStrSlice, procData.UpdatedTime)
-				procStrSlice = append(procStrSlice, procData.Status)
+				if procData.Status == "Allow" {
+					procStrSlice = append(procStrSlice, agc(procData.Status))
+				} else if procData.Status == "Deny" {
+					procStrSlice = append(procStrSlice, arc(procData.Status))
+				}
 				procRowData = append(procRowData, procStrSlice)
 			}
 			sort.Slice(procRowData[:], func(i, j int) bool {
@@ -69,7 +78,11 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				fileStrSlice = append(fileStrSlice, fileData.ProcName)
 				fileStrSlice = append(fileStrSlice, fileData.Count)
 				fileStrSlice = append(fileStrSlice, fileData.UpdatedTime)
-				fileStrSlice = append(fileStrSlice, fileData.Status)
+				if fileData.Status == "Allow" {
+					fileStrSlice = append(fileStrSlice, agc(fileData.Status))
+				} else if fileData.Status == "Deny" {
+					fileStrSlice = append(fileStrSlice, arc(fileData.Status))
+				}
 				fileRowData = append(fileRowData, fileStrSlice)
 			}
 			sort.Slice(fileRowData[:], func(i, j int) bool {
