@@ -29,7 +29,7 @@ clean:
 
 .PHONY: test
 test:
-	cd $(CURDIR); go test -v ./...
+	cd $(CURDIR); go test -v $(go list ./... | grep -v recommend)
 
 .PHONY: protobuf
 vm-protobuf:
