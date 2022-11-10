@@ -4,4 +4,4 @@
 .PHONY: recommend
 recommend:
 	@go mod tidy
-	@ginkgo -r recommend
+	@ginkgo -r -v recommend

@@ -5,10 +5,13 @@ package recommend_test
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/recommend"
 	. "github.com/onsi/gomega"
@@ -19,7 +22,19 @@ var err error
 
 var client *k8s.Client
 
-var _ = Describe("Recommend", func() {
+func compareData(file1, file2 string) bool {
+	data1, err := os.ReadFile(filepath.Clean(file1))
+	if err != nil {
+		return false
+	}
+	data2, err := os.ReadFile(filepath.Clean(file2))
+	if err != nil {
+		return false
+	}
+	return cmp.Equal(data1, data2)
+}
+
+var _ = Describe("karmor", func() {
 
 	BeforeEach(func() {
 		testOptions.OutDir = "out"
@@ -30,36 +45,141 @@ var _ = Describe("Recommend", func() {
 	})
 
 	AfterEach(func() {
-		os.RemoveAll(testOptions.OutDir)
-		testOptions.Images = []string{}
-		testOptions.Namespace = ""
+		testOptions = recommend.Options{}
 	})
 
-	Describe("Command", func() {
-		Context("when called with image name ubuntu", func() {
+	Describe("recommend", func() {
 
-			It("should fetch the ubuntu:latest image and create a directory ubuntu-latest under `out` folder", func() {
-				testOptions.Images = []string{"ubuntu"}
-				err = recommend.Recommend(client, testOptions)
+		Context("when called with `update` command", func() {
+
+			It("should fetch the latest policy-template release and modify the rule under ~/.cache/karmor/", func() {
+				//os.MkdirAll(testOptions.OutDir, 0777)
+				_, err := recommend.DownloadAndUnzipRelease()
 				Expect(err).To(BeNil())
-				files, err := os.ReadDir(fmt.Sprintf("%s/%s-latest", testOptions.OutDir, testOptions.Images[0]))
+				files, err := os.ReadDir(fmt.Sprintf("%s/.cache/karmor", os.Getenv("HOME")))
+				Expect(err).To(BeNil())
 				Expect(len(files)).To(BeNumerically(">=", 1))
-				fmt.Printf("files: %+v", files)
-				Expect(err).To(BeNil())
+				//os.RemoveAll(testOptions.OutDir)
 			})
 		})
 
-		Context("when called with namespace wordpress-mysql and labels app=wordpress", func() {
+		Context("when called with --image=ubuntu:18.04", func() {
+			var files []fs.DirEntry
+			count := 0
+			It("should fetch the ubuntu:18.04 image and create a directory `ubuntu-18-04` under `out` folder", func() {
+				testOptions.Images = []string{"ubuntu:18.04"}
+				err = recommend.Recommend(client, testOptions)
+				Expect(err).To(BeNil())
+				files, err = os.ReadDir(fmt.Sprintf("%s/ubuntu-18-04", testOptions.OutDir))
+				Expect(len(files)).To(BeNumerically(">=", 1))
+				Expect(err).To(BeNil())
+			})
+			It("should contain `4` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
+				testOptions.Images = []string{"ubuntu:18.04"}
+				for _, file := range files {
+					filesRes, err := os.ReadDir("res/out/ubuntu-18-04")
+					Expect(err).To(BeNil())
+					for _, fileRes := range filesRes {
+						if file.Name() == fileRes.Name() {
+							if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
+								count++
+							}
+						}
+					}
+				}
+				Expect(count).To(BeNumerically("==", len(files)))
+			})
+		})
 
-			It("should fetch the pod and create a folder wordpress-mysql-wordpress under `out` directory", func() {
+		Context("when called with --image=ubuntu and --outdir=ubuntu-test", func() {
+			var files []fs.DirEntry
+			count := 0
+			It("should fetch the ubuntu:18.04 image and create a directory `ubuntu-18-04` under `ubuntu-test` folder", func() {
+				testOptions.OutDir = "ubuntu-test"
+				testOptions.Images = []string{"ubuntu:18.04"}
+				err = recommend.Recommend(client, testOptions)
+				Expect(err).To(BeNil())
+				files, err = os.ReadDir(fmt.Sprintf("%s/ubuntu-18-04", testOptions.OutDir))
+				Expect(len(files)).To(BeNumerically(">=", 1))
+				Expect(err).To(BeNil())
+			})
+			It("should contain `4` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
+				testOptions.OutDir = "ubuntu-test"
+				testOptions.Images = []string{"ubuntu:18.04"}
+				for _, file := range files {
+					filesRes, err := os.ReadDir("res/out/ubuntu-18-04")
+					Expect(err).To(BeNil())
+					for _, fileRes := range filesRes {
+						if file.Name() == fileRes.Name() {
+							if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
+								count++
+							}
+						}
+					}
+				}
+				Expect(count).To(BeNumerically("==", len(files)))
+			})
+		})
+
+		Context("when called with --namespace=wordpress-mysql and --labels=app=wordpress", func() {
+			var files []fs.DirEntry
+			count := 0
+			It("should fetch the image and create a folder wordpress-mysql-wordpress under `out` directory", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				err = recommend.Recommend(client, testOptions)
 				Expect(err).To(BeNil())
-				files, err := os.ReadDir(fmt.Sprintf("%s/wordpress-mysql-wordpress", testOptions.OutDir))
+				files, err = os.ReadDir(fmt.Sprintf("%s/wordpress-mysql-wordpress", testOptions.OutDir))
 				Expect(len(files)).To(BeNumerically(">=", 1))
-				fmt.Printf("files: %+v", files)
 				Expect(err).To(BeNil())
+			})
+			It("should contain `6` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+				testOptions.Labels = []string{"app=wordpress"}
+				testOptions.Namespace = "wordpress-mysql"
+				for _, file := range files {
+					filesRes, err := os.ReadDir("res/out/wordpress-mysql-wordpress")
+					Expect(err).To(BeNil())
+					for _, fileRes := range filesRes {
+						if file.Name() == fileRes.Name() {
+							if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
+								count++
+							}
+						}
+					}
+				}
+				Expect(count).To(BeNumerically("==", len(files)))
+			})
+		})
+
+		Context("when called with --namespace=wordpress-mysql , --labels=app=wordpress and --outdir=wordpress-test", func() {
+			var files []fs.DirEntry
+			count := 0
+			It("should fetch the image and create a folder wordpress-mysql-wordpress under `wordpress-test` directory", func() {
+				testOptions.Labels = []string{"app=wordpress"}
+				testOptions.Namespace = "wordpress-mysql"
+				testOptions.OutDir = "wordpress-test"
+				err = recommend.Recommend(client, testOptions)
+				Expect(err).To(BeNil())
+				files, err = os.ReadDir(fmt.Sprintf("%s/wordpress-mysql-wordpress", testOptions.OutDir))
+				Expect(len(files)).To(BeNumerically(">=", 1))
+				Expect(err).To(BeNil())
+			})
+			It("should contain `6` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+				testOptions.Labels = []string{"app=wordpress"}
+				testOptions.Namespace = "wordpress-mysql"
+				testOptions.OutDir = "wordpress-test"
+				for _, file := range files {
+					filesRes, err := os.ReadDir("res/out/wordpress-mysql-wordpress")
+					Expect(err).To(BeNil())
+					for _, fileRes := range filesRes {
+						if file.Name() == fileRes.Name() {
+							if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
+								count++
+							}
+						}
+					}
+				}
+				Expect(count).To(BeNumerically("==", len(files)))
 			})
 		})
 	})
