@@ -89,7 +89,16 @@ func Recommend(c *k8s.Client, o Options) error {
 	deployments := []Deployment{}
 	var err error
 	if !isLatest() {
-		log.Warn("\033[1;33mpolicy-templates ", LatestVersion, " is available. Use `karmor recommend update` to get recommendations based on the latest policy-templates.\033[0m")
+		log.WithFields(log.Fields{
+			"Current Version": CurrentVersion,
+		}).Info("Found outdated version of policy-templates")
+		log.Info("Downloading latest version [", LatestVersion, "]")
+		if _, err := DownloadAndUnzipRelease(); err != nil {
+			return err
+		}
+		log.WithFields(log.Fields{
+			"Updated Version": CurrentVersion,
+		}).Info("policy-templates updated")
 	}
 
 	if err = createOutDir(o.OutDir); err != nil {
