@@ -40,7 +40,7 @@ func (r TextReport) writeImageSummary(img *ImageInfo) {
 	t.Append([]string{"OS", img.OS})
 	t.Append([]string{"Arch", img.Arch})
 	t.Append([]string{"Distro", img.Distro})
-	t.Append([]string{"Output Directory", fmt.Sprintf("%s/%s-%s/", options.OutDir, img.Namespace, img.Deployment)})
+	t.Append([]string{"Output Directory", img.getPolicyDir()})
 	t.Append([]string{"policy-template version", CurrentVersion})
 	t.Render()
 }

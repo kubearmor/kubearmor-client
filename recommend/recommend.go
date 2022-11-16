@@ -25,6 +25,7 @@ type Options struct {
 	Namespace  string
 	OutDir     string
 	ReportFile string
+	Config     string
 }
 
 // LabelMap is an alias for map[string]string
@@ -155,7 +156,7 @@ func handleDeployment(dp Deployment) error {
 		if err != nil {
 			log.WithError(err).Error("could not create temp dir")
 		}
-		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img)
+		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img, options.Config)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"image": img,
