@@ -1,0 +1,18 @@
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: ubuntu-18-04-maintenance-tool-access
+spec:
+  action: Audit
+  file:
+    matchDirectories:
+    - dir: /sbin/
+      recursive: true
+  message: restricted maintenance tool access attempt detected
+  selector:
+    matchLabels:
+      kubearmor.io/container.name: ubuntu
+  severity: 1
+  tags:
+  - PCI_DSS
+  - MITRE
