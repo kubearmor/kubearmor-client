@@ -4,12 +4,12 @@ metadata:
   name: wordpress-wordpress-4-8-apache-maintenance-tool-access
   namespace: wordpress-mysql
 spec:
-  action: Audit
-  file:
+  action: Block
+  message: restricted maintenance tool access attempt detected
+  process:
     matchDirectories:
     - dir: /sbin/
       recursive: true
-  message: restricted maintenance tool access attempt detected
   selector:
     matchLabels:
       app: wordpress
