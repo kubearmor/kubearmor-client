@@ -4,12 +4,14 @@
 package recommend_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/kubearmor/kubearmor-client/k8s"
@@ -23,15 +25,42 @@ var err error
 var client *k8s.Client
 
 func compareData(file1, file2 string) bool {
+
+	var pol1, pol2 recommend.MatchSpec
 	data1, err := os.ReadFile(filepath.Clean(file1))
 	if err != nil {
+		return false
+	}
+	policyRulesJSON, err := yaml.YAMLToJSON(data1)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	err = json.Unmarshal(policyRulesJSON, &pol1)
+	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 	data2, err := os.ReadFile(filepath.Clean(file2))
 	if err != nil {
 		return false
 	}
-	return cmp.Equal(data1, data2)
+	policyRulesJSON, err = yaml.YAMLToJSON(data2)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	err = json.Unmarshal(policyRulesJSON, &pol2)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	if !cmp.Equal(pol1, pol2) {
+		fmt.Printf("\npolicy-1: %+v\npolicy-2: %+v", pol1, pol2)
+	}
+
+	return cmp.Equal(pol1, pol2)
 }
 
 var _ = Describe("karmor", func() {
