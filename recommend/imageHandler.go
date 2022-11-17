@@ -29,8 +29,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var cli *client.Client // docker client
-var tempDir string     // temporary directory used by karmor to save image etc
+var cli *client.Client      // docker client
+var tempDir string          // temporary directory used by karmor to save image etc
+var dockerConfigPath string // stores path of docker config.json
 
 // ImageInfo contains image information
 type ImageInfo struct {
@@ -46,9 +47,28 @@ type ImageInfo struct {
 	Labels     LabelMap
 }
 
-func getAuthStr() string {
-	u := os.Getenv("DOCKER_USERNAME")
-	p := os.Getenv("DOCKER_PASSWORD")
+// AuthConfigurations contains the configuration information's
+type AuthConfigurations struct {
+	Configs map[string]types.AuthConfig `json:"configs"`
+}
+
+// getConf reads the docker config.json file and returns a map
+func getConf() map[string]types.AuthConfig {
+	var confs map[string]types.AuthConfig
+	if dockerConfigPath != "" {
+		data, err := os.ReadFile(filepath.Clean(dockerConfigPath))
+		if err != nil {
+			return confs
+		}
+		confs, err = parseDockerConfig(data)
+		if err != nil {
+			return confs
+		}
+	}
+	return confs
+}
+
+func getAuthStr(u, p string) string {
 	if u == "" || p == "" {
 		return ""
 	}
@@ -75,13 +95,50 @@ func init() {
 	}
 }
 
+// parseDockerConfig parses the docker config.json to generate a map
+func parseDockerConfig(byteData []byte) (map[string]types.AuthConfig, error) {
+
+	confsWrapper := struct {
+		Auths map[string]types.AuthConfig `json:"auths"`
+	}{}
+	if err := json.Unmarshal(byteData, &confsWrapper); err == nil {
+		if len(confsWrapper.Auths) > 0 {
+			return confsWrapper.Auths, nil
+		}
+	}
+
+	var confs map[string]types.AuthConfig
+	if err := json.Unmarshal(byteData, &confs); err != nil {
+		return nil, err
+	}
+	return confs, nil
+}
+
 func pullImage(imageName string) error {
-	out, err := cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{RegistryAuth: getAuthStr()})
+	var out io.ReadCloser
+	var err error
+	var confData []string
+	confData = append(confData, fmt.Sprintf("%s:%s", os.Getenv("DOCKER_USERNAME"), os.Getenv("DOCKER_PASSWORD")))
+	if dockerConfigPath != "" {
+		confs := getConf()
+		if len(confs) > 0 {
+			for _, conf := range confs {
+				data, _ := base64.StdEncoding.DecodeString(conf.Auth)
+				confData = append(confData, string(data))
+			}
+		}
+	}
+	for _, data := range confData {
+		userpass := strings.SplitN(string(data), ":", 2)
+		out, err = cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{RegistryAuth: getAuthStr(userpass[0], userpass[1])})
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
-		log.WithError(err).Fatal("could not pull image")
+		log.WithError(err).Fatal("could not pull images using ", dockerConfigPath)
 	}
 	defer out.Close()
-
 	termFd, isTerm := term.GetFdInfo(os.Stderr)
 	err = jsonmessage.DisplayJSONMessagesStream(out, os.Stderr, termFd, isTerm, nil)
 	if err != nil {
@@ -423,7 +480,8 @@ func getImageDetails(namespace, deployment string, labels LabelMap, imageName st
 	return nil
 }
 
-func imageHandler(namespace, deployment string, labels LabelMap, imageName string) error {
+func imageHandler(namespace, deployment string, labels LabelMap, imageName string, config string) error {
+	dockerConfigPath = config
 	log.WithFields(log.Fields{
 		"image": imageName,
 	}).Info("pulling image")

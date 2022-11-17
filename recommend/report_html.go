@@ -118,7 +118,7 @@ func (r HTMLReport) Start(img *ImageInfo) error {
 		ImgInfo: []Info{
 			{Key: "Container", Val: img.RepoTags[0]},
 			{Key: "OS/Arch/Distro", Val: img.OS + "/" + img.Arch + "/" + img.Distro},
-			{Key: "Output Directory", Val: options.OutDir + "/" + img.Namespace + "-" + img.Deployment + "/"},
+			{Key: "Output Directory", Val: img.getPolicyDir()},
 			{Key: "policy-template version", Val: CurrentVersion},
 		},
 	}

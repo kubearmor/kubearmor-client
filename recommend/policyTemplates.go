@@ -34,13 +34,13 @@ var CurrentVersion string
 var LatestVersion string
 
 func getCachePath() string {
-	cache := fmt.Sprintf("%s/%s", userHome(), cache)
+	cache := fmt.Sprintf("%s/%s", UserHome(), cache)
 	return cache
 
 }
 
-// userHome function returns users home directory
-func userHome() string {
+// UserHome function returns users home directory
+func UserHome() string {
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 		if home == "" {
