@@ -714,6 +714,8 @@ github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d
 github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41/go.mod h1:8NwuCbDs76/wmWvRnODxpTqdHTX61ovSJ5DBXh22C+w=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1 h1:HOntsSjM0bA7QlFimkSwFMUdxN7i2S9hx2TS/EdPp14=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1/go.mod h1:tsQnbUwJtoeDB4oQiIaBBoOOajwKoQFpKrTHLAeD4F8=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20221117040949-d3559c7ffd74 h1:O2NDViNaRckSAtz8+ipjYT2GEZ3EiU/wLoA1JEhH4Xo=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20221117040949-d3559c7ffd74/go.mod h1:w6uvrqp4v7p3FynjVpYw46RSjfwHOrx5Botgp7nEDBE=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhnIaL+V+BEER86oLrvS+kWobKpbJuye0=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 h1:6E+4a0GO5zZEnZ81pIr0yLvtUWk2if982qA3F3QD6H4=
@@ -1693,6 +1695,8 @@ google.golang.org/grpc v1.46.2/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACu
 google.golang.org/grpc v1.47.0/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
 google.golang.org/grpc v1.48.0 h1:rQOsyJ/8+ufEDJd/Gdsz7HG220Mh9HAhFHRGnIjda0w=
 google.golang.org/grpc v1.48.0/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
+google.golang.org/grpc v1.49.0 h1:WTLtQzmQori5FUH25Pq4WT22oCsv8USpQ+F6rqtsmxw=
+google.golang.org/grpc v1.49.0/go.mod h1:ZgQEeidpAuNRZ8iRrlBKXZQP1ghovWIVhdJRyCDK+GI=
 google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0/go.mod h1:6Kw0yEErY5E/yWrBtf03jp27GLLJujG4z/JK95pnjjw=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=

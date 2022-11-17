@@ -23,7 +23,7 @@ require (
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220902110926-23f39cfa09e5
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy v0.0.0-20220620050120-7e1810d2ad41
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy v0.0.0-20220620050120-7e1810d2ad41
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20220815044951-425f333210e1
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20221117040949-d3559c7ffd74
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae
 	github.com/olekukonko/tablewriter v0.0.5
@@ -37,7 +37,7 @@ require (
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	golang.org/x/sys v0.1.0
 	google.golang.org/genproto v0.0.0-20220815135757-37a418bb8959 // indirect
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.24.3
 	k8s.io/apiextensions-apiserver v0.22.3
