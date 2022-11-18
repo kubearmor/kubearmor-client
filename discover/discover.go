@@ -79,22 +79,17 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
 	}
 
-	if o.Policy == "network" {
-		policy := types.CiliumNetworkPolicy{}
-
-		ciliumpolicy := []types.CiliumNetworkPolicy{}
+	if o.Policy == "CiliumNetworkPolicy" {
 
 		if len(response.Ciliumpolicy) > 0 {
 			for _, val := range response.Ciliumpolicy {
-				policy = types.CiliumNetworkPolicy{}
+				policy := types.CiliumNetworkPolicy{}
 
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
 					log.Error().Msg(err.Error())
 					return err
 				}
-
-				ciliumpolicy = append(ciliumpolicy, policy)
 
 				str := ""
 				if o.Format == "json" {
@@ -112,8 +107,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 				}
 			}
 		}
-	} else if o.Policy == "system" {
-		kubearmorpolicy := []types.KubeArmorPolicy{}
+	} else if o.Policy == "KubearmorSecurityPolicy" {
 
 		if len(response.Kubearmorpolicy) > 0 {
 			for _, val := range response.Kubearmorpolicy {
@@ -124,8 +118,6 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 					log.Error().Msg(err.Error())
 					return err
 				}
-
-				kubearmorpolicy = append(kubearmorpolicy, policy)
 
 				str := ""
 				if o.Format == "json" {
@@ -143,8 +135,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 				}
 			}
 		}
-	} else if o.Policy == "network-generic" {
-		k8sNetPol := []nv1.NetworkPolicy{}
+	} else if o.Policy == "NetworkPolicy" {
 
 		if len(response.K8SNetworkpolicy) > 0 {
 			for _, val := range response.K8SNetworkpolicy {
@@ -155,8 +146,6 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 					log.Error().Msg(err.Error())
 					return err
 				}
-
-				k8sNetPol = append(k8sNetPol, policy)
 
 				str := ""
 				if o.Format == "json" {
@@ -181,13 +170,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 
 // Policy discovers Cilium or KubeArmor policies
 func Policy(c *k8s.Client, o Options) error {
-	if o.Policy == "cilium" {
-		o.Policy = "network-cilium"
-	} else if o.Policy == "kubearmor" {
-		o.Policy = "system"
-	} else if o.Policy == "k8snetpol" {
-		o.Policy = "network-generic"
-	} else {
+	if o.Policy != "CiliumNetworkPolicy" && o.Policy != "NetworkPolicy" && o.Policy != "KubearmorSecurityPolicy" {
 		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are cilium, kubearmor and k8snetpol\n")
 	}
 

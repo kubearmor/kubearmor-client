@@ -27,7 +27,7 @@ func init() {
 	rootCmd.AddCommand(discoverCmd)
 	discoverCmd.Flags().StringVar(&discoverOptions.GRPC, "gRPC", "", "gRPC server information")
 	discoverCmd.Flags().StringVarP(&discoverOptions.Format, "format", "f", "json", "Format: json or yaml")
-	discoverCmd.Flags().StringVarP(&discoverOptions.Policy, "policy", "p", "kubearmor", "Type of policies to be discovered: cilium|kubearmor|k8snetpol")
+	discoverCmd.Flags().StringVarP(&discoverOptions.Policy, "policy", "p", "KubearmorSecurityPolicy", "Type of policies to be discovered: KubearmorSecurityPolicy|CiliumNetworkPolicy|NetworkPolicy")
 	discoverCmd.Flags().StringVarP(&discoverOptions.Namespace, "namespace", "n", "", "Filter by Namespace")
 	discoverCmd.Flags().StringVarP(&discoverOptions.Clustername, "clustername", "c", "", "Filter by Clustername")
 	discoverCmd.Flags().StringVarP(&discoverOptions.Labels, "labels", "l", "", "Filter by policy Label")
