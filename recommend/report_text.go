@@ -70,7 +70,7 @@ func (r TextReport) Record(ms MatchSpec, policyName string) error {
 	rec = append(rec, ms.Description.Tldr)
 	rec = append(rec, fmt.Sprintf("%d", ms.Spec.Severity))
 	rec = append(rec, string(ms.Spec.Action))
-	rec = append(rec, strings.Join(ms.Spec.Tags[:], ","))
+	rec = append(rec, strings.Join(ms.Spec.Tags[:], "\n"))
 	r.table.Append(rec)
 	return nil
 }

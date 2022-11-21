@@ -82,6 +82,9 @@ func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
 	var matches []string
 	for _, preCondition := range ms.Precondition {
 		matches = append(matches, checkForSpec(filepath.Join(preCondition), img.FileList)...)
+		if strings.Contains(preCondition, "OPTSCAN") {
+			return true
+		}
 	}
 	return len(matches) >= len(ms.Precondition)
 }
