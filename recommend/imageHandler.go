@@ -136,7 +136,7 @@ func pullImage(imageName string) error {
 		}
 	}
 	if err != nil {
-		log.WithError(err).Fatal("could not pull images using ", dockerConfigPath)
+		return err
 	}
 	defer out.Close()
 	termFd, isTerm := term.GetFdInfo(os.Stderr)
@@ -457,16 +457,10 @@ func (img *ImageInfo) getImageInfo() {
 	img.getDistro()
 }
 
-func getImageDetails(namespace, deployment string, labels LabelMap, imageName string) error {
-	img := ImageInfo{
-		Name:       imageName,
-		Namespace:  namespace,
-		Deployment: deployment,
-		Labels:     labels,
-	}
+func getImageDetails(img ImageInfo) error {
 
 	// step 1: save the image to a tar file
-	tarname := saveImageToTar(imageName)
+	tarname := saveImageToTar(img.Name)
 
 	// step 2: retrieve information from tar
 	img.FileList, img.DirList = extractTar(tarname)
@@ -485,12 +479,22 @@ func imageHandler(namespace, deployment string, labels LabelMap, imageName strin
 	log.WithFields(log.Fields{
 		"image": imageName,
 	}).Info("pulling image")
+	img := ImageInfo{
+		Name:       imageName,
+		Namespace:  namespace,
+		Deployment: deployment,
+		Labels:     labels,
+	}
 	err := pullImage(imageName)
 	if err != nil {
-		return err
+		log.Warn("Failed to pull image. Dumping generic policies.")
+		img.OS = "linux"
+		img.RepoTags = append(img.RepoTags, img.Name)
+		img.getPolicyFromImageInfo()
+		return nil
 	}
 
-	err = getImageDetails(namespace, deployment, labels, imageName)
+	err = getImageDetails(img)
 	if err != nil {
 		return err
 	}

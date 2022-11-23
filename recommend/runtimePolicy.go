@@ -93,9 +93,9 @@ func checkProcessFileData(sumResp []*opb.Response, distro string) *MatchSpec {
 	}
 	for _, eachResp := range sumResp {
 		for _, fileData := range eachResp.FileData {
-			if strings.HasPrefix(fileData.ProcName, saPath[0]) || strings.HasPrefix(fileData.ProcName, saPath[1]) {
+			if strings.HasPrefix(fileData.Destination, saPath[0]) || strings.HasPrefix(fileData.Destination, saPath[1]) {
 				fromSourceArr = append(fromSourceArr, pol.MatchSourceType{
-					Path: pol.MatchPathType(fileData.ParentProcName),
+					Path: pol.MatchPathType(fileData.Source),
 				})
 			}
 		}

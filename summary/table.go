@@ -25,7 +25,7 @@ var (
 // DisplaySummaryOutput function
 func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType string) {
 
-	if len(resp.ProcessData) <= 0 && len(resp.FileData) <= 0 && len(resp.InNwData) <= 0 && len(resp.OutNwData) <= 0 {
+	if len(resp.ProcessData) <= 0 && len(resp.FileData) <= 0 && len(resp.IngressConnection) <= 0 && len(resp.EgressConnection) <= 0 {
 		return
 	}
 
@@ -42,8 +42,8 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 			fmt.Printf("\nProcess Data\n")
 			for _, procData := range resp.ProcessData {
 				procStrSlice := []string{}
-				procStrSlice = append(procStrSlice, procData.ParentProcName)
-				procStrSlice = append(procStrSlice, procData.ProcName)
+				procStrSlice = append(procStrSlice, procData.Source)
+				procStrSlice = append(procStrSlice, procData.Destination)
 				procStrSlice = append(procStrSlice, procData.Count)
 				procStrSlice = append(procStrSlice, procData.UpdatedTime)
 				if procData.Status == "Allow" {
@@ -74,8 +74,8 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 			fileRowData := [][]string{}
 			for _, fileData := range resp.FileData {
 				fileStrSlice := []string{}
-				fileStrSlice = append(fileStrSlice, fileData.ParentProcName)
-				fileStrSlice = append(fileStrSlice, fileData.ProcName)
+				fileStrSlice = append(fileStrSlice, fileData.Source)
+				fileStrSlice = append(fileStrSlice, fileData.Destination)
 				fileStrSlice = append(fileStrSlice, fileData.Count)
 				fileStrSlice = append(fileStrSlice, fileData.UpdatedTime)
 				if fileData.Status == "Allow" {
@@ -100,42 +100,42 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 	}
 
 	if strings.Contains(requestType, "network") {
-		if len(resp.InNwData) > 0 {
+		if len(resp.IngressConnection) > 0 {
 			fmt.Printf("\nIngress connections\n")
 			// Display server conn data
 			inNwRowData := [][]string{}
-			for _, inNwData := range resp.InNwData {
+			for _, IngressConnection := range resp.IngressConnection {
 				inNwStrSlice := []string{}
-				domainName := dnsLookup(inNwData.IP, revDNSLookup)
-				inNwStrSlice = append(inNwStrSlice, inNwData.Protocol)
-				inNwStrSlice = append(inNwStrSlice, inNwData.Command)
+				domainName := dnsLookup(IngressConnection.IP, revDNSLookup)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.Protocol)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.Command)
 				inNwStrSlice = append(inNwStrSlice, domainName)
-				inNwStrSlice = append(inNwStrSlice, inNwData.Port)
-				inNwStrSlice = append(inNwStrSlice, inNwData.Namespace)
-				inNwStrSlice = append(inNwStrSlice, inNwData.Labels)
-				inNwStrSlice = append(inNwStrSlice, inNwData.Count)
-				inNwStrSlice = append(inNwStrSlice, inNwData.UpdatedTime)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.Port)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.Namespace)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.Labels)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.Count)
+				inNwStrSlice = append(inNwStrSlice, IngressConnection.UpdatedTime)
 				inNwRowData = append(inNwRowData, inNwStrSlice)
 			}
 			WriteTable(SysNwHeader, inNwRowData)
 			fmt.Printf("\n")
 		}
 
-		if len(resp.OutNwData) > 0 {
+		if len(resp.EgressConnection) > 0 {
 			fmt.Printf("\nEgress connections\n")
 			// Display server conn data
 			outNwRowData := [][]string{}
-			for _, outNwData := range resp.OutNwData {
+			for _, EgressConnection := range resp.EgressConnection {
 				outNwStrSlice := []string{}
-				domainName := dnsLookup(outNwData.IP, revDNSLookup)
-				outNwStrSlice = append(outNwStrSlice, outNwData.Protocol)
-				outNwStrSlice = append(outNwStrSlice, outNwData.Command)
+				domainName := dnsLookup(EgressConnection.IP, revDNSLookup)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.Protocol)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.Command)
 				outNwStrSlice = append(outNwStrSlice, domainName)
-				outNwStrSlice = append(outNwStrSlice, outNwData.Port)
-				outNwStrSlice = append(outNwStrSlice, outNwData.Namespace)
-				outNwStrSlice = append(outNwStrSlice, outNwData.Labels)
-				outNwStrSlice = append(outNwStrSlice, outNwData.Count)
-				outNwStrSlice = append(outNwStrSlice, outNwData.UpdatedTime)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.Port)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.Namespace)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.Labels)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.Count)
+				outNwStrSlice = append(outNwStrSlice, EgressConnection.UpdatedTime)
 				outNwRowData = append(outNwRowData, outNwStrSlice)
 			}
 			WriteTable(SysNwHeader, outNwRowData)
