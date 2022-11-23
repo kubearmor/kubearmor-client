@@ -103,7 +103,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain `4` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
+			It("should contain atleast `2` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
 				testOptions.Images = []string{"ubuntu:18.04"}
 				for _, file := range files {
 					filesRes, err := os.ReadDir("res/out/ubuntu-18-04")
@@ -116,11 +116,11 @@ var _ = Describe("karmor", func() {
 						}
 					}
 				}
-				Expect(count).To(BeNumerically("==", len(files)))
+				Expect(count).To(BeNumerically(">=", 2))
 			})
 		})
 
-		Context("when called with --image=ubuntu and --outdir=ubuntu-test", func() {
+		Context("when called with --image=ubuntu:18.04 and --outdir=ubuntu-test", func() {
 			var files []fs.DirEntry
 			count := 0
 			It("should fetch the ubuntu:18.04 image and create a directory `ubuntu-18-04` under `ubuntu-test` folder", func() {
@@ -132,7 +132,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain `4` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
+			It("should contain atleast `2` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
 				testOptions.OutDir = "ubuntu-test"
 				testOptions.Images = []string{"ubuntu:18.04"}
 				for _, file := range files {
@@ -146,7 +146,7 @@ var _ = Describe("karmor", func() {
 						}
 					}
 				}
-				Expect(count).To(BeNumerically("==", len(files)))
+				Expect(count).To(BeNumerically(">=", 2))
 			})
 		})
 
@@ -162,7 +162,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain `6` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+			It("should contain atleast `3` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				for _, file := range files {
@@ -176,7 +176,7 @@ var _ = Describe("karmor", func() {
 						}
 					}
 				}
-				Expect(count).To(BeNumerically("==", len(files)))
+				Expect(count).To(BeNumerically(">=", 3))
 			})
 		})
 
@@ -193,7 +193,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain `6` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+			It("should contain atleast `3` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				testOptions.OutDir = "wordpress-test"
@@ -208,7 +208,7 @@ var _ = Describe("karmor", func() {
 						}
 					}
 				}
-				Expect(count).To(BeNumerically("==", len(files)))
+				Expect(count).To(BeNumerically(">=", 3))
 			})
 		})
 	})
