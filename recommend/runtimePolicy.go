@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
-	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

@@ -12,8 +12,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	kspAPI "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
-	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/client/clientset/versioned/typed/security.kubearmor.com/v1"
+	kspAPI "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
+	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/client/clientset/versioned/typed/security.kubearmor.com/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to auth with cloud providers
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )

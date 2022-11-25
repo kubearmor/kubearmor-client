@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/fatih/color"
-	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 )
 
