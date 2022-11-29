@@ -26,13 +26,14 @@ import (
 
 // Options Structure
 type Options struct {
-	GRPC        string
-	Format      string
-	Policy      string
-	Namespace   string
-	Clustername string
-	Labels      string
-	Fromsource  string
+	GRPC           string
+	Format         string
+	Policy         string
+	Namespace      string
+	Clustername    string
+	Labels         string
+	Fromsource     string
+	IncludeNetwork bool
 }
 
 var matchLabels = map[string]string{"container": "knoxautopolicy"}
@@ -57,11 +58,12 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 	}
 
 	data := &wpb.WorkerRequest{
-		Policytype:  o.Policy,
-		Namespace:   o.Namespace,
-		Clustername: o.Clustername,
-		Labels:      o.Labels,
-		Fromsource:  o.Fromsource,
+		Policytype:     o.Policy,
+		Namespace:      o.Namespace,
+		Clustername:    o.Clustername,
+		Labels:         o.Labels,
+		Fromsource:     o.Fromsource,
+		Includenetwork: o.IncludeNetwork,
 	}
 
 	// create a client

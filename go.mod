@@ -13,7 +13,6 @@ replace (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221117052812-ce8fb166b71d
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cilium/cilium v1.10.14
 	github.com/clarketm/json v1.17.1
@@ -33,8 +32,8 @@ require (
 	github.com/rs/zerolog v1.26.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.4.0
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
+	golang.org/x/exp v0.0.0-20221114191408-850992195362
+	golang.org/x/mod v0.6.0
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	golang.org/x/sys v0.1.0
@@ -50,6 +49,7 @@ require (
 )
 
 require (
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221124164201-3131f7e51a72
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
@@ -163,7 +163,7 @@ require (
 	github.com/xlab/treeprint v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.8.4 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094 // indirect
 	golang.org/x/term v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect

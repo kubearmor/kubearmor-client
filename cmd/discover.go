@@ -32,4 +32,5 @@ func init() {
 	discoverCmd.Flags().StringVarP(&discoverOptions.Clustername, "clustername", "c", "", "Filter by Clustername")
 	discoverCmd.Flags().StringVarP(&discoverOptions.Labels, "labels", "l", "", "Filter by policy Label")
 	discoverCmd.Flags().StringVarP(&discoverOptions.Fromsource, "fromsource", "s", "", "Filter by policy FromSource")
+	discoverCmd.Flags().BoolVar(&discoverOptions.IncludeNetwork, "network", false, "Include network rules in system policies")
 }
