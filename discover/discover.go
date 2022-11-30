@@ -36,7 +36,7 @@ type Options struct {
 	IncludeNetwork bool
 }
 
-var matchLabels = map[string]string{"container": "knoxautopolicy"}
+var matchLabels = map[string]string{"app": "discovery-engine"}
 var port int64 = 9089
 
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies

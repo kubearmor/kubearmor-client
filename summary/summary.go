@@ -20,7 +20,7 @@ import (
 
 // DefaultReqType : default option for request type
 var DefaultReqType = "process,file,network"
-var matchLabels = map[string]string{"container": "knoxautopolicy"}
+var matchLabels = map[string]string{"app": "discovery-engine"}
 var port int64 = 9089
 
 // Options Structure
