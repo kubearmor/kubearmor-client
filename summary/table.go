@@ -104,17 +104,17 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 			fmt.Printf("\nIngress connections\n")
 			// Display server conn data
 			inNwRowData := [][]string{}
-			for _, IngressConnection := range resp.IngressConnection {
+			for _, ingressConnection := range resp.IngressConnection {
 				inNwStrSlice := []string{}
-				domainName := dnsLookup(IngressConnection.IP, revDNSLookup)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.Protocol)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.Command)
+				domainName := dnsLookup(ingressConnection.IP, revDNSLookup)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.Protocol)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.Command)
 				inNwStrSlice = append(inNwStrSlice, domainName)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.Port)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.Namespace)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.Labels)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.Count)
-				inNwStrSlice = append(inNwStrSlice, IngressConnection.UpdatedTime)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.Port)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.Namespace)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.Labels)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.Count)
+				inNwStrSlice = append(inNwStrSlice, ingressConnection.UpdatedTime)
 				inNwRowData = append(inNwRowData, inNwStrSlice)
 			}
 			WriteTable(SysNwHeader, inNwRowData)
@@ -125,17 +125,17 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 			fmt.Printf("\nEgress connections\n")
 			// Display server conn data
 			outNwRowData := [][]string{}
-			for _, EgressConnection := range resp.EgressConnection {
+			for _, egressConnection := range resp.EgressConnection {
 				outNwStrSlice := []string{}
-				domainName := dnsLookup(EgressConnection.IP, revDNSLookup)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.Protocol)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.Command)
+				domainName := dnsLookup(egressConnection.IP, revDNSLookup)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.Protocol)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.Command)
 				outNwStrSlice = append(outNwStrSlice, domainName)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.Port)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.Namespace)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.Labels)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.Count)
-				outNwStrSlice = append(outNwStrSlice, EgressConnection.UpdatedTime)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.Port)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.Namespace)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.Labels)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.Count)
+				outNwStrSlice = append(outNwStrSlice, egressConnection.UpdatedTime)
 				outNwRowData = append(outNwRowData, outNwStrSlice)
 			}
 			WriteTable(SysNwHeader, outNwRowData)
