@@ -15,7 +15,7 @@ import (
 
 	"github.com/cavaliergopher/grab/v3"
 	"github.com/google/go-github/github"
-	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )

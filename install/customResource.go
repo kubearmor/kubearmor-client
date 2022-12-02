@@ -4,8 +4,7 @@
 package install
 
 import (
-	hsp "github.com/kubearmor/KubeArmor/pkg/KubeArmorHostPolicy/crd"
-	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/crd"
+	ksp "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/crd"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
@@ -17,9 +16,9 @@ func CreateCustomResourceDefinition(crdName string) apiextensions.CustomResource
 	var crd apiextensions.CustomResourceDefinition
 	switch crdName {
 	case kspName:
-		crd = ksp.GetCRD()
+		crd = ksp.GetKspCRD()
 	case hspName:
-		crd = hsp.GetCRD()
+		crd = ksp.GetHspCRD()
 	}
 
 	return crd
