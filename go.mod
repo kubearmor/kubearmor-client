@@ -47,7 +47,7 @@ require (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221124164201-3131f7e51a72
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221129114555-66fc8ef6cfe4
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
