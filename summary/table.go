@@ -20,6 +20,8 @@ var (
 	SysFileHeader = []string{"Src Process", "Destination File Path", "Count", "Last Updated Time", "Status"}
 	// SysNwHeader variable contains protocol, command, POD/SVC/IP, Port, Namespace, and Labels
 	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels", "Count", "Last Updated Time"}
+	// SysBindNwHeader variable contains protocol, command, Bind Port, Bind Address, count and timestamp
+	SysBindNwHeader = []string{"Protocol", "Command", "Bind Port", "Bind Address", "Count", "Last Updated Time"}
 )
 
 // DisplaySummaryOutput function
@@ -139,6 +141,24 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				outNwRowData = append(outNwRowData, outNwStrSlice)
 			}
 			WriteTable(SysNwHeader, outNwRowData)
+			fmt.Printf("\n")
+		}
+
+		if len(resp.BindConnection) > 0 {
+			fmt.Printf("\nBind Points\n")
+			// Display bind connections details
+			bindNwRowData := [][]string{}
+			for _, bindConnection := range resp.BindConnection {
+				bindNwStrSlice := []string{}
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Protocol)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Command)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.BindPort)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.BindAddress)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Count)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.UpdatedTime)
+				bindNwRowData = append(bindNwRowData, bindNwStrSlice)
+			}
+			WriteTable(SysBindNwHeader, bindNwRowData)
 			fmt.Printf("\n")
 		}
 	}
