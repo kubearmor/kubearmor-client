@@ -34,7 +34,10 @@ func GetLogs() error {
 		evtin := <-eventChan
 		if evtin.Type == "Log" {
 			log := pb.Log{}
-			protojson.Unmarshal(evtin.Data, &log)
+			err := protojson.Unmarshal(evtin.Data, &log)
+			if err != nil {
+				return err
+			}
 			TelMutex.Lock()
 			Telemetry = append(Telemetry, log)
 			TelMutex.Unlock()
