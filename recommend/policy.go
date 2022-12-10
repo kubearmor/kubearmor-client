@@ -11,7 +11,7 @@ import (
 
 	"github.com/clarketm/json"
 	"github.com/fatih/color"
-	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/yaml"
@@ -82,6 +82,9 @@ func (img *ImageInfo) checkPreconditions(ms MatchSpec) bool {
 	var matches []string
 	for _, preCondition := range ms.Precondition {
 		matches = append(matches, checkForSpec(filepath.Join(preCondition), img.FileList)...)
+		if strings.Contains(preCondition, "OPTSCAN") {
+			return true
+		}
 	}
 	return len(matches) >= len(ms.Precondition)
 }

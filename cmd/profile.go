@@ -4,21 +4,26 @@
 package cmd
 
 import (
-	"github.com/kubearmor/kubearmor-client/profile"
+	profileclient "github.com/kubearmor/kubearmor-client/profile/Client"
 	"github.com/spf13/cobra"
 )
 
-// logCmd represents the log command
+var profileOptions profileclient.Options
+
+// profileCmd represents the profile command
 var profilecmd = &cobra.Command{
 	Use:   "profile",
 	Short: "Profiling of logs",
 	Long:  `Profiling of logs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		profile.Start()
+		profileclient.Start(profileOptions)
 		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(profilecmd)
+
+	profilecmd.Flags().StringVar(&profileOptions.Namespace, "namespace", "", "Filter using namespace")
+	profilecmd.Flags().StringVar(&profileOptions.Pod, "pod", "", "Filter using Pod name")
 }

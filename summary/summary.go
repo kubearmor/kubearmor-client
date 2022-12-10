@@ -6,7 +6,9 @@ package summary
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -20,7 +22,7 @@ import (
 
 // DefaultReqType : default option for request type
 var DefaultReqType = "process,file,network"
-var matchLabels = map[string]string{"container": "knoxautopolicy"}
+var matchLabels = map[string]string{"app": "discovery-engine"}
 var port int64 = 9089
 
 // Options Structure
@@ -32,6 +34,7 @@ type Options struct {
 	ClusterName   string
 	ContainerName string
 	Type          string
+	Output        string
 	RevDNSLookup  bool
 	Aggregation   bool
 }
@@ -102,8 +105,16 @@ func Summary(c *k8s.Client, o Options) error {
 			if err != nil {
 				return err
 			}
-			DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
+			if o.Output == "" {
+				DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
+			}
 
+			str := ""
+			if o.Output == "json" {
+				arr, _ := json.MarshalIndent(sumResp, "", "    ")
+				str = fmt.Sprintf("%s\n", string(arr))
+				fmt.Printf("%s", str)
+			}
 		}
 	}
 	return nil

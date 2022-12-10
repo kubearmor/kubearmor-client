@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2022 Authors of KubeArmor
+
 package profile
 
 import (
@@ -5,7 +8,7 @@ import (
 	"sync"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
-	// . "github.com/kubearmor/KubeArmor/tests/util"
+
 	"github.com/kubearmor/kubearmor-client/k8s"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	log "github.com/sirupsen/logrus"
@@ -18,8 +21,7 @@ var Telemetry []pb.Log
 var TelMutex sync.RWMutex
 
 func GetLogs() error {
-	var err error
-	KarmorProfileStart("all")
+	err := KarmorProfileStart("all")
 	if err != nil {
 		return err
 	}
@@ -29,20 +31,13 @@ func GetLogs() error {
 	}
 
 	for eventChan != nil {
-		// fmt.Printf("event before\n")
 		evtin := <-eventChan
-		// fmt.Printf("event after\n")
 		if evtin.Type == "Log" {
 			log := pb.Log{}
 			protojson.Unmarshal(evtin.Data, &log)
 			TelMutex.Lock()
 			Telemetry = append(Telemetry, log)
 			TelMutex.Unlock()
-			// b, err := json.MarshalIndent(Telemetry, "", "  ")
-			// if err != nil {
-			// 	fmt.Println("error:", err)
-			// }
-			// fmt.Printf(string(b))
 		} else {
 			log.Errorf("UNKNOWN EVT type %s", evtin.Type)
 		}
@@ -66,7 +61,6 @@ func KarmorProfileStart(logFilter string) error {
 			LogFilter: logFilter,
 			MsgPath:   "none",
 			EventChan: eventChan,
-			// Namespace: "wordpress-mysql",
 		})
 		if err != nil {
 			return

@@ -40,7 +40,7 @@ func (r TextReport) writeImageSummary(img *ImageInfo) {
 	t.Append([]string{"OS", img.OS})
 	t.Append([]string{"Arch", img.Arch})
 	t.Append([]string{"Distro", img.Distro})
-	t.Append([]string{"Output Directory", fmt.Sprintf("%s/%s-%s/", options.OutDir, img.Namespace, img.Deployment)})
+	t.Append([]string{"Output Directory", img.getPolicyDir()})
 	t.Append([]string{"policy-template version", CurrentVersion})
 	t.Render()
 }
@@ -70,7 +70,7 @@ func (r TextReport) Record(ms MatchSpec, policyName string) error {
 	rec = append(rec, ms.Description.Tldr)
 	rec = append(rec, fmt.Sprintf("%d", ms.Spec.Severity))
 	rec = append(rec, string(ms.Spec.Action))
-	rec = append(rec, strings.Join(ms.Spec.Tags[:], ","))
+	rec = append(rec, strings.Join(ms.Spec.Tags[:], "\n"))
 	r.table.Append(rec)
 	return nil
 }

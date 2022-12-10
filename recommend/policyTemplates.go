@@ -15,7 +15,7 @@ import (
 
 	"github.com/cavaliergopher/grab/v3"
 	"github.com/google/go-github/github"
-	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorPolicy/api/security.kubearmor.com/v1"
+	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )
@@ -34,13 +34,13 @@ var CurrentVersion string
 var LatestVersion string
 
 func getCachePath() string {
-	cache := fmt.Sprintf("%s/%s", userHome(), cache)
+	cache := fmt.Sprintf("%s/%s", UserHome(), cache)
 	return cache
 
 }
 
-// userHome function returns users home directory
-func userHome() string {
+// UserHome function returns users home directory
+func UserHome() string {
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 		if home == "" {

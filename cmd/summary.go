@@ -25,12 +25,15 @@ var summaryCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(summaryCmd)
+
+	summaryCmd.Flags().StringVar(&summaryOptions.GRPC, "gRPC", "", "gRPC server information")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Labels, "labels", "l", "", "Labels")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Namespace, "namespace", "n", "", "Namespace")
 	summaryCmd.Flags().StringVarP(&summaryOptions.PodName, "pod", "p", "", "PodName")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Type, "type", "t", summary.DefaultReqType, "Summary filter type : process|file|network ")
 	summaryCmd.Flags().StringVar(&summaryOptions.ClusterName, "cluster", "", "Cluster name")
 	summaryCmd.Flags().StringVar(&summaryOptions.ContainerName, "container", "", "Container name")
+	summaryCmd.Flags().StringVarP(&summaryOptions.Output, "output", "o", "", "Export Summary Data in JSON (karmor summary -o json)")
 	summaryCmd.Flags().BoolVar(&summaryOptions.RevDNSLookup, "rev-dns-lookup", false, "Reverse DNS Lookup")
 	summaryCmd.Flags().BoolVar(&summaryOptions.Aggregation, "agg", false, "Aggregate destination files/folder path")
 }
