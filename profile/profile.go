@@ -17,9 +17,14 @@ import (
 
 var eventChan chan klog.EventInfo
 var client *k8s.Client
+
+// Telemetry to store incoming log events
 var Telemetry []pb.Log
+
+// TelMutex to prevent deadlock
 var TelMutex sync.RWMutex
 
+// GetLogs to fetch logs
 func GetLogs() error {
 	err := KarmorProfileStart("all")
 	if err != nil {
@@ -49,6 +54,7 @@ func GetLogs() error {
 	return err
 }
 
+// KarmorProfileStart starts observer
 func KarmorProfileStart(logFilter string) error {
 	if eventChan == nil {
 		eventChan = make(chan klog.EventInfo)
