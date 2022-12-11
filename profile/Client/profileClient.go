@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
-// profileclient to handle profiling of kubearmor telemetry events
+// Package profileclient to handle profiling of kubearmor telemetry events
 package profileclient
 
 import (
@@ -75,14 +75,14 @@ type Model struct {
 	state sessionState
 }
 
-// Row Data
+// SomeData stores incoming row data
 type SomeData struct {
 	rows []table.Row
 }
 
 var o1 Options
 
-// Bubble tea Model initialization
+// NewModel initializates new bubbletea model
 func NewModel() Model {
 
 	return Model{
@@ -147,7 +147,7 @@ func generateColumns(Operation string) []table.Column {
 	}
 }
 
-// Initial functions to be called
+// Init calls initial functions if needed
 func (m Model) Init() tea.Cmd {
 	go profile.GetLogs()
 	return tea.Batch(
@@ -155,7 +155,7 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-// Bubble Tea function to Update with incoming events
+// Update Bubble Tea function to Update with incoming events
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -227,7 +227,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// Render Bubble Tea UI
+// View Renders Bubble Tea UI
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().Padding(1)
 
@@ -319,6 +319,7 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	return s.rows
 }
 
+// Start entire TUI
 func Start(o Options) {
 	os.Stderr = nil
 	o1.Namespace = o.Namespace
