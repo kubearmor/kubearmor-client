@@ -20,14 +20,16 @@ import (
 )
 
 const (
-	columnNamespace   = "namespace"
-	columnPodname     = "podname"
-	columnProcessName = "ProcName"
-	columnResource    = "Resource"
-	columnResult      = "Result"
-	columnCount       = "count"
-	columnTimestamp   = "timestamp"
+	ColumnNamespace   = "Namespace"
+	ColumnPodname     = "Podname"
+	ColumnProcessName = "Procname"
+	ColumnResource    = "Resource"
+	ColumnResult      = "Result"
+	ColumnCount       = "Count"
+	ColumnTimestamp   = "Timestamp"
+)
 
+const (
 	processview sessionState = iota
 	fileview
 	networkview
@@ -92,37 +94,37 @@ func NewModel() Model {
 }
 
 func generateColumns(Operation string) []table.Column {
-	CountCol := table.NewColumn(columnCount, "Count", 10).WithStyle(
+	CountCol := table.NewColumn(ColumnCount, "Count", 10).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	Namespace := table.NewColumn(columnNamespace, "Namespace", 20).WithStyle(
+	Namespace := table.NewColumn(ColumnNamespace, "Namespace", 20).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	PodName := table.NewColumn(columnPodname, "Podname", 40).WithStyle(
+	PodName := table.NewColumn(ColumnPodname, "Podname", 40).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	ProcName := table.NewColumn(columnProcessName, "ProcessName", 30).WithStyle(
+	ProcName := table.NewColumn(ColumnProcessName, "ProcessName", 30).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	Resource := table.NewColumn(columnResource, Operation, 60).WithStyle(
+	Resource := table.NewColumn(ColumnResource, Operation, 60).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#57f8c8")).
 			Align(lipgloss.Center))
 
-	Result := table.NewColumn(columnResult, "Result", 10).WithStyle(
+	Result := table.NewColumn(ColumnResult, "Result", 10).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	Timestamp := table.NewColumn(columnTimestamp, "TimeStamp", 30).WithStyle(
+	Timestamp := table.NewColumn(ColumnTimestamp, "TimeStamp", 30).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
@@ -202,11 +204,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case klog.EventInfo:
 		profile.TelMutex.RLock()
 		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns("File"))
-		m.File = m.File.SortByDesc(columnCount)
+		m.File = m.File.SortByDesc(ColumnCount)
 		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns("Process"))
-		m.Process = m.Process.SortByDesc(columnCount)
+		m.Process = m.Process.SortByDesc(ColumnCount)
 		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns("Network"))
-		m.Network = m.Network.SortByDesc(columnCount)
+		m.Network = m.Network.SortByDesc(ColumnCount)
 		profile.TelMutex.RUnlock()
 
 		return m, waitForActivity()
@@ -293,13 +295,13 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 
 	for r, frequency := range w {
 		row := table.NewRow(table.RowData{
-			columnNamespace:   r.Namespace,
-			columnPodname:     r.PodName,
-			columnProcessName: r.Process,
-			columnResource:    r.Resource,
-			columnResult:      r.Result,
-			columnCount:       frequency.freq,
-			columnTimestamp:   frequency.time,
+			ColumnNamespace:   r.Namespace,
+			ColumnPodname:     r.PodName,
+			ColumnProcessName: r.Process,
+			ColumnResource:    r.Resource,
+			ColumnResult:      r.Result,
+			ColumnCount:       frequency.freq,
+			ColumnTimestamp:   frequency.time,
 		})
 		s.rows = append(s.rows, row)
 	}
