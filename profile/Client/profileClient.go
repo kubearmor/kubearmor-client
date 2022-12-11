@@ -19,6 +19,7 @@ import (
 	profile "github.com/kubearmor/kubearmor-client/profile"
 )
 
+// Column keys
 const (
 	ColumnNamespace   = "Namespace"
 	ColumnPodname     = "Podname"
@@ -29,6 +30,10 @@ const (
 	ColumnTimestamp   = "Timestamp"
 )
 
+// session state for switching views
+type sessionState uint
+
+// Manage Bubble Tea display state
 const (
 	processview sessionState = iota
 	fileview
@@ -41,8 +46,7 @@ var (
 		Align(lipgloss.Right)
 )
 
-type sessionState uint
-
+// Options for filter
 type Options struct {
 	Namespace string
 	Pod       string
@@ -55,6 +59,7 @@ func waitForActivity() tea.Cmd {
 	}
 }
 
+// Model for main Bubble Tea
 type Model struct {
 	File     table.Model
 	Process  table.Model
@@ -70,12 +75,14 @@ type Model struct {
 	state sessionState
 }
 
+// Row Data
 type SomeData struct {
 	rows []table.Row
 }
 
 var o1 Options
 
+// Bubble tea Model initialization
 func NewModel() Model {
 
 	return Model{
@@ -140,6 +147,7 @@ func generateColumns(Operation string) []table.Column {
 	}
 }
 
+// Initial functions to be called
 func (m Model) Init() tea.Cmd {
 	go profile.GetLogs()
 	return tea.Batch(
@@ -147,6 +155,7 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
+// Bubble Tea function to Update with incoming events
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -218,6 +227,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// Render Bubble Tea UI
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().Padding(1)
 
@@ -253,15 +263,16 @@ func (m Model) View() string {
 
 }
 
+// Profile Row Data to display
 type Profile struct {
-	Namespace  string
-	PodName    string
-	Process    string
-	Resource   string
-	Result     string
-	UpdateTime string
+	Namespace string
+	PodName   string
+	Process   string
+	Resource  string
+	Result    string
 }
 
+// Frequency and Timestamp data for another map
 type Frequency struct {
 	freq int
 	time string
