@@ -159,7 +159,9 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 
 func checkLsmSupport(supportedLSM string) {
 	fmt.Printf("\t Enforcement:")
-	if strings.Contains(supportedLSM, "selinux") {
+	if strings.Contains(supportedLSM, "bpf") {
+		color.Green(" Full (Supported LSMs: " + supportedLSM + ")")
+	} else if strings.Contains(supportedLSM, "selinux") {
 		color.Yellow(" Partial (Supported LSMs: " + supportedLSM + ") \n\t To have full enforcement support, apparmor must be supported")
 	} else if strings.Contains(supportedLSM, "apparmor") || strings.Contains(supportedLSM, "bpf") {
 		color.Green(" Full (Supported LSMs: " + supportedLSM + ")")
