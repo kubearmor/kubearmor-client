@@ -32,9 +32,9 @@ require (
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/exp v0.0.0-20221114191408-850992195362
 	golang.org/x/mod v0.6.0
-	golang.org/x/net v0.1.0 // indirect
-	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
-	golang.org/x/sys v0.1.0
+	golang.org/x/net v0.3.0 // indirect
+	golang.org/x/sync v0.1.0
+	golang.org/x/sys v0.3.0
 	google.golang.org/genproto v0.0.0-20220815135757-37a418bb8959 // indirect
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
@@ -47,7 +47,7 @@ require (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221129114555-66fc8ef6cfe4
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20221206061659-45c77dd83169
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.22.1
@@ -178,8 +178,8 @@ require (
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094 // indirect
-	golang.org/x/term v0.1.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -194,4 +194,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-replace github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.5
+replace (
+	github.com/accuknox/auto-policy-discovery/src => /home/yasin/Documents/discovery-engine/src
+	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.5
+)

@@ -21,7 +21,7 @@ import (
 )
 
 // DefaultReqType : default option for request type
-var DefaultReqType = "process,file,network"
+var DefaultReqType = "process,file,network,syscall"
 var matchLabels = map[string]string{"app": "discovery-engine"}
 var port int64 = 9089
 

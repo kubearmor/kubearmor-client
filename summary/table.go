@@ -20,6 +20,10 @@ var (
 	SysFileHeader = []string{"Src Process", "Destination File Path", "Count", "Last Updated Time", "Status"}
 	// SysNwHeader variable contains protocol, command, POD/SVC/IP, Port, Namespace, and Labels
 	SysNwHeader = []string{"Protocol", "Command", "POD/SVC/IP", "Port", "Namespace", "Labels", "Count", "Last Updated Time"}
+	// SysBindNwHeader variable contains protocol, command, Bind Port, Bind Address, count and timestamp
+	SysBindNwHeader = []string{"Protocol", "Command", "Bind Port", "Bind Address", "Count", "Last Updated Time"}
+	// SysSyscallHeader variable contains "Parent Process", "Child Process", "Syscall", "Parameters", "Count", "Last Updated Time", "Result"
+	SysSyscallHeader = []string{"Parent Process", "Child Process", "Syscall", "Parameters", "Count", "Last Updated Time", "Result"}
 )
 
 // DisplaySummaryOutput function
@@ -141,7 +145,61 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 			WriteTable(SysNwHeader, outNwRowData)
 			fmt.Printf("\n")
 		}
+
+		if len(resp.BindConnection) > 0 {
+			fmt.Printf("\nBind Points\n")
+			// Display bind connections details
+			bindNwRowData := [][]string{}
+			for _, bindConnection := range resp.BindConnection {
+				bindNwStrSlice := []string{}
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Protocol)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Command)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.BindPort)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.BindAddress)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.Count)
+				bindNwStrSlice = append(bindNwStrSlice, bindConnection.UpdatedTime)
+				bindNwRowData = append(bindNwRowData, bindNwStrSlice)
+			}
+			WriteTable(SysBindNwHeader, bindNwRowData)
+			fmt.Printf("\n")
+		}
 	}
+
+	if strings.Contains(requestType, "syscall") {
+		if len(resp.SyscallData) > 0 {
+			fmt.Printf("\nSyscall Data\n")
+			// Display syscall data
+			syscallRowData := [][]string{}
+			for _, syscallData := range resp.SyscallData {
+				syscallStrSlice := []string{}
+				syscallStrSlice = append(syscallStrSlice, syscallData.ParentProcess)
+				syscallStrSlice = append(syscallStrSlice, syscallData.ChildProcess)
+				syscallStrSlice = append(syscallStrSlice, syscallData.Syscall)
+				syscallStrSlice = append(syscallStrSlice, syscallData.Parameters)
+				syscallStrSlice = append(syscallStrSlice, syscallData.Count)
+				syscallStrSlice = append(syscallStrSlice, syscallData.UpdatedTime)
+				syscallStrSlice = append(syscallStrSlice, syscallData.Result)
+				if syscallData.Result == "Allow" {
+					syscallStrSlice = append(syscallStrSlice, agc(syscallData.Result))
+				} else if syscallData.Result == "Deny" {
+					syscallStrSlice = append(syscallStrSlice, arc(syscallData.Result))
+				}
+				syscallRowData = append(syscallRowData, syscallStrSlice)
+			}
+			sort.Slice(syscallRowData[:], func(i, j int) bool {
+				for x := range syscallRowData[i] {
+					if syscallRowData[i][x] == syscallRowData[j][x] {
+						continue
+					}
+					return syscallRowData[i][x] < syscallRowData[j][x]
+				}
+				return false
+			})
+			WriteTable(SysSyscallHeader, syscallRowData)
+			fmt.Printf("\n")
+		}
+	}
+
 }
 
 func dnsLookup(ip string, revDNSLookup bool) string {
