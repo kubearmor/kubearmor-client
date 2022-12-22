@@ -21,7 +21,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220815044951-425f333210e1
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20220902110926-23f39cfa09e5
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20221222060140-7d5948614008
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20221117040949-d3559c7ffd74
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae

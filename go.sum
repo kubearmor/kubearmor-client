@@ -669,6 +669,8 @@ github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220815044951-425f333210e1 h1:A
 github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20220815044951-425f333210e1/go.mod h1:eZsn+ZbHGi1e/rIJW7IwYFvOJv8S2YekphskoBcUVOI=
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20220902110926-23f39cfa09e5 h1:Z8bcwblMpPRhL3R/4STE8NktiyOyyEW83uynikZZvJ8=
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20220902110926-23f39cfa09e5/go.mod h1:MIcoFMLGKjXSxwSIhBaLbp1aYItmNMI2podNwc30bug=
+github.com/kubearmor/KubeArmor/deployments v0.0.0-20221222060140-7d5948614008 h1:9X7QjVCQydvEmQHxyDqzCcIKCS4qkHkFsB9078Mp99Y=
+github.com/kubearmor/KubeArmor/deployments v0.0.0-20221222060140-7d5948614008/go.mod h1:9RAMgbWGjNZkXzY393OlqLsqbiuJNW/4hSX4BwRlfW8=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20221125090214-8406abab2b03 h1:xaR1usvz0HYfthfs/HavshIcFleDeEcePsHX5sxgfak=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20221125090214-8406abab2b03/go.mod h1:+GithELxQE729iPFXaNOhEaoeve5BoVe96imNVOA5qc=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20221117040949-d3559c7ffd74 h1:O2NDViNaRckSAtz8+ipjYT2GEZ3EiU/wLoA1JEhH4Xo=
