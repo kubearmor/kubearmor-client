@@ -54,7 +54,7 @@ type Options struct {
 
 func waitForActivity() tea.Cmd {
 	return func() tea.Msg {
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		return klog.EventInfo{}
 	}
 }
@@ -213,11 +213,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case klog.EventInfo:
 		profile.TelMutex.RLock()
 		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns("File"))
-		m.File = m.File.SortByDesc(ColumnCount)
+		m.File = m.File.SortByDesc(ColumnCount).ThenSortByDesc(ColumnResource).ThenSortByDesc(ColumnProcessName).ThenSortByDesc(ColumnPodname).ThenSortByDesc(ColumnNamespace)
 		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns("Process"))
-		m.Process = m.Process.SortByDesc(ColumnCount)
+		m.Process = m.Process.SortByDesc(ColumnCount).ThenSortByDesc(ColumnResource).ThenSortByDesc(ColumnProcessName).ThenSortByDesc(ColumnPodname).ThenSortByDesc(ColumnNamespace)
 		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns("Network"))
-		m.Network = m.Network.SortByDesc(ColumnCount)
+		m.Network = m.Network.SortByDesc(ColumnCount).ThenSortByDesc(ColumnResource).ThenSortByDesc(ColumnProcessName).ThenSortByDesc(ColumnPodname).ThenSortByDesc(ColumnNamespace)
 		profile.TelMutex.RUnlock()
 
 		return m, waitForActivity()
