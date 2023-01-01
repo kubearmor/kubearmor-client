@@ -70,6 +70,17 @@ func probeDaemonUninstaller(c *k8s.Client, o Options) error {
 	return nil
 }
 
+// only annotated pods and corresponding policies
+func PrintAnnotatedPods(c *k8s.Client, o Options) error {
+	if isKubeArmorRunning(c, o) {
+		err := getAnnotatedPods(c)
+		if err != nil {
+			log.Println("error occured when getting annotated pods", err)
+		}
+	}
+	return nil
+}
+
 // PrintProbeResult prints the result for the  host and k8s probing kArmor does to check compatibility with KubeArmor
 func PrintProbeResult(c *k8s.Client, o Options) error {
 	if runtime.GOOS != "linux" {

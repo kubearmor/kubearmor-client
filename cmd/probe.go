@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var verbose bool
+
 var probeInstallOptions probe.Options
 
 // probeCmd represents the get command
@@ -22,16 +24,23 @@ and what KubeArmor features will be supported e.g: observability, enforcement, e
 If KubeArmor is running, It probes which environment KubeArmor is running on (e.g: systemd mode, kubernetes etc.), 
 the supported KubeArmor features in the environment, the pods being handled by KubeArmor and the policies running on each of these pods`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := probe.PrintProbeResult(client, probeInstallOptions); err != nil {
-			return err
+		if !verbose {
+			err := probe.PrintAnnotatedPods(client, probeInstallOptions)
+			if err != nil {
+				return err
+			}
+		} else {
+			if err := probe.PrintProbeResult(client, probeInstallOptions); err != nil {
+				return err
+			}
 		}
 		return nil
-
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(probeCmd)
+	probeCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print verbose output of karmor probe")
 	probeCmd.Flags().StringVarP(&probeInstallOptions.Namespace, "namespace", "n", "kube-system", "Namespace for resources")
 	probeCmd.Flags().BoolVar(&probeInstallOptions.Full, "full", false, `If KubeArmor is not running, it deploys a daemonset to have access to more
 information on KubeArmor support in the environment and deletes daemonset after probing`)
