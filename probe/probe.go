@@ -599,10 +599,10 @@ func getAnnotatedPods(c *k8s.Client) error {
 			if err != nil {
 				return err
 			}
-			var k []string
+			var labels []string
 			data = append(data, []string{armoredPod.Namespace, armoredPod.Name, ""})
-			k =  getAnnotatedPodLabels(armoredPod.Labels, k)
-				s1 := sliceToSet(k)
+			labels =  getAnnotatedPodLabels(armoredPod.Labels, labels)
+				s1 := sliceToSet(labels)
 				for policyKey, policyValue := range policyMap {
 					s2 := sliceToSet(policyValue)
 					// log.Print(policyValue)
