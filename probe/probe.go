@@ -605,7 +605,6 @@ func getAnnotatedPods(c *k8s.Client) error {
 			s1 := sliceToSet(labels)
 			for policyKey, policyValue := range policyMap {
 				s2 := sliceToSet(policyValue)
-				// log.Print(policyValue)
 				if s2.IsSubset(s1) {
 					if checkIfDataAlreadyContainsPodName(data, armoredPod.Name, policyKey) {
 						continue
