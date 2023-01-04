@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/fatih/color"
 	jsoniter "github.com/json-iterator/go"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
@@ -571,6 +572,14 @@ func probeSystemdMode() error {
 	return nil
 }
 
+func getAnnotatedPodLabels(m map[string]string, a []string) []string {
+	for key, value := range m {
+		a =append(a, key+":"+value)
+	}
+
+	return a
+}
+
 func getAnnotatedPods(c *k8s.Client) error {
 	// Annotated Pods Description
 	var data [][]string
@@ -590,21 +599,22 @@ func getAnnotatedPods(c *k8s.Client) error {
 			if err != nil {
 				return err
 			}
+			var k []string
 			data = append(data, []string{armoredPod.Namespace, armoredPod.Name, ""})
-			for key, value := range armoredPod.Labels {
+			k =  getAnnotatedPodLabels(armoredPod.Labels, k)
+				s1 := sliceToSet(k)
 				for policyKey, policyValue := range policyMap {
-					if slices.Contains(policyValue, key+":"+value) {
+					s2 := sliceToSet(policyValue)
+					// log.Print(policyValue)
+					if s2.IsSubset(s1) {
 						if checkIfDataAlreadyContainsPodName(data, armoredPod.Name, policyKey) {
 							continue
-						} else {
+						} else {		
 							data = append(data, []string{armoredPod.Namespace, armoredPod.Name, policyKey})
 						}
-
 					}
-
 				}
 			}
-		}
 	}
 	_, err = boldWhite.Printf("Armored Up pods : \n")
 	if err != nil {
@@ -672,4 +682,12 @@ func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy str
 
 	}
 	return false
+}
+
+func sliceToSet(mySlice []string) mapset.Set[string] {
+	mySet := mapset.NewSet[string]()
+	for _, ele := range mySlice {
+		mySet.Add(ele)
+	}
+	return mySet
 }

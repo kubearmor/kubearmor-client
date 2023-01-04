@@ -52,6 +52,7 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.22.1
 	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/deckarep/golang-set/v2 v2.1.0
 	github.com/evertras/bubble-table v0.14.6
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
