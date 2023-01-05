@@ -572,12 +572,13 @@ func probeSystemdMode() error {
 	return nil
 }
 
-func getAnnotatedPodLabels(m map[string]string, a []string) []string {
+func getAnnotatedPodLabels(m map[string]string) mapset.Set[string] {
+	var a []string
 	for key, value := range m {
 		a = append(a, key+":"+value)
 	}
-
-	return a
+	b := sliceToSet(a)
+	return b
 }
 
 func getAnnotatedPods(c *k8s.Client) error {
@@ -599,13 +600,11 @@ func getAnnotatedPods(c *k8s.Client) error {
 			if err != nil {
 				return err
 			}
-			var labels []string
 			data = append(data, []string{armoredPod.Namespace, armoredPod.Name, ""})
-			labels = getAnnotatedPodLabels(armoredPod.Labels, labels)
-			s1 := sliceToSet(labels)
+			labels := getAnnotatedPodLabels(armoredPod.Labels)
 			for policyKey, policyValue := range policyMap {
 				s2 := sliceToSet(policyValue)
-				if s2.IsSubset(s1) {
+				if s2.IsSubset(labels) {
 					if checkIfDataAlreadyContainsPodName(data, armoredPod.Name, policyKey) {
 						continue
 					} else {
