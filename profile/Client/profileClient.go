@@ -99,7 +99,6 @@ func NewModel() Model {
 		state: processview,
 	}
 
-	// model.updateFooter()
 	return model
 }
 
