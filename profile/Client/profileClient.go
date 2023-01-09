@@ -5,6 +5,7 @@
 package profileclient
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -84,11 +85,10 @@ var o1 Options
 
 // NewModel initializates new bubbletea model
 func NewModel() Model {
-
-	return Model{
-		File:    table.New(generateColumns("File")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(10).Filtered(true),
-		Process: table.New(generateColumns("Process")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(10),
-		Network: table.New(generateColumns("Network")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(10),
+	model := Model{
+		File:    table.New(generateColumns("File")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(30),
+		Process: table.New(generateColumns("Process")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(30),
+		Network: table.New(generateColumns("Network")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(30),
 		tabs: &tabs{
 			height: 3,
 			active: "Lip Gloss",
@@ -98,6 +98,9 @@ func NewModel() Model {
 		help:  help.New(),
 		state: processview,
 	}
+
+	// model.updateFooter()
+	return model
 }
 
 func generateColumns(Operation string) []table.Column {
@@ -161,7 +164,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
-
 	m.tabs, _ = m.tabs.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -193,6 +195,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = processview
 			}
 
+		case "u":
+			m.File = m.File.WithPageSize(m.File.PageSize() - 1)
+			m.Network = m.Network.WithPageSize(m.Network.PageSize() - 1)
+			m.Process = m.Process.WithPageSize(m.Process.PageSize() - 1)
+
+		case "i":
+			m.File = m.File.WithPageSize(m.File.PageSize() + 1)
+			m.Network = m.Network.WithPageSize(m.Network.PageSize() + 1)
+			m.Process = m.Process.WithPageSize(m.Process.PageSize() + 1)
 		}
 
 		switch m.state {
@@ -230,8 +241,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View Renders Bubble Tea UI
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().Padding(1)
-
-	helpKey := m.help.Styles.FullKey.Foreground(lipgloss.Color("#57f8c8")).PaddingLeft(1)
+	RowCount := lipgloss.JoinHorizontal(lipgloss.Center, lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#57f8c8")).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
+	helpKey := m.help.Styles.FullDesc.Foreground(lipgloss.Color("#ffffff")).PaddingLeft(1)
 	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
 	var total string
 	switch m.state {
@@ -241,6 +252,7 @@ func (m Model) View() string {
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Process.View()))),
+			RowCount,
 			help,
 		))
 	case fileview:
@@ -248,6 +260,7 @@ func (m Model) View() string {
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.File.View()))),
+			RowCount,
 			help,
 		))
 	case networkview:
@@ -255,6 +268,7 @@ func (m Model) View() string {
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Network.View()))),
+			RowCount,
 			help,
 		))
 	}

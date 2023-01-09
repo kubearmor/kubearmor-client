@@ -8,27 +8,32 @@ import (
 )
 
 type keyMap struct {
-	Quit  key.Binding
-	Help  key.Binding
-	Tab   key.Binding
-	Arrow key.Binding
+	Quit   key.Binding
+	Help   key.Binding
+	Tab    key.Binding
+	Arrow  key.Binding
+	MaxRow key.Binding
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Quit, k.Tab, k.Arrow}}
+	return [][]key.Binding{{k.Quit, k.Tab, k.Arrow, k.MaxRow}}
 }
 
 var keys = keyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "quit"),
+		key.WithHelp("", "(q)quit"),
 	),
 	Arrow: key.NewBinding(
 		key.WithKeys(""),
-		key.WithHelp("Arrow Keys or h j k l", "scrolling through the table"),
+		key.WithHelp("", "(arrow keys or h j k l) scrolling through the table"),
 	),
 	Tab: key.NewBinding(
 		key.WithKeys("tab"),
-		key.WithHelp("Tab", "Change Operation"),
+		key.WithHelp("", "(Tab) Change Operation"),
+	),
+	MaxRow: key.NewBinding(
+		key.WithKeys(""),
+		key.WithHelp("", "(i)increase or (u)decrease max rows per page"),
 	),
 }
