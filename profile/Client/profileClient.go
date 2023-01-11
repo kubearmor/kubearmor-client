@@ -6,10 +6,6 @@ package profileclient
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"time"
-
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,6 +14,9 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
+	"log"
+	"os"
+	"time"
 )
 
 // Column keys
@@ -45,12 +44,19 @@ var (
 	styleBase = lipgloss.NewStyle().
 		BorderForeground(lipgloss.Color("#57f8c8")).
 		Align(lipgloss.Right)
+
+	helptheme = lipgloss.AdaptiveColor{
+		Light: "#000000",
+		Dark:  "#ffffff",
+	}
+
 )
 
 // Options for filter
 type Options struct {
 	Namespace string
 	Pod       string
+	GRPC      string
 }
 
 func waitForActivity() tea.Cmd {
@@ -151,7 +157,7 @@ func generateColumns(Operation string) []table.Column {
 
 // Init calls initial functions if needed
 func (m Model) Init() tea.Cmd {
-	go profile.GetLogs()
+	go profile.GetLogs(o1.GRPC)
 	return tea.Batch(
 		waitForActivity(),
 	)
@@ -241,7 +247,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().Padding(1)
 	RowCount := lipgloss.JoinHorizontal(lipgloss.Center, lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#57f8c8")).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
-	helpKey := m.help.Styles.FullDesc.Foreground(lipgloss.Color("#ffffff")).PaddingLeft(1)
+	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).PaddingLeft(1)
 	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
 	var total string
 	switch m.state {
@@ -337,6 +343,7 @@ func Start(o Options) {
 	os.Stderr = nil
 	o1.Namespace = o.Namespace
 	o1.Pod = o.Pod
+	o1.GRPC = o.GRPC
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 
 	if err := p.Start(); err != nil {
