@@ -6,6 +6,10 @@ package profileclient
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,9 +18,6 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
-	"log"
-	"os"
-	"time"
 )
 
 // Column keys
@@ -42,14 +43,13 @@ const (
 
 var (
 	styleBase = lipgloss.NewStyle().
-		BorderForeground(lipgloss.Color("#57f8c8")).
-		Align(lipgloss.Right)
+			BorderForeground(lipgloss.Color("#57f8c8")).
+			Align(lipgloss.Right)
 
 	helptheme = lipgloss.AdaptiveColor{
 		Light: "#000000",
 		Dark:  "#ffffff",
 	}
-
 )
 
 // Options for filter
@@ -109,37 +109,37 @@ func NewModel() Model {
 }
 
 func generateColumns(Operation string) []table.Column {
-	CountCol := table.NewColumn(ColumnCount, "Count", 10).WithStyle(
+	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	Namespace := table.NewColumn(ColumnNamespace, "Namespace", 20).WithStyle(
+	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	PodName := table.NewColumn(ColumnPodname, "Podname", 40).WithStyle(
+	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	ProcName := table.NewColumn(ColumnProcessName, "ProcessName", 30).WithStyle(
+	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	Resource := table.NewColumn(ColumnResource, Operation, 60).WithStyle(
+	Resource := table.NewFlexColumn(ColumnResource, Operation, 6).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#57f8c8")).
 			Align(lipgloss.Center))
 
-	Result := table.NewColumn(ColumnResult, "Result", 10).WithStyle(
+	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
 
-	Timestamp := table.NewColumn(ColumnTimestamp, "TimeStamp", 30).WithStyle(
+	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#09ff00")).
 			Align(lipgloss.Center))
@@ -179,6 +179,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		msg.Height -= 2
 		msg.Width -= 4
 		m.help.Width = msg.Width
+		m.recalculateTable()
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit):
@@ -243,9 +244,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *Model) recalculateTable() {
+	m.File = m.File.WithTargetWidth(m.width)
+	m.Network = m.Network.WithTargetWidth(m.width)
+	m.Process = m.Process.WithTargetWidth(m.width)
+}
+
 // View Renders Bubble Tea UI
 func (m Model) View() string {
-	pad := lipgloss.NewStyle().Padding(1)
+	pad := lipgloss.NewStyle().PaddingRight(1)
 	RowCount := lipgloss.JoinHorizontal(lipgloss.Center, lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#57f8c8")).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
 	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).PaddingLeft(1)
 	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
@@ -277,7 +284,6 @@ func (m Model) View() string {
 			help,
 		))
 	}
-
 	return total
 
 }

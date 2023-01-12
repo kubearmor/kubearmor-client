@@ -9,6 +9,7 @@ import (
 )
 
 var profileOptions profileclient.Options
+
 // profileCmd represents the profile command
 var profilecmd = &cobra.Command{
 	Use:   "profile",
