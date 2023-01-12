@@ -92,11 +92,10 @@ var o1 Options
 // NewModel initializates new bubbletea model
 func NewModel() Model {
 	model := Model{
-		File:    table.New(generateColumns("File")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(30),
-		Process: table.New(generateColumns("Process")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(30),
-		Network: table.New(generateColumns("Network")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(30),
+		File:    table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30),
+		Process: table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30),
+		Network: table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30),
 		tabs: &tabs{
-			height: 3,
 			active: "Lip Gloss",
 			items:  []string{"Process", "File", "Network"},
 		},
@@ -176,8 +175,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 		m.width = msg.Width
-		msg.Height -= 2
-		msg.Width -= 4
+		// msg.Height -= 2
+		// msg.Width -= 4
 		m.help.Width = msg.Width
 		m.recalculateTable()
 	case tea.KeyMsg:
@@ -254,13 +253,13 @@ func (m *Model) recalculateTable() {
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().PaddingRight(1)
 	RowCount := lipgloss.JoinHorizontal(lipgloss.Center, lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#57f8c8")).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
-	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).PaddingLeft(1)
+	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).PaddingLeft(1).Height(m.height)
 	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
 	var total string
 	switch m.state {
 
 	case processview:
-		s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
+		s := lipgloss.NewStyle().Height(m.height).MaxHeight(m.height)
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Process.View()))),
