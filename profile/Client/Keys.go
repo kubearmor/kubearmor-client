@@ -13,16 +13,17 @@ type keyMap struct {
 	Tab    key.Binding
 	Arrow  key.Binding
 	MaxRow key.Binding
+	Filter key.Binding
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Quit, k.Tab, k.Arrow, k.MaxRow}}
+	return [][]key.Binding{{k.Quit, k.Tab, k.Arrow, k.MaxRow, k.Filter}}
 }
 
 var keys = keyMap{
 	Quit: key.NewBinding(
-		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("", "(q)quit"),
+		key.WithKeys("ctrl+c"),
+		key.WithHelp("", "(ctrl + c)quit"),
 	),
 	Arrow: key.NewBinding(
 		key.WithKeys(""),
@@ -35,5 +36,9 @@ var keys = keyMap{
 	MaxRow: key.NewBinding(
 		key.WithKeys(""),
 		key.WithHelp("", "(i)increase or (u)decrease max rows per page"),
+	),
+	Filter: key.NewBinding(
+		key.WithKeys(""),
+		key.WithHelp("", "(/) To filter the tables, Press <Esc> to clear filter"),
 	),
 }

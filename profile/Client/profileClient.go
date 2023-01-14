@@ -62,13 +62,6 @@ type Options struct {
 	GRPC      string
 }
 
-func waitForActivity() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(2 * time.Second)
-		return klog.EventInfo{}
-	}
-}
-
 // Model for main Bubble Tea
 type Model struct {
 	File     table.Model
@@ -90,41 +83,30 @@ type SomeData struct {
 	rows []table.Row
 }
 
-var o1 Options
-
-// NewModel initializates new bubbletea model
-func NewModel() Model {
-	model := Model{
-		File:    table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30),
-		Process: table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30),
-		Network: table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30),
-		tabs: &tabs{
-			active: "Lip Gloss",
-			items:  []string{"Process", "File", "Network"},
-		},
-		keys:  keys,
-		help:  help.New(),
-		state: processview,
+func waitForActivity() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(2 * time.Second)
+		return klog.EventInfo{}
 	}
-
-	return model
 }
 
+var o1 Options
+
 func generateColumns(Operation string) []table.Column {
-	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle)
+	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle).WithFiltered(true)
 
-	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle)
+	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
 
-	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(ColumnStyle)
+	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(ColumnStyle).WithFiltered(true)
 
-	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle)
+	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle).WithFiltered(true)
 
 	Resource := table.NewFlexColumn(ColumnResource, Operation, 6).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("202")).
-			Align(lipgloss.Center))
+			Align(lipgloss.Center)).WithFiltered(true)
 
-	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(ColumnStyle)
+	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(ColumnStyle).WithFiltered(true)
 
 	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(ColumnStyle)
 
@@ -147,6 +129,24 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
+// NewModel initializates new bubbletea model
+func NewModel() Model {
+	model := Model{
+		File:    table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Process: table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Network: table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		tabs: &tabs{
+			active: "Lip Gloss",
+			items:  []string{"Process", "File", "Network"},
+		},
+		keys:  keys,
+		help:  help.New(),
+		state: processview,
+	}
+
+	return model
+}
+
 // Update Bubble Tea function to Update with incoming events
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
@@ -160,8 +160,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 		m.width = msg.Width
-		// msg.Height -= 2
-		// msg.Width -= 4
 		m.help.Width = msg.Width
 		m.recalculateTable()
 	case tea.KeyMsg:
@@ -169,12 +167,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
 			return m, tea.Quit
-		case key.Matches(msg, m.keys.Help):
-			m.help.ShowAll = !m.help.ShowAll
 
 		}
 
 		switch msg.String() {
+
 		case "tab":
 			switch m.state {
 			case processview:
