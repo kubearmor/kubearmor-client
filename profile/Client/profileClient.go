@@ -43,8 +43,11 @@ const (
 
 var (
 	styleBase = lipgloss.NewStyle().
-			BorderForeground(lipgloss.Color("#57f8c8")).
+			BorderForeground(lipgloss.Color("12")).
 			Align(lipgloss.Right)
+	//ColumnStyle for column color
+	ColumnStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#00af00")).Align(lipgloss.Center).Bold(true)
 
 	helptheme = lipgloss.AdaptiveColor{
 		Light: "#000000",
@@ -108,40 +111,22 @@ func NewModel() Model {
 }
 
 func generateColumns(Operation string) []table.Column {
-	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle)
 
-	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle)
 
-	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(ColumnStyle)
 
-	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle)
 
 	Resource := table.NewFlexColumn(ColumnResource, Operation, 6).WithStyle(
 		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#57f8c8")).
+			Foreground(lipgloss.Color("202")).
 			Align(lipgloss.Center))
 
-	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(ColumnStyle)
 
-	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(ColumnStyle)
 
 	return []table.Column{
 		Namespace,
@@ -252,35 +237,36 @@ func (m *Model) recalculateTable() {
 // View Renders Bubble Tea UI
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().PaddingRight(1)
-	RowCount := lipgloss.JoinHorizontal(lipgloss.Center, lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#57f8c8")).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
-	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).PaddingLeft(1).Height(m.height)
+	RowCount := lipgloss.JoinHorizontal(lipgloss.Left, lipgloss.NewStyle().Foreground(helptheme).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
+	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).Padding(0, 0, 1)
 	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
 	var total string
+	s := lipgloss.NewStyle().Height(m.height).MaxHeight(m.height)
 	switch m.state {
 
 	case processview:
-		s := lipgloss.NewStyle().Height(m.height).MaxHeight(m.height)
+
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+			help,
+			RowCount,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Process.View()))),
-			RowCount,
-			help,
 		))
 	case fileview:
-		s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
+		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+			help,
+			RowCount,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.File.View()))),
-			RowCount,
-			help,
 		))
 	case networkview:
-		s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
+		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+			help,
+			RowCount,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Network.View()))),
-			RowCount,
-			help,
 		))
 	}
 	return total
