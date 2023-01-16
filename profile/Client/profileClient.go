@@ -5,6 +5,7 @@
 package profileclient
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -42,21 +43,23 @@ const (
 
 var (
 	styleBase = lipgloss.NewStyle().
-		BorderForeground(lipgloss.Color("#57f8c8")).
-		Align(lipgloss.Right)
+			BorderForeground(lipgloss.Color("12")).
+			Align(lipgloss.Right)
+	//ColumnStyle for column color
+	ColumnStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#00af00")).Align(lipgloss.Center).Bold(true)
+
+	helptheme = lipgloss.AdaptiveColor{
+		Light: "#000000",
+		Dark:  "#ffffff",
+	}
 )
 
 // Options for filter
 type Options struct {
 	Namespace string
 	Pod       string
-}
-
-func waitForActivity() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(2 * time.Second)
-		return klog.EventInfo{}
-	}
+	GRPC      string
 }
 
 // Model for main Bubble Tea
@@ -80,61 +83,32 @@ type SomeData struct {
 	rows []table.Row
 }
 
-var o1 Options
-
-// NewModel initializates new bubbletea model
-func NewModel() Model {
-
-	return Model{
-		File:    table.New(generateColumns("File")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(10).Filtered(true),
-		Process: table.New(generateColumns("Process")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(10),
-		Network: table.New(generateColumns("Network")).BorderRounded().WithBaseStyle(styleBase).WithPageSize(10),
-		tabs: &tabs{
-			height: 3,
-			active: "Lip Gloss",
-			items:  []string{"Process", "File", "Network"},
-		},
-		keys:  keys,
-		help:  help.New(),
-		state: processview,
+func waitForActivity() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(2 * time.Second)
+		return klog.EventInfo{}
 	}
 }
 
+var o1 Options
+
 func generateColumns(Operation string) []table.Column {
-	CountCol := table.NewColumn(ColumnCount, "Count", 10).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle).WithFiltered(true)
 
-	Namespace := table.NewColumn(ColumnNamespace, "Namespace", 20).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
 
-	PodName := table.NewColumn(ColumnPodname, "Podname", 40).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(ColumnStyle).WithFiltered(true)
 
-	ProcName := table.NewColumn(ColumnProcessName, "ProcessName", 30).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle).WithFiltered(true)
 
-	Resource := table.NewColumn(ColumnResource, Operation, 60).WithStyle(
+	Resource := table.NewFlexColumn(ColumnResource, Operation, 6).WithStyle(
 		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#57f8c8")).
-			Align(lipgloss.Center))
+			Foreground(lipgloss.Color("202")).
+			Align(lipgloss.Center)).WithFiltered(true)
 
-	Result := table.NewColumn(ColumnResult, "Result", 10).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(ColumnStyle).WithFiltered(true)
 
-	Timestamp := table.NewColumn(ColumnTimestamp, "TimeStamp", 30).WithStyle(
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#09ff00")).
-			Align(lipgloss.Center))
+	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(ColumnStyle)
 
 	return []table.Column{
 		Namespace,
@@ -149,10 +123,28 @@ func generateColumns(Operation string) []table.Column {
 
 // Init calls initial functions if needed
 func (m Model) Init() tea.Cmd {
-	go profile.GetLogs()
+	go profile.GetLogs(o1.GRPC)
 	return tea.Batch(
 		waitForActivity(),
 	)
+}
+
+// NewModel initializates new bubbletea model
+func NewModel() Model {
+	model := Model{
+		File:    table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Process: table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Network: table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		tabs: &tabs{
+			active: "Lip Gloss",
+			items:  []string{"Process", "File", "Network"},
+		},
+		keys:  keys,
+		help:  help.New(),
+		state: processview,
+	}
+
+	return model
 }
 
 // Update Bubble Tea function to Update with incoming events
@@ -161,7 +153,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
-
 	m.tabs, _ = m.tabs.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -169,20 +160,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 		m.width = msg.Width
-		msg.Height -= 2
-		msg.Width -= 4
 		m.help.Width = msg.Width
+		m.recalculateTable()
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
 			return m, tea.Quit
-		case key.Matches(msg, m.keys.Help):
-			m.help.ShowAll = !m.help.ShowAll
 
 		}
 
 		switch msg.String() {
+
 		case "tab":
 			switch m.state {
 			case processview:
@@ -193,6 +182,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = processview
 			}
 
+		case "u":
+			m.File = m.File.WithPageSize(m.File.PageSize() - 1)
+			m.Network = m.Network.WithPageSize(m.Network.PageSize() - 1)
+			m.Process = m.Process.WithPageSize(m.Process.PageSize() - 1)
+
+		case "i":
+			m.File = m.File.WithPageSize(m.File.PageSize() + 1)
+			m.Network = m.Network.WithPageSize(m.Network.PageSize() + 1)
+			m.Process = m.Process.WithPageSize(m.Process.PageSize() + 1)
 		}
 
 		switch m.state {
@@ -227,38 +225,47 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *Model) recalculateTable() {
+	m.File = m.File.WithTargetWidth(m.width)
+	m.Network = m.Network.WithTargetWidth(m.width)
+	m.Process = m.Process.WithTargetWidth(m.width)
+}
+
 // View Renders Bubble Tea UI
 func (m Model) View() string {
-	pad := lipgloss.NewStyle().Padding(1)
-
-	helpKey := m.help.Styles.FullKey.Foreground(lipgloss.Color("#57f8c8")).PaddingLeft(1)
+	pad := lipgloss.NewStyle().PaddingRight(1)
+	RowCount := lipgloss.JoinHorizontal(lipgloss.Left, lipgloss.NewStyle().Foreground(helptheme).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
+	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).Padding(0, 0, 1)
 	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
 	var total string
+	s := lipgloss.NewStyle().Height(m.height).MaxHeight(m.height)
 	switch m.state {
 
 	case processview:
-		s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
+
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+			help,
+			RowCount,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Process.View()))),
-			help,
 		))
 	case fileview:
-		s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
+		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+			help,
+			RowCount,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.File.View()))),
-			help,
 		))
 	case networkview:
-		s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
+		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
 		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+			help,
+			RowCount,
 			m.tabs.View(),
 			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Network.View()))),
-			help,
 		))
 	}
-
 	return total
 
 }
@@ -324,6 +331,7 @@ func Start(o Options) {
 	os.Stderr = nil
 	o1.Namespace = o.Namespace
 	o1.Pod = o.Pod
+	o1.GRPC = o.GRPC
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 
 	if err := p.Start(); err != nil {

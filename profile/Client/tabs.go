@@ -35,8 +35,7 @@ var (
 )
 
 type tabs struct {
-	height int
-	width  int
+	width int
 
 	active string
 	cursor int

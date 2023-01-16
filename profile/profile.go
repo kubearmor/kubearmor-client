@@ -26,8 +26,8 @@ var Telemetry []pb.Log
 var TelMutex sync.RWMutex
 
 // GetLogs to fetch logs
-func GetLogs() error {
-	err := KarmorProfileStart("all")
+func GetLogs(grpc string) error {
+	err := KarmorProfileStart("system", grpc)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func GetLogs() error {
 }
 
 // KarmorProfileStart starts observer
-func KarmorProfileStart(logFilter string) error {
+func KarmorProfileStart(logFilter string, grpc string) error {
 	if eventChan == nil {
 		eventChan = make(chan klog.EventInfo)
 	}
@@ -67,14 +67,24 @@ func KarmorProfileStart(logFilter string) error {
 		return err
 	}
 	go func() {
+		// if len(grpc) != 0 {
 		err = klog.StartObserver(client, klog.Options{
 			LogFilter: logFilter,
 			MsgPath:   "none",
 			EventChan: eventChan,
+			GRPC:      grpc,
 		})
+		// } else {
+		// 	err = klog.StartObserver(client, klog.Options{
+		// 		LogFilter: logFilter,
+		// 		MsgPath:   "none",
+		// 		EventChan: eventChan,
+		// 	})
+		// }
 		if err != nil {
 			return
 		}
+
 	}()
 	return err
 }
