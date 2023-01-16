@@ -67,20 +67,20 @@ func KarmorProfileStart(logFilter string, grpc string) error {
 		return err
 	}
 	go func() {
-		if len(grpc) != 0 {
-			err = klog.StartObserver(client, klog.Options{
-				LogFilter: logFilter,
-				MsgPath:   "none",
-				EventChan: eventChan,
-				GRPC:      grpc,
-			})
-		} else {
-			err = klog.StartObserver(client, klog.Options{
-				LogFilter: logFilter,
-				MsgPath:   "none",
-				EventChan: eventChan,
-			})
-		}
+		// if len(grpc) != 0 {
+		err = klog.StartObserver(client, klog.Options{
+			LogFilter: logFilter,
+			MsgPath:   "none",
+			EventChan: eventChan,
+			GRPC:      grpc,
+		})
+		// } else {
+		// 	err = klog.StartObserver(client, klog.Options{
+		// 		LogFilter: logFilter,
+		// 		MsgPath:   "none",
+		// 		EventChan: eventChan,
+		// 	})
+		// }
 		if err != nil {
 			return
 		}
