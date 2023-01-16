@@ -23,7 +23,7 @@ var profilecmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(profilecmd)
-
+	profilecmd.Flags().StringVar(&profileOptions.GRPC, "gRPC", "", "use gRPC")
 	profilecmd.Flags().StringVar(&profileOptions.Namespace, "namespace", "", "Filter using namespace")
 	profilecmd.Flags().StringVar(&profileOptions.Pod, "pod", "", "Filter using Pod name")
 }
