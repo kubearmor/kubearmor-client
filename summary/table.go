@@ -36,6 +36,7 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 	// Colored Status for Allow and Deny
 	agc := ansi.ColorFunc("green")
 	arc := ansi.ColorFunc("red")
+	ayc := ansi.ColorFunc("yellow")
 
 	if strings.Contains(requestType, "process") {
 		if len(resp.ProcessData) > 0 {
@@ -48,8 +49,10 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				procStrSlice = append(procStrSlice, procData.Destination)
 				procStrSlice = append(procStrSlice, procData.Count)
 				procStrSlice = append(procStrSlice, procData.UpdatedTime)
-				if procData.Status == "Allow" || procData.Status == "Audit" {
+				if procData.Status == "Allow" {
 					procStrSlice = append(procStrSlice, agc(procData.Status))
+				} else if procData.Status == "Audit" {
+					procStrSlice = append(procStrSlice, ayc(procData.Status))
 				} else {
 					procStrSlice = append(procStrSlice, arc(procData.Status))
 				}
@@ -80,8 +83,10 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				fileStrSlice = append(fileStrSlice, fileData.Destination)
 				fileStrSlice = append(fileStrSlice, fileData.Count)
 				fileStrSlice = append(fileStrSlice, fileData.UpdatedTime)
-				if fileData.Status == "Allow" || fileData.Status == "Audit" {
+				if fileData.Status == "Allow" {
 					fileStrSlice = append(fileStrSlice, agc(fileData.Status))
+				} else if fileData.Status == "Audit" {
+					fileStrSlice = append(fileStrSlice, ayc(fileData.Status))
 				} else {
 					fileStrSlice = append(fileStrSlice, arc(fileData.Status))
 				}
