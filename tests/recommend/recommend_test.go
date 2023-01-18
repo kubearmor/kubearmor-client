@@ -57,10 +57,9 @@ func compareData(file1, file2 string) bool {
 	}
 
 	if !cmp.Equal(pol1, pol2) {
-		fmt.Printf("\npolicy-1: %+v\npolicy-2: %+v", pol1, pol2)
+		return false
 	}
-
-	return cmp.Equal(pol1, pol2)
+	return true
 }
 
 var _ = Describe("karmor", func() {
@@ -103,20 +102,21 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain atleast `2` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
+			It("should contain atleast `3` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
 				testOptions.Images = []string{"ubuntu:18.04"}
 				for _, file := range files {
 					filesRes, err := os.ReadDir("res/out/ubuntu-18-04")
 					Expect(err).To(BeNil())
 					for _, fileRes := range filesRes {
-						if file.Name() == fileRes.Name() {
-							if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
-								count++
-							}
+
+						if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
+							count++
+
 						}
 					}
 				}
-				Expect(count).To(BeNumerically(">=", 2))
+				fmt.Printf("Matched files count: %v\n", count)
+				Expect(count).To(BeNumerically("==", 3))
 			})
 		})
 
@@ -132,21 +132,21 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain atleast `2` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
+			It("should contain atleast `3` policy files under directory `ubuntu-18-04` and should match with the files under `res/out/ubuntu-18-04`", func() {
 				testOptions.OutDir = "ubuntu-test"
 				testOptions.Images = []string{"ubuntu:18.04"}
 				for _, file := range files {
 					filesRes, err := os.ReadDir("res/out/ubuntu-18-04")
 					Expect(err).To(BeNil())
 					for _, fileRes := range filesRes {
-						if file.Name() == fileRes.Name() {
-							if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
-								count++
-							}
+						if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
+							count++
 						}
+
 					}
 				}
-				Expect(count).To(BeNumerically(">=", 2))
+				fmt.Printf("Matched files count: %v\n", count)
+				Expect(count).To(BeNumerically("==", 3))
 			})
 		})
 
@@ -162,21 +162,22 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain atleast `3` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+			It("should contain atleast `5` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				for _, file := range files {
 					filesRes, err := os.ReadDir("res/out/wordpress-mysql-wordpress")
 					Expect(err).To(BeNil())
 					for _, fileRes := range filesRes {
-						if file.Name() == fileRes.Name() {
-							if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
-								count++
-							}
+
+						if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
+							count++
+
 						}
 					}
 				}
-				Expect(count).To(BeNumerically(">=", 3))
+				fmt.Printf("Matched files count: %v\n", count)
+				Expect(count).To(BeNumerically("==", 5))
 			})
 		})
 
@@ -193,7 +194,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain atleast `3` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+			It("should contain atleast `5` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				testOptions.OutDir = "wordpress-test"
@@ -201,14 +202,13 @@ var _ = Describe("karmor", func() {
 					filesRes, err := os.ReadDir("res/out/wordpress-mysql-wordpress")
 					Expect(err).To(BeNil())
 					for _, fileRes := range filesRes {
-						if file.Name() == fileRes.Name() {
-							if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
-								count++
-							}
+						if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
+							count++
 						}
 					}
 				}
-				Expect(count).To(BeNumerically(">=", 3))
+				fmt.Printf("Matched files count: %v\n", count)
+				Expect(count).To(BeNumerically("==", 5))
 			})
 		})
 	})
