@@ -42,6 +42,7 @@ type Options struct {
 // Summary : Get summary on pods
 func Summary(c *k8s.Client, o Options) error {
 	gRPC := ""
+	targetPodName := "discovery-engine"
 
 	if o.GRPC != "" {
 		gRPC = o.GRPC
@@ -49,7 +50,7 @@ func Summary(c *k8s.Client, o Options) error {
 		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 			gRPC = val
 		} else {
-			pf, err := utils.InitiatePortForward(c, port, port, matchLabels)
+			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetPodName)
 			if err != nil {
 				return err
 			}

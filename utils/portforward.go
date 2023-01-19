@@ -22,20 +22,22 @@ import (
 
 // PortForwardOpt details for a pod
 type PortForwardOpt struct {
-	LocalPort   int64
-	RemotePort  int64
-	MatchLabels map[string]string
-	Namespace   string
-	PodName     string
+	LocalPort     int64
+	RemotePort    int64
+	MatchLabels   map[string]string
+	Namespace     string
+	PodName       string
+	TargetPodName string
 }
 
 // InitiatePortForward : Initiate port forwarding
-func InitiatePortForward(c *k8s.Client, localPort int64, remotePort int64, matchLabels map[string]string) (PortForwardOpt, error) {
+func InitiatePortForward(c *k8s.Client, localPort int64, remotePort int64, matchLabels map[string]string, targetPodName string) (PortForwardOpt, error) {
 	pf := PortForwardOpt{
-		LocalPort:   localPort,
-		RemotePort:  remotePort,
-		Namespace:   "",
-		MatchLabels: matchLabels,
+		LocalPort:     localPort,
+		RemotePort:    remotePort,
+		Namespace:     "",
+		MatchLabels:   matchLabels,
+		TargetPodName: targetPodName,
 	}
 
 	// handle port forward
@@ -118,7 +120,7 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 		return err
 	}
 	if len(podList.Items) == 0 {
-		return errors.New("kubearmor pod not found")
+		return fmt.Errorf("kubearmor %s pod not found", pf.TargetPodName)
 	}
 	pf.PodName = podList.Items[0].GetObjectMeta().GetName()
 	pf.Namespace = podList.Items[0].GetObjectMeta().GetNamespace()
