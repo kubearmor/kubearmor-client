@@ -33,21 +33,24 @@ Usage:
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
   discover    Discover applicable policies
-  get         Display specified resources
   help        Help about any command
-  insight     Policy insight from discovery engine
   install     Install KubeArmor in a Kubernetes Cluster
-  log         Observe Logs from KubeArmor
+  logs        Observe Logs from KubeArmor
+  probe       Checks for supported KubeArmor features in the current environment
+  profile     Profiling of logs
+  recommend   Recommend Policies
   rotate-tls  Rotate webhook controller tls certificates
   selfupdate  selfupdate this cli tool
+  summary     Observability from discovery engine
   sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
   vm          VM commands for kvmservice
-  probe       Checks for supported kubearmor features in the current environment       
 
 Flags:
-  -h, --help   help for karmor
+      --context string      Name of the kubeconfig context to use
+  -h, --help                help for karmor
+      --kubeconfig string   Path to the kubeconfig file to use
 
 Use "karmor [command] --help" for more information about a command.
 ```
