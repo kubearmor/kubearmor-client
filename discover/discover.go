@@ -42,7 +42,7 @@ var port int64 = 9089
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
 func ConvertPolicy(c *k8s.Client, o Options) error {
 	gRPC := ""
-	targetPodName := "discovery-engine"
+	targetSvc := "discovery-engine"
 
 	if o.GRPC != "" {
 		gRPC = o.GRPC
@@ -50,7 +50,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 		if val, ok := os.LookupEnv("DISCOVERY_SERVICE"); ok {
 			gRPC = val
 		} else {
-			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetPodName)
+			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 			if err != nil {
 				return err
 			}
