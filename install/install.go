@@ -135,7 +135,7 @@ func checkTerminatingPods(c *k8s.Client) int {
 			break
 		}
 		if podno == 0 {
-			fmt.Printf("\r🥳   Done Checking , ALL Services are stopped!             \n")
+			fmt.Printf("\r🔴   Done Checking , ALL Services are stopped!             \n")
 			fmt.Printf("⌚️   Termination Time : %s \n", time.Since(stime))
 			break
 		}
