@@ -117,7 +117,7 @@ func checkPods(c *k8s.Client) int {
 
 func checkTerminatingPods(c *k8s.Client) int {
 	cursor := [4]string{"|", "/", "—", "\\"}
-	fmt.Printf("😋   Checking if KubeArmor pods are stopped ...")
+	fmt.Printf("🔴   Checking if KubeArmor pods are stopped ...")
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	for {
