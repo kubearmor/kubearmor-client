@@ -453,7 +453,7 @@ func removeAnnotations(c *k8s.Client) {
 // K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	animation = o.Animation
-	fmt.Print("🧐   Mutation Admission Registration ...\n")
+	fmt.Print("❌   Mutation Admission Registration ...\n")
 	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.AnnotationsControllerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -461,7 +461,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   Mutation Admission Registration not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Annotation Controller Service ...\n")
+	fmt.Print("❌   KubeArmor Annotation Controller Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), deployments.AnnotationsControllerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -469,7 +469,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Annotation Controller Service not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Annotation Controller Deployment ...\n")
+	fmt.Print("❌   KubeArmor Annotation Controller Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), deployments.AnnotationsControllerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -477,14 +477,14 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Annotation Controller Deployment not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Annotation Controller TLS certificates ...\n")
+	fmt.Print("❌   KubeArmor Annotation Controller TLS certificates ...\n")
 	if err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerSecretName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
 		fmt.Print("ℹ️   KubeArmor Annotation Controller TLS certificates not found ...\n")
 	}
-	fmt.Print("🧐   Service Account ...\n")
+	fmt.Print("❌   Service Account ...\n")
 	if err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Delete(context.Background(), serviceAccountName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -492,7 +492,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   Service Account not found ...\n")
 	}
 
-	fmt.Print("🧐   Cluster Role Bindings ...\n")
+	fmt.Print("❌   Cluster Role Bindings ...\n")
 	if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), clusterRoleBindingName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -500,7 +500,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   Cluster Role Bindings not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Relay Service ...\n")
+	fmt.Print("❌   KubeArmor Relay Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), relayServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -508,7 +508,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Relay Service not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Relay Deployment ...\n")
+	fmt.Print("❌   KubeArmor Relay Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), relayDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -516,7 +516,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Relay Deployment not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor DaemonSet ...\n")
+	fmt.Print("❌   KubeArmor DaemonSet ...\n")
 	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), kubearmor, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -524,7 +524,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor DaemonSet not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Policy Manager Service ...\n")
+	fmt.Print("❌   KubeArmor Policy Manager Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), policyManagerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -532,7 +532,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Policy Manager Service not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Policy Manager Deployment ...\n")
+	fmt.Print("❌   KubeArmor Policy Manager Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), policyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -540,7 +540,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Policy Manager Deployment not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Host Policy Manager Service ...\n")
+	fmt.Print("❌   KubeArmor Host Policy Manager Service ...\n")
 	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), hostPolicyManagerServiceName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
@@ -548,7 +548,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Host Policy Manager Service not found ...\n")
 	}
 
-	fmt.Print("🧐   KubeArmor Host Policy Manager Deployment ...\n")
+	fmt.Print("❌   KubeArmor Host Policy Manager Deployment ...\n")
 	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), hostPolicyManagerDeploymentName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
