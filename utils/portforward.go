@@ -129,8 +129,6 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 func (pf *PortForwardOpt) getLocalPort() (int64, error) {
 
 	for {
-		port := pf.LocalPort
-
 		port, err := getRandomPort()
 		if err != nil {
 			return port, err
