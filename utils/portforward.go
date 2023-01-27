@@ -27,15 +27,17 @@ type PortForwardOpt struct {
 	MatchLabels map[string]string
 	Namespace   string
 	PodName     string
+	TargetSvc   string
 }
 
 // InitiatePortForward : Initiate port forwarding
-func InitiatePortForward(c *k8s.Client, localPort int64, remotePort int64, matchLabels map[string]string) (PortForwardOpt, error) {
+func InitiatePortForward(c *k8s.Client, localPort int64, remotePort int64, matchLabels map[string]string, targetSvc string) (PortForwardOpt, error) {
 	pf := PortForwardOpt{
 		LocalPort:   localPort,
 		RemotePort:  remotePort,
 		Namespace:   "",
 		MatchLabels: matchLabels,
+		TargetSvc:   targetSvc,
 	}
 
 	// handle port forward
@@ -118,7 +120,7 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 		return err
 	}
 	if len(podList.Items) == 0 {
-		return errors.New("kubearmor pod not found")
+		return fmt.Errorf("%s svc not found", pf.TargetSvc)
 	}
 	pf.PodName = podList.Items[0].GetObjectMeta().GetName()
 	pf.Namespace = podList.Items[0].GetObjectMeta().GetNamespace()
@@ -127,9 +129,12 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 
 // Returns the local port for the port forwarder
 func (pf *PortForwardOpt) getLocalPort() (int64, error) {
-	port := pf.LocalPort
 
 	for {
+		port, err := getRandomPort()
+		if err != nil {
+			return port, err
+		}
 		listener, err := net.Listen("tcp", "127.0.0.1:"+strconv.FormatInt(port, 10))
 		if err == nil {
 			if err := listener.Close(); err != nil {
@@ -138,20 +143,17 @@ func (pf *PortForwardOpt) getLocalPort() (int64, error) {
 			fmt.Fprintf(os.Stderr, "local port to be used for port forwarding %s: %d \n", pf.PodName, port)
 			return port, nil
 		}
-
-		n, err := getRandomInt()
-		if err != nil {
-			return n, err
-		}
-		port = n + 32768
 	}
+
 }
 
-// get random integer
-func getRandomInt() (int64, error) {
+// Return a port number > 32767
+func getRandomPort() (int64, error) {
 	n, err := rand.Int(rand.Reader, big.NewInt(32900-32768))
 	if err != nil {
 		return -1, errors.New("unable to generate random integer for port")
 	}
-	return n.Int64(), nil
+
+	var portNo = n.Int64() + 32768
+	return portNo, nil
 }
