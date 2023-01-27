@@ -117,13 +117,14 @@ func closeStopChan() {
 // StartObserver Function
 func StartObserver(c *k8s.Client, o Options) error {
 	gRPC := ""
+	targetSvc := "kubearmor-relay"
 
 	if o.GRPC != "" {
 		gRPC = o.GRPC
 	} else if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
 		gRPC = val
 	} else {
-		pf, err := utils.InitiatePortForward(c, port, port, matchLabels)
+		pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 		if err != nil {
 			return err
 		}

@@ -27,15 +27,17 @@ type PortForwardOpt struct {
 	MatchLabels map[string]string
 	Namespace   string
 	PodName     string
+	TargetSvc   string
 }
 
 // InitiatePortForward : Initiate port forwarding
-func InitiatePortForward(c *k8s.Client, localPort int64, remotePort int64, matchLabels map[string]string) (PortForwardOpt, error) {
+func InitiatePortForward(c *k8s.Client, localPort int64, remotePort int64, matchLabels map[string]string, targetSvc string) (PortForwardOpt, error) {
 	pf := PortForwardOpt{
 		LocalPort:   localPort,
 		RemotePort:  remotePort,
 		Namespace:   "",
 		MatchLabels: matchLabels,
+		TargetSvc:   targetSvc,
 	}
 
 	// handle port forward
@@ -118,7 +120,7 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 		return err
 	}
 	if len(podList.Items) == 0 {
-		return errors.New("kubearmor pod not found")
+		return fmt.Errorf("%s svc not found", pf.TargetSvc)
 	}
 	pf.PodName = podList.Items[0].GetObjectMeta().GetName()
 	pf.Namespace = podList.Items[0].GetObjectMeta().GetNamespace()
