@@ -70,7 +70,7 @@ func probeDaemonUninstaller(c *k8s.Client, o Options) error {
 	return nil
 }
 
-// only annotated pods and corresponding policies
+// PrintAnnotatedPods only annotated pods and corresponding policies
 func PrintAnnotatedPods(c *k8s.Client, o Options) error {
 	if isKubeArmorRunning(c, o) {
 		err := getAnnotatedPods(c)
