@@ -25,16 +25,9 @@ If KubeArmor is running, It probes which environment KubeArmor is running on (e.
 the supported KubeArmor features in the environment, the pods being handled by KubeArmor and the policies running on each of these pods`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if !verbose {
-			err := probe.PrintAnnotatedPods(client, probeInstallOptions)
-			if err != nil {
-				return err
-			}
-		} else {
-			if err := probe.PrintProbeResult(client, probeInstallOptions); err != nil {
-				return err
-			}
+			return probe.PrintAnnotatedPods(client, probeInstallOptions)
 		}
-		return nil
+		return probe.PrintProbeResult(client, probeInstallOptions); err != nil {
 	},
 }
 
