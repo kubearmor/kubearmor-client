@@ -16,6 +16,7 @@ var uninstallCmd = &cobra.Command{
 	Short: "Uninstall KubeArmor from a Kubernetes Cluster",
 	Long:  `Uninstall KubeArmor from a Kubernetes Clusters`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		uninstallOptions.Animation = true
 		if err := install.K8sUninstaller(client, uninstallOptions); err != nil {
 			return err
 		}
