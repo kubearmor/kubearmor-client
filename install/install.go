@@ -244,13 +244,13 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	if o.Audit == "all" || strings.Contains(o.Audit, "capabilities") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=audit")
 	}
-	if o.Block == "all" || strings.Contains(o.Audit, "file") {
+	if o.Block == "all" || strings.Contains(o.Block, "file") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultFilePosture=block")
 	}
-	if o.Block == "all" || strings.Contains(o.Audit, "network") {
+	if o.Block == "all" || strings.Contains(o.Block, "network") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultNetworkPosture=block")
 	}
-	if o.Block == "all" || strings.Contains(o.Audit, "capabilities") {
+	if o.Block == "all" || strings.Contains(o.Block, "capabilities") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=block")
 	}
 	s := strings.Join(daemonset.Spec.Template.Spec.Containers[0].Args, " ")
