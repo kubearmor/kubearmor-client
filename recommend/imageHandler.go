@@ -25,6 +25,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/fatih/color"
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/moby/term"
 	log "github.com/sirupsen/logrus"
 )
@@ -138,7 +139,11 @@ func pullImage(imageName string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if err := out.Close(); err != nil {
+			kg.Warnf("Error closing io stream %s\n", err)
+		}
+	}()
 	termFd, isTerm := term.GetFdInfo(os.Stderr)
 	err = jsonmessage.DisplayJSONMessagesStream(out, os.Stderr, termFd, isTerm, nil)
 	if err != nil {
@@ -251,7 +256,11 @@ func saveImageToTar(imageName string) string {
 	if err != nil {
 		log.WithError(err).Fatal("could not save image")
 	}
-	defer imgdata.Close()
+	defer func() {
+		if err := imgdata.Close(); err != nil {
+			kg.Warnf("Error closing io stream %s\n", err)
+		}
+	}()
 
 	tarname := filepath.Join(tempDir, randString(8)+".tar")
 

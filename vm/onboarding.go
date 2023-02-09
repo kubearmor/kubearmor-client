@@ -16,6 +16,7 @@ import (
 	"time"
 
 	tp "github.com/kubearmor/KVMService/src/types"
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -36,7 +37,11 @@ func postHTTPRequest(eventData []byte, vmAction string, address string) (string,
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			kg.Warnf("Error closing http stream %s\n", err)
+		}
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

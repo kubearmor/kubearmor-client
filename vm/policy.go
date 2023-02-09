@@ -18,6 +18,7 @@ import (
 	v2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 
 	"google.golang.org/grpc"
 	"sigs.k8s.io/yaml"
@@ -102,7 +103,11 @@ func sendPolicyOverHTTP(address string, kind string, policyEventData []byte) err
 	if err != nil {
 		return fmt.Errorf("failed to send policy")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			kg.Warnf("Error closing http stream %s\n", err)
+		}
+	}()
 
 	fmt.Println("Success")
 	return nil

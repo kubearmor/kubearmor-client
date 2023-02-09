@@ -11,9 +11,11 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 )
 
-//LabelOptions are optional configuration for kArmor vm policy
+// LabelOptions are optional configuration for kArmor vm policy
 type LabelOptions struct {
 	VMName   string
 	VMLabels string
@@ -26,7 +28,7 @@ type KubeArmorVirtualMachineLabel struct {
 	Labels []map[string]string `json:"labels,omitempty"`
 }
 
-//LabelHandling Function recives path to YAML file with the type of event and HTTP Server
+// LabelHandling Function recives path to YAML file with the type of event and HTTP Server
 func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) error {
 
 	var respBody []byte
@@ -73,7 +75,11 @@ func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) err
 		if err != nil {
 			return fmt.Errorf("failed to manage labels")
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				kg.Warnf("Error closing http stream %s\n", err)
+			}
+		}()
 
 		respBody, err = io.ReadAll(resp.Body)
 		if err != nil {
