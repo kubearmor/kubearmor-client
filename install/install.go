@@ -36,11 +36,33 @@ type Options struct {
 	Force          bool
 	Save           bool
 	Animation      bool
+	Env            EnvOption
+}
+
+type EnvOption struct {
+	Auto        bool
+	Environment string
 }
 
 var animation bool
 var progress int
 var cursorcount int
+var validEnvironments = []string{"k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
+
+func (env *EnvOption) CheckAndSetValidEnvironmentOption(envOption string) error {
+	for _, v := range validEnvironments {
+		if v == envOption {
+			env.Environment = envOption
+			env.Auto = false
+			return nil
+		}
+	}
+	env.Auto = true
+	if envOption == "" {
+		return nil
+	}
+	return errors.New("Invalid environment passed")
+}
 
 func clearLine(size int) int {
 	for i := 0; i < size; i++ {
@@ -146,11 +168,17 @@ func checkTerminatingPods(c *k8s.Client) int {
 // K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
 	animation = o.Animation
-	env := AutoDetectEnvironment(c)
-	if env == "none" {
-		return errors.New("unsupported environment or cluster not configured correctly")
+	var env string
+	if o.Env.Auto {
+		env = AutoDetectEnvironment(c)
+		if env == "none" {
+			return errors.New("unsupported environment or cluster not configured correctly")
+		}
+		printMessage("😄  Auto Detected Environment : "+env, true)
+	} else {
+		env = o.Env.Environment
+		printMessage("😄  Environment : "+env, true)
 	}
-	printMessage("😄  Auto Detected Environment : "+env, true)
 
 	var printYAML []interface{}
 
