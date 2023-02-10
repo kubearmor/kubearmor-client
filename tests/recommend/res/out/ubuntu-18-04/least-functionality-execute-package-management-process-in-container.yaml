@@ -3,13 +3,18 @@ kind: KubeArmorPolicy
 metadata:
   name: ubuntu-18-04-least-functionality-execute-package-management-process-in-container
 spec:
-  action: Block
-  message: Alert! Execution of package management process inside container is denied
+  tags: ["NIST", "NIST_800-53_CM-7(4)", "SI-4", "process","NIST_800-53_SI-4"]
+  message: "Alert! Execution of package management process inside container is denied"
+  selector:
+    matchLabels:
+      kubearmor.io/container.name: ubuntu
+  severity: 5
   process:
     matchPaths:
     - path: /usr/bin/apt
     - path: /usr/bin/apt-get
     - path: /bin/apt-get
+    - path: /sbin/apk
     - path: /bin/apt
     - path: /usr/bin/dpkg
     - path: /bin/dpkg
@@ -37,13 +42,4 @@ spec:
     - path: /sbin/yaourt
     - path: /usr/bin/zypper
     - path: /bin/zypper
-  selector:
-    matchLabels:
-      kubearmor.io/container.name: ubuntu
-  severity: 5
-  tags:
-  - NIST
-  - NIST_800-53_CM-7(4)
-  - SI-4
-  - process
-  - NIST_800-53_SI-4
+  action: Block
