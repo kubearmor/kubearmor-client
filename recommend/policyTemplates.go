@@ -15,6 +15,7 @@ import (
 
 	"github.com/cavaliergopher/grab/v3"
 	"github.com/google/go-github/github"
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
@@ -153,7 +154,11 @@ func unZip(source, dest string) error {
 		if err = create.Close(); err != nil {
 			return err
 		}
-		defer open.Close()
+		defer func() {
+			if err := open.Close(); err != nil {
+				kg.Warnf("Error closing io stream %s\n", err)
+			}
+		}()
 	}
 	return nil
 }

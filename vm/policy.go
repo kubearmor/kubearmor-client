@@ -16,6 +16,7 @@ import (
 	"time"
 
 	v2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 
@@ -102,13 +103,17 @@ func sendPolicyOverHTTP(address string, kind string, policyEventData []byte) err
 	if err != nil {
 		return fmt.Errorf("failed to send policy")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			kg.Warnf("Error closing http stream %s\n", err)
+		}
+	}()
 
 	fmt.Println("Success")
 	return nil
 }
 
-//PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server
+// PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server
 func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, isKvmsEnv bool) error {
 	var k struct {
 		Kind string `json:"kind"`

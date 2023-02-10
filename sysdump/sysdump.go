@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,7 +111,11 @@ func Collect(c *k8s.Client, o Options) error {
 				fmt.Printf("failed getting logs from pod=%s err=%s\n", p.Name, err)
 				continue
 			}
-			defer s.Close()
+			defer func() {
+				if err := s.Close(); err != nil {
+					kg.Warnf("Error closing io stream %s\n", err)
+				}
+			}()
 			var logs bytes.Buffer
 			if _, err = io.Copy(&logs, s); err != nil {
 				return err
