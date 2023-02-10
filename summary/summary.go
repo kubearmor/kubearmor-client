@@ -94,8 +94,9 @@ func Summary(c *k8s.Client, o Options) error {
 			return err
 		}
 
-		for _, podname := range podNameResp.PodName {
+		for i, podname := range podNameResp.PodName {
 			if podname == "" {
+				fmt.Printf("]\n")
 				continue
 			}
 			sumResp, err := client.Summary(context.Background(), &opb.Request{
@@ -112,9 +113,18 @@ func Summary(c *k8s.Client, o Options) error {
 
 			str := ""
 			if o.Output == "json" {
+				if i == 0 {
+					fmt.Printf("[\n")
+				}
 				arr, _ := json.MarshalIndent(sumResp, "", "    ")
 				str = fmt.Sprintf("%s\n", string(arr))
 				fmt.Printf("%s", str)
+				if i < len(podNameResp.PodName)-2 || podNameResp.PodName[len(podNameResp.PodName)-1] != "" {
+					fmt.Printf(",")
+				}
+				if i == len(podNameResp.PodName)-1 {
+					fmt.Printf("]\n")
+				}
 			}
 		}
 	}
