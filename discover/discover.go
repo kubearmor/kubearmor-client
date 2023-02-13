@@ -40,7 +40,8 @@ var matchLabels = map[string]string{"app": "discovery-engine"}
 var port int64 = 9089
 
 // ConvertPolicy converts the knoxautopolicies to KubeArmor and Cilium policies
-func ConvertPolicy(c *k8s.Client, o Options) error {
+func ConvertPolicy(c *k8s.Client, o Options) ([]string, error) {
+	var str []string
 	gRPC := ""
 	targetSvc := "discovery-engine"
 
@@ -52,7 +53,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 		} else {
 			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 		}
@@ -70,7 +71,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 	// create a client
 	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer conn.Close()
 
@@ -79,7 +80,7 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 	var response *wpb.WorkerResponse
 	response, err = client.Convert(context.Background(), data)
 	if err != nil {
-		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n- Configure grpc server information using\n\t\033[1mkarmor log --grpc <info>\033[0m")
+		return nil, errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- kubectl get po -n accuknox-agents")
 	}
 
 	if o.Policy == "CiliumNetworkPolicy" {
@@ -91,24 +92,24 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
 					log.Error().Msg(err.Error())
-					return err
+					return nil, err
 				}
 
-				str := ""
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
-					str = fmt.Sprintf("%s\n", string(arr))
-					fmt.Printf("%s", str)
+					pstr := fmt.Sprintf("%s\n", string(arr))
+					str = append(str, pstr)
 				} else if o.Format == "yaml" {
 					arr, _ := json.Marshal(policy)
 					yamlarr, _ := yaml.JSONToYAML(arr)
-					str = fmt.Sprintf("%s", string(yamlarr))
-					fmt.Printf("%s---\n", str)
+					pstr := fmt.Sprintf("%s", string(yamlarr))
+					str = append(str, pstr)
 				} else {
 					log.Printf("Currently supported formats are json and yaml\n")
 					break
 				}
 			}
+			return str, err
 		}
 	} else if o.Policy == "KubearmorSecurityPolicy" {
 
@@ -119,24 +120,24 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
 					log.Error().Msg(err.Error())
-					return err
+					return nil, err
 				}
 
-				str := ""
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
-					str = fmt.Sprintf("%s\n", string(arr))
-					fmt.Printf("%s", str)
+					pstr := fmt.Sprintf("%s\n", string(arr))
+					str = append(str, pstr)
 				} else if o.Format == "yaml" {
 					arr, _ := json.Marshal(policy)
 					yamlarr, _ := yaml.JSONToYAML(arr)
-					str = fmt.Sprintf("%s", string(yamlarr))
-					fmt.Printf("%s---\n", str)
+					pstr := fmt.Sprintf("%s", string(yamlarr))
+					str = append(str, pstr)
 				} else {
 					fmt.Printf("Currently supported formats are json and yaml\n")
 					break
 				}
 			}
+			return str, err
 		}
 	} else if o.Policy == "NetworkPolicy" {
 
@@ -147,38 +148,48 @@ func ConvertPolicy(c *k8s.Client, o Options) error {
 				err = json.Unmarshal(val.Data, &policy)
 				if err != nil {
 					log.Error().Msg(err.Error())
-					return err
+					return nil, err
 				}
 
-				str := ""
 				if o.Format == "json" {
 					arr, _ := json.MarshalIndent(policy, "", "    ")
-					str = fmt.Sprintf("%s\n", string(arr))
-					fmt.Printf("%s", str)
+					pstr := fmt.Sprintf("%s\n", string(arr))
+					str = append(str, pstr)
 				} else if o.Format == "yaml" {
 					arr, _ := json.Marshal(policy)
 					yamlarr, _ := yaml.JSONToYAML(arr)
-					str = fmt.Sprintf("%s", string(yamlarr))
-					fmt.Printf("%s---\n", str)
+					pstr := fmt.Sprintf("%s", string(yamlarr))
+					str = append(str, pstr)
 				} else {
 					fmt.Printf("Currently supported formats are json and yaml\n")
 					break
 				}
 			}
+			return str, err
 		}
 	}
 
-	return err
+	return str, err
 }
 
 // Policy discovers Cilium or KubeArmor policies
 func Policy(c *k8s.Client, o Options) error {
+	var str []string
+	var err error
 	if o.Policy != "CiliumNetworkPolicy" && o.Policy != "NetworkPolicy" && o.Policy != "KubearmorSecurityPolicy" {
 		log.Error().Msgf("Policy type not recognized.\nCurrently supported policies are cilium, kubearmor and k8snetpol\n")
 	}
 
-	if err := ConvertPolicy(c, o); err != nil {
+	if str, err = ConvertPolicy(c, o); err != nil {
 		return err
+	}
+	for _, policy := range str {
+		if o.Format == "yaml" {
+			fmt.Printf("%s---\n", policy)
+		}
+		if o.Format == "json" {
+			fmt.Printf("%s", policy)
+		}
 	}
 	return nil
 }
