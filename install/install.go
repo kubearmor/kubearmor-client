@@ -37,10 +37,10 @@ type Options struct {
 	Force          bool
 	Save           bool
 	Animation      bool
-	Env            EnvOption
+	Env            envOption
 }
 
-type EnvOption struct {
+type envOption struct {
 	Auto        bool
 	Environment string
 }
@@ -50,17 +50,18 @@ var progress int
 var cursorcount int
 var validEnvironments = []string{"k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
 
-func (env *EnvOption) CheckAndSetValidEnvironmentOption(envOption string) error {
+// Checks if passed string is a valid environment
+func (env *envOption) CheckAndSetValidEnvironmentOption(envOption string) error {
+	if envOption == "" {
+		env.Auto = true
+		return nil
+	}
 	for _, v := range validEnvironments {
 		if v == envOption {
 			env.Environment = envOption
 			env.Auto = false
 			return nil
 		}
-	}
-	env.Auto = true
-	if envOption == "" {
-		return nil
 	}
 	return errors.New("Invalid environment passed")
 }
