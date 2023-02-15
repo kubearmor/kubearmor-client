@@ -39,8 +39,9 @@ type Options struct {
 	Aggregation   bool
 }
 
-// Summary : Get summary on pods
-func Summary(c *k8s.Client, o Options) error {
+// GetSummary on pods
+func GetSummary(c *k8s.Client, o Options) ([]string, error) {
+	var str []string
 	gRPC := ""
 	targetSvc := "discovery-engine"
 
@@ -52,7 +53,7 @@ func Summary(c *k8s.Client, o Options) error {
 		} else {
 			pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 		}
@@ -70,7 +71,7 @@ func Summary(c *k8s.Client, o Options) error {
 	// create a client
 	conn, err := grpc.Dial(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- Create a portforward to discovery engine service using\n\t\033[1mkubectl port-forward -n explorer service/knoxautopolicy --address 0.0.0.0 --address :: 9089:9089\033[0m\n[0m")
+		return nil, errors.New("could not connect to the server. Possible troubleshooting:\n- Check if discovery engine is running\n- kubectl get po -n accuknox-agents")
 	}
 	defer conn.Close()
 
@@ -83,15 +84,25 @@ func Summary(c *k8s.Client, o Options) error {
 			Aggregate: o.Aggregation,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
-		DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
+		if o.Output == "" {
+			DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
+		}
+
+		sumstr := ""
+		if o.Output == "json" {
+			arr, _ := json.MarshalIndent(sumResp, "", "    ")
+			sumstr = fmt.Sprintf("%s\n", string(arr))
+			str = append(str, sumstr)
+			return str, nil
+		}
 
 	} else {
 		//Fetch Summary Logs
 		podNameResp, err := client.GetPodNames(context.Background(), data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, podname := range podNameResp.PodName {
@@ -104,18 +115,36 @@ func Summary(c *k8s.Client, o Options) error {
 				Aggregate: o.Aggregation,
 			})
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if o.Output == "" {
 				DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
 			}
 
-			str := ""
+			sumstr := ""
 			if o.Output == "json" {
 				arr, _ := json.MarshalIndent(sumResp, "", "    ")
-				str = fmt.Sprintf("%s\n", string(arr))
-				fmt.Printf("%s", str)
+				sumstr = fmt.Sprintf("%s\n", string(arr))
+				str = append(str, sumstr)
 			}
+		}
+		if o.Output == "json" {
+			return str, nil
+		}
+	}
+	return str, nil
+}
+
+// Summary - printing the summary output
+func Summary(c *k8s.Client, o Options) error {
+
+	summary, err := GetSummary(c, o)
+	if err != nil {
+		return err
+	}
+	for _, sum := range summary {
+		if o.Output == "json" {
+			fmt.Printf("%s", sum)
 		}
 	}
 	return nil
