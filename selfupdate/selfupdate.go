@@ -25,6 +25,8 @@ var BuildDate string
 
 const ghrepo = "kubearmor/kubearmor-client"
 
+// IsValidVersion checks if a given string is a valid semantic version.
+// Returns true if the string is a valid semantic version, false otherwise.
 func IsValidVersion(ver string) bool {
 	_, err := semver.Make(ver)
 	return err == nil
