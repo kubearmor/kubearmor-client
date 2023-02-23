@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -618,6 +619,10 @@ func getAnnotatedPods(c *k8s.Client) error {
 	if err != nil {
 		color.Red(" Error printing bold text")
 	}
+
+	sort.SliceStable(data, func(i, j int) bool {
+		return data[i][0] < data[j][0]
+	}) // sorting according to namespaces, for merging of cells with same namespaces
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAMESPACE", "NAME", "POLICY"})
