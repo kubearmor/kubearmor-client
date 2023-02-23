@@ -620,9 +620,10 @@ func getAnnotatedPods(c *k8s.Client) error {
 		color.Red(" Error printing bold text")
 	}
 
+	// sorting according to namespaces, for merging of cells with same namespaces
 	sort.SliceStable(data, func(i, j int) bool {
 		return data[i][0] < data[j][0]
-	}) // sorting according to namespaces, for merging of cells with same namespaces
+	}) 
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAMESPACE", "NAME", "POLICY"})
@@ -679,7 +680,7 @@ func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy str
 				slice[2] = policy
 			} else {
 				slice[2] = slice[2] + "\n" + policy
-			}
+			}git config commit.gpgsign true
 			return true
 		}
 
