@@ -1,67 +1,515 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js">
-    </script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js">
-    </script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css">
-
-    <script type="text/javascript">
-        function showHideRow(row) {
-            $("#" + row).toggle();
-        }
-    </script>
-
-    <style>
-        body {
-            margin: 0 auto;
-            padding: 0px;
-            text-align: center;
-            width: 100%;
-            font-family: "Myriad Pro",
-                "Helvetica Neue", Helvetica,
-                Arial, Sans-Serif;
-        }
-
-        #wrapper {
-            margin: 0 auto;
-            padding: 0px;
-            text-align: center;
-            width: 995px;
-        }
-
-        #wrapper h1 {
-            margin-top: 50px;
-            font-size: 45px;
-            color: #585858;
-        }
-
-        #wrapper h1 p {
-            font-size: 20px;
-        }
-
-        #table_detail {
-            width: 900px;
-            text-align: left;
-            border-collapse: collapse;
-            color: #2E2E2E;
-            border: #A4A4A4;
-        }
-
-        #table_detail tr:hover {
-            background-color: #F2F2F2;
-        }
-
-        #table_detail .hidden_row {
-            display: none;
-        }
-    </style>
+  <link href="https://fonts.googleapis.com/css?family=Red+Hat+Display&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&amp;display=swap" rel="stylesheet">
+  <title>Document</title>
+  <script type="text/javascript">
+    function showHideRow(row) {
+        $("#" + row).toggle();
+    }
+  </script>
+  <style>
+    * {
+  box-sizing: border-box;
+  }
+  body {
+  font-size: 14px;
+  }
+  .background-color {
+  width: 100%;
+  height: 2151px;
+  background: rgb(255, 255, 255);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  overflow: hidden;
+  }
+  .watermark-image {
+  width: 100%;
+  height: 100%;
+  background: url("./images/watermark-image.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 402px;
+  left: 203px;
+  overflow: hidden;
+  }
+  .kubearmor-image {
+  width: 288px;
+  height: 57px;
+  background: url("./images/kubearmor-image.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 42px;
+  left: 34px;
+  overflow: hidden;
+  }
+  .security-report {
+  width: 482px;
+  color: rgba(11,66,150,1);
+  position: absolute;
+  top: 112px;
+  left: 515px;
+  font-family: Red Hat Display;
+  font-weight: Bold;
+  font-size: 26px;
+  opacity: 1;
+  text-align: left;
+  }
+  .policy {
+  width: 54px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 308px;
+  left: 67px;
+  font-family: Red Hat Display;
+  font-weight: Bold;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .description {
+  width: 96px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 308px;
+  left: 377px;
+  font-family: Red Hat Display;
+  font-weight: Bold;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .severity {
+  width: 70px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 308px;
+  left: 701px;
+  font-family: Red Hat Display;
+  font-weight: Bold;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .action {
+  width: 55px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 308px;
+  left: 886px;
+  font-family: Red Hat Display;
+  font-weight: Bold;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .tags {
+  width: 37px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 308px;
+  left: 1047px;
+  font-family: Red Hat Display;
+  font-weight: Bold;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .policy-details {
+  width: 100%;
+  height: 38px;
+  background: url("../images/v38_6847.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 369px;
+  left: 67px;
+  overflow: hidden;
+  }
+  .policy-name {
+  width: 215px;
+  color: rgba(11,66,150,1);
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .description-tl-dr {
+  width: 215px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 0px;
+  left: 317px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .tags-details {
+  width: 103px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 0px;
+  left: 980px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .policy-details-end {
+  width: 83px;
+  height: 27px;
+  background: url("../images/v38_6851.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 634px;
+  overflow: hidden;
+  }
+  .severity-details-start {
+  width: 83px;
+  height: 5px;
+  background: url("../images/v38_6852.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 22px;
+  left: 0px;
+  overflow: hidden;
+  }
+  .severity-1 {
+  width: 15px;
+  height: 5px;
+  background: rgba(239,175,79,1);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  overflow: hidden;
+  }
+  .severity-2 {
+  width: 15px;
+  height: 5px;
+  background: rgba(255,130,15,1);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 17px;
+  overflow: hidden;
+  }
+  .severity-3 {
+  width: 15px;
+  height: 5px;
+  background: rgba(255,87,15,1);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 34px;
+  overflow: hidden;
+  }
+  .severity-4 {
+  width: 15px;
+  height: 5px;
+  background: rgba(255,58,15,1);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 51px;
+  overflow: hidden;
+  }
+  .severity-5 {
+  width: 15px;
+  height: 5px;
+  background: rgba(170,0,0,1);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 68px;
+  overflow: hidden;
+  }
+  .severity-value {
+  width: 19px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .action-start {
+  width: 60px;
+  height: 23px;
+  background: rgba(244,221,221,1);
+  padding: 2px 12px;
+  margin: 10px;
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 819px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+  }
+  .action-value-block {
+  width: 36px;
+  color: rgba(131,0,0,1);
+  position: absolute;
+  top: 2px;
+  left: 12px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .container-name {
+  width: 64px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 169px;
+  left: 592px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .container-value {
+  width: 147px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 169px;
+  left: 772px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .os-name {
+  width: 101px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 189px;
+  left: 592px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .os-value {
+  width: 50px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 189px;
+  left: 772px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .out-directory-name {
+  width: 110px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 209px;
+  left: 592px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .out-directory-value {
+  width: 144px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 209px;
+  left: 772px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .policy-template-name {
+  width: 152px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 229px;
+  left: 592px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .policy-template-version-value {
+  width: 45px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 229px;
+  left: 772px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .policy-yaml-details-start {
+  width: 100%;
+  height: 594px;
+  background: url("../images/v38_7021.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 428px;
+  left: 67px;
+  overflow: hidden;
+  }
+  .policy-yaml-details-start-1 {
+  width: 100%;
+  height: 594px;
+  background: rgba(242,242,242,0.5);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border: 1px solid rgba(240,240,240,1);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+  }
+  .policy-drop-down {
+  width: 465px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 51px;
+  left: 17px;
+  font-family: Ubuntu Mono;
+  font-weight: Regular;
+  font-size: 13px;
+  opacity: 1;
+  text-align: left;
+  }
+  .kubearmor-security-policies {
+  width: 281px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 22px;
+  left: 17px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 22px;
+  opacity: 1;
+  text-align: left;
+  }
+  .description-title-name {
+  width: 116px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 432px;
+  left: 17px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 22px;
+  opacity: 1;
+  text-align: left;
+  }
+  .references {
+  width: 114px;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 522px;
+  left: 17px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 22px;
+  opacity: 1;
+  text-align: left;
+  }
+  .descrition-large {
+  width: 100%;
+  color: rgba(0,0,0,1);
+  position: absolute;
+  top: 461px;
+  left: 17px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  .tags-and-link {
+  width: 100%;
+  color: url("../images/v38_7028.png");
+  position: absolute;
+  top: 551px;
+  left: 17px;
+  font-family: Red Hat Display;
+  font-weight: Medium;
+  font-size: 14px;
+  opacity: 1;
+  text-align: left;
+  }
+  </style>
 </head>
-
 <body>
-    <h1>{{.ReportTitle}}</h1>
-
-    <p>Date: {{.DateTime}}</p>
+  <div class="background-color">
+    <div class="watermark-image"></div>
+    <div class="kubearmor-image"></div><span class="security-report">Security Report: {{.DateTime}}</span> <span class="policy">POLICY</span> <span class="description">DESCRIPTION</span> <span class="severity">SEVERITY</span> <span class="action">ACTION</span> <span class="tags">TAGS</span>
+    <div class="policy-details">
+      <span class="policy-name">{{.Name}}</span> <span class="description-tl-dr">{{.Description}}</span> <span class="tags-details">PCI_DSS MITRE</span>
+      <div class="policy-details-end">
+        <div class="severity-details-start">
+          <div class="severity-1"></div>
+          <div class="severity-2"></div>
+          <div class="severity-3"></div>
+          <div class="severity-4"></div>
+          <div class="severity-5"></div>
+        </div><span class="severity-value">5/5</span>
+      </div>
+      <div class="action-start">
+        <span class="action-value-block">Block</span>
+      </div>
+    </div><span class="container-name">Container</span> <span class="container-value">{{range .ImgInfo}}</span> <span class="os-name">OS/Arch/Distro</span> <span class="os-value">: linux//</span> <span class="out-directory-name">Output Directory</span> <span class="out-directory-value">: out/dvwa-dvwa-web</span> <span class="policy-template-name">policy-template version</span> <span class="policy-template-version-value">: v0.1.6</span>
+    <div class="policy-yaml-details-start">
+      <div class="policy-yaml-details-start-1"></div>
+      <p><code class="policy-drop-down" data-lang="yaml">{{.Policy}}</code></p><span class="kubearmor-security-policies">Kubearmor Security Policies</span> <span class="description-title-name">Description</span> <span class="references">References</span> <span class="descrition-large">Container images might contain maintenance tools which should ideally never be used in prod env, or if used, should be used only in certain time frames. Examples include, dynamic package management tools, mii-tool, iptables etc</span> <span class="tags-and-link">{{.Name}}: {{.URL}}</span>
+    </div>
+  </div>
+</body>
+</html>
