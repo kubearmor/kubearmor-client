@@ -50,4 +50,6 @@ func init() {
 	recommendCmd.Flags().StringVarP(&recommendOptions.ReportFile, "report", "r", "report.txt", "report file")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "tags (comma-separated) to apply. Eg. PCI-DSS, MITRE")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Config, "config", "c", recommend.UserHome()+"/.docker/config.json", "absolute path to image registry configuration file")
+	recommendCmd.Flags().BoolVarP(&recommendOptions.Merge, "merge", "m", false, "Merge recommended hardening policies")
+
 }
