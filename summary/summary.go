@@ -66,6 +66,7 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 		ClusterName:   o.ClusterName,
 		ContainerName: o.ContainerName,
 		Aggregate:     o.Aggregation,
+		Type:          o.Type,
 	}
 
 	// create a client
@@ -78,11 +79,7 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 	client := opb.NewObservabilityClient(conn)
 
 	if data.PodName != "" {
-		sumResp, err := client.Summary(context.Background(), &opb.Request{
-			PodName:   data.PodName,
-			Type:      o.Type,
-			Aggregate: o.Aggregation,
-		})
+		sumResp, err := client.Summary(context.Background(), data)
 		if err != nil {
 			return nil, err
 		}
@@ -109,11 +106,8 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 			if podname == "" {
 				continue
 			}
-			sumResp, err := client.Summary(context.Background(), &opb.Request{
-				PodName:   podname,
-				Type:      o.Type,
-				Aggregate: o.Aggregation,
-			})
+			data.PodName = podname
+			sumResp, err := client.Summary(context.Background(), data)
 			if err != nil {
 				return nil, err
 			}
