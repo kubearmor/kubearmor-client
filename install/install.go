@@ -33,9 +33,11 @@ type Options struct {
 	Namespace      string
 	InitImage      string
 	KubearmorImage string
+	Tag            string
 	Audit          string
 	Block          string
 	Force          bool
+	Local          bool
 	Save           bool
 	Animation      bool
 	Env            envOption
@@ -264,8 +266,21 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
+	if o.Tag != "" {
+		kimg := strings.Split(o.KubearmorImage, ":")
+		kimg[1] = o.Tag
+		o.KubearmorImage = strings.Join(kimg, ":")
+
+		iimg := strings.Split(o.InitImage, ":")
+		iimg[1] = o.Tag
+		o.KubearmorImage = strings.Join(iimg, ":")
+	}
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
 	daemonset.Spec.Template.Spec.InitContainers[0].Image = o.InitImage
+	if o.Local == true {
+		daemonset.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+		daemonset.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = "IfNotPresent"
+	}
 	if o.Audit == "all" || strings.Contains(o.Audit, "file") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultFilePosture=audit")
 	}
