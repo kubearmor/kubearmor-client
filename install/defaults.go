@@ -6,7 +6,7 @@ package install
 var kubearmor = "kubearmor"
 
 var serviceAccountName = kubearmor
-var clusterRoleBindingName = kubearmor
+var clusterRoleBindingName = "kubearmor-clusterrolebinding"
 var relayServiceName = kubearmor
 var relayDeploymentName = "kubearmor-relay"
 var policyManagerServiceName = "kubearmor-policy-manager-metrics-service"

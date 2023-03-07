@@ -33,9 +33,11 @@ type Options struct {
 	Namespace      string
 	InitImage      string
 	KubearmorImage string
+	Tag            string
 	Audit          string
 	Block          string
 	Force          bool
+	Local          bool
 	Save           bool
 	Animation      bool
 	Env            envOption
@@ -64,7 +66,7 @@ func (env *envOption) CheckAndSetValidEnvironmentOption(envOption string) error 
 			return nil
 		}
 	}
-	return errors.New("Invalid environment passed")
+	return errors.New("invalid environment passed")
 }
 
 func clearLine(size int) int {
@@ -264,8 +266,21 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
+	if o.Tag != "" {
+		kimg := strings.Split(o.KubearmorImage, ":")
+		kimg[1] = o.Tag
+		o.KubearmorImage = strings.Join(kimg, ":")
+
+		iimg := strings.Split(o.InitImage, ":")
+		iimg[1] = o.Tag
+		o.KubearmorImage = strings.Join(iimg, ":")
+	}
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
 	daemonset.Spec.Template.Spec.InitContainers[0].Image = o.InitImage
+	if o.Local == true {
+		daemonset.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+		daemonset.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = "IfNotPresent"
+	}
 	if o.Audit == "all" || strings.Contains(o.Audit, "file") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultFilePosture=audit")
 	}
@@ -538,7 +553,13 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
-		fmt.Print("ℹ️   Cluster Role Bindings not found ...\n")
+		// Older CLuster Role Binding Name, keeping it to clean up older kubearmor installations
+		if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), kubearmor, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Print("ℹ️   Cluster Role Bindings not found ...\n")
+		}
 	}
 
 	fmt.Print("❌   KubeArmor Relay Service ...\n")
