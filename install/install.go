@@ -31,6 +31,7 @@ import (
 // Options for karmor install
 type Options struct {
 	Namespace      string
+	InitImage      string
 	KubearmorImage string
 	Audit          string
 	Block          string
@@ -264,6 +265,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
+	daemonset.Spec.Template.Spec.InitContainers[0].Image = o.InitImage
 	if o.Audit == "all" || strings.Contains(o.Audit, "file") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultFilePosture=audit")
 	}
@@ -283,7 +285,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=block")
 	}
 	s := strings.Join(daemonset.Spec.Template.Spec.Containers[0].Args, " ")
-	printMessage("🛡   KubeArmor DaemonSet"+daemonset.Spec.Template.Spec.Containers[0].Image+s+"  ", true)
+	printMessage("🛡   KubeArmor DaemonSet - Init "+daemonset.Spec.Template.Spec.InitContainers[0].Image+", Container "+daemonset.Spec.Template.Spec.Containers[0].Image+s+"  ", true)
 
 	if !o.Save {
 		if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
