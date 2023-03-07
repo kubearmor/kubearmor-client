@@ -273,7 +273,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 		iimg := strings.Split(o.InitImage, ":")
 		iimg[1] = o.Tag
-		o.KubearmorImage = strings.Join(iimg, ":")
+		o.InitImage = strings.Join(iimg, ":")
 	}
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
 	daemonset.Spec.Template.Spec.InitContainers[0].Image = o.InitImage
