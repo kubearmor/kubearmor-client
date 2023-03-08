@@ -62,17 +62,20 @@ func latestRelease() string {
 }
 
 // CurrentRelease gets the current release of policy-templates
-func CurrentRelease() string {
-
-	path, err := os.ReadFile(fmt.Sprintf("%s%s", getCachePath(), "rules.yaml"))
+func CurrentRelease() (string, error) {
+	fileData, err := os.ReadFile(fmt.Sprintf("%s%s", getCachePath(), "rules.yaml"))
 	if err != nil {
-		CurrentVersion = strings.Trim(updateRulesYAML([]byte{}), "\"")
+		return "", err
 	} else {
-
-		CurrentVersion = strings.Trim(updateRulesYAML(path), "\"")
+		var version string
+		version, err = updateRulesYAML(fileData, &policyRules)
+		if err != nil {
+			return "", err
+		} else {
+			CurrentVersion = strings.Trim(version, "\"")
+		}
 	}
-
-	return CurrentVersion
+	return CurrentVersion, nil
 }
 
 func isLatest() bool {
@@ -92,15 +95,14 @@ func removeData(file string) error {
 }
 
 func init() {
-	CurrentVersion = CurrentRelease()
+	CurrentVersion, _ = CurrentRelease()
 }
 
 // DownloadAndUnzipRelease downloads the latest version of policy-templates
 func DownloadAndUnzipRelease() (string, error) {
-
 	LatestVersion = latestRelease()
-
 	_ = removeData(getCachePath())
+
 	err := os.MkdirAll(filepath.Dir(getCachePath()), 0750)
 	if err != nil {
 		return "", err
@@ -119,8 +121,14 @@ func DownloadAndUnzipRelease() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_ = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"))
-	CurrentVersion = CurrentRelease()
+	err = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"), &policyRules)
+	if err != nil {
+		return "", err
+	}
+	CurrentVersion, err = CurrentRelease()
+	if err != nil {
+		return "", err
+	}
 	return LatestVersion, nil
 }
 
@@ -163,7 +171,7 @@ func unZip(source, dest string) error {
 	return nil
 }
 
-func updatePolicyRules(filePath string) error {
+func updatePolicyRules(filePath string, policyRules *[]MatchSpec) error {
 	var files []string
 	err := filepath.Walk(filePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -174,6 +182,7 @@ func updatePolicyRules(filePath string) error {
 		}
 		return nil
 	})
+
 	if err != nil {
 		return err
 	}
@@ -193,9 +202,12 @@ func updatePolicyRules(filePath string) error {
 		if err != nil {
 			return err
 		}
-		version = updateRulesYAML(yamlFile)
-		ms, err := getNextRule(&idx)
-		for ; err == nil; ms, err = getNextRule(&idx) {
+		version, err = updateRulesYAML(yamlFile, policyRules)
+		if err != nil {
+			return err
+		}
+		ms, err := getNextRule(&idx, *policyRules)
+		for ; err == nil; ms, err = getNextRule(&idx, *policyRules) {
 			if ms.Yaml != "" {
 				newPolicyFile := pol.KubeArmorPolicy{}
 				newYaml, err := os.ReadFile(filepath.Clean(fmt.Sprintf("%s%s", strings.TrimSuffix(file, "metadata.yaml"), ms.Yaml)))
@@ -216,6 +228,11 @@ func updatePolicyRules(filePath string) error {
 	if err != nil {
 		return err
 	}
+	updateYamlRulesFile(version, yamlFile, f)
+	return nil
+}
+
+func updateYamlRulesFile(version string, yamlFile []byte, f *os.File) {
 	version = strings.Trim(version, "\"")
 	yamlFile = []byte(fmt.Sprintf("version: %s\npolicyRules:\n%s", version, yamlFile))
 	if _, err := f.WriteString(string(yamlFile)); err != nil {
@@ -227,5 +244,4 @@ func updatePolicyRules(filePath string) error {
 	if err := f.Close(); err != nil {
 		log.WithError(err).Error("file close failed")
 	}
-	return nil
 }

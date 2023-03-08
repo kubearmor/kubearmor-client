@@ -153,8 +153,8 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 		log.Infof("No runtime policy generated for %s/%s/%s", img.Namespace, img.Deployment, img.Name)
 	}
 
-	ms, err = getNextRule(&idx)
-	for ; err == nil; ms, err = getNextRule(&idx) {
+	ms, err = getNextRule(&idx, policyRules)
+	for ; err == nil; ms, err = getNextRule(&idx, policyRules) {
 		// matches preconditions
 
 		if !matchTags(ms) {

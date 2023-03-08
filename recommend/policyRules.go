@@ -4,16 +4,12 @@
 package recommend
 
 import (
-	_ "embed" // need for embedding
-
 	"errors"
 
 	"github.com/clarketm/json"
 	"sigs.k8s.io/yaml"
 
-	"github.com/fatih/color"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
-	log "github.com/sirupsen/logrus"
 )
 
 // MatchSpec spec to match for defining policy
@@ -40,34 +36,25 @@ type Description struct {
 
 var policyRules []MatchSpec
 
-//go:embed yaml/rules.yaml
-var policyRulesYAML []byte
-
-func updateRulesYAML(yamlFile []byte) string {
-	policyRules = []MatchSpec{}
-	if len(yamlFile) < 30 {
-		yamlFile = policyRulesYAML
-	}
+func updateRulesYAML(yamlFile []byte, policyRules *[]MatchSpec) (string, error) {
 	policyRulesJSON, err := yaml.YAMLToJSON(yamlFile)
 	if err != nil {
-		color.Red("failed to convert policy rules yaml to json")
-		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
+		return "", err
 	}
 	var jsonRaw map[string]json.RawMessage
 	err = json.Unmarshal(policyRulesJSON, &jsonRaw)
 	if err != nil {
-		color.Red("failed to unmarshal policy rules json")
-		log.WithError(err).Fatal("failed to unmarshal policy rules json")
+		return "", err
 	}
-	err = json.Unmarshal(jsonRaw["policyRules"], &policyRules)
+	err = json.Unmarshal(jsonRaw["policyRules"], policyRules)
+
 	if err != nil {
-		color.Red("failed to unmarshal policy rules")
-		log.WithError(err).Fatal("failed to unmarshal policy rules")
+		return "", err
 	}
-	return string(jsonRaw["version"])
+	return string(jsonRaw["version"]), nil
 }
 
-func getNextRule(idx *int) (MatchSpec, error) {
+func getNextRule(idx *int, policyRules []MatchSpec) (MatchSpec, error) {
 	if *idx < 0 {
 		(*idx)++
 	}
