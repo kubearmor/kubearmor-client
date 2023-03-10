@@ -42,6 +42,15 @@ var sectionHTML string
 //go:embed html/sectend.html
 var sectendHTML string
 
+//go:embed html/css/main.css
+var mainCSS []byte
+
+//go:embed html/images/v38_6837.png
+var imageV38_6837 []byte
+
+//go:embed html/images/v38_7029.png
+var imageV38_7029 []byte
+
 // Col column of the table
 type Col struct {
 	Name string
@@ -89,7 +98,7 @@ func NewHTMLReport() HTMLReport {
 		log.WithError(err).Fatal("failed parsing html sectend template")
 	}
 	hdri := HeaderInfo{
-		ReportTitle: "KubeArmor Security Report",
+		ReportTitle: "Security Report",
 		DateTime:    time.Now().Format("02-Jan-2006 15:04:05"),
 	}
 	_ = header.Execute(str, hdri)
@@ -109,11 +118,11 @@ func NewHTMLReport() HTMLReport {
 func (r HTMLReport) Start(img *ImageInfo) error {
 	seci := SectionInfo{
 		HdrCols: []Col{
-			{Name: "Policy"},
-			{Name: "Description"},
-			{Name: "Severity"},
-			{Name: "Action"},
-			{Name: "Tags"},
+			{Name: "POLICY"},
+			{Name: "DESCRIPTION"},
+			{Name: "SEVERITY"},
+			{Name: "ACTION"},
+			{Name: "TAGS"},
 		},
 		ImgInfo: []Info{
 			{Key: "Container", Val: img.RepoTags[0]},
@@ -169,6 +178,21 @@ func (r HTMLReport) SectionEnd(img *ImageInfo) error {
 func (r HTMLReport) Render(out string) error {
 	_ = r.footer.Execute(r.outString, nil)
 
+	outPath := strings.Join(strings.Split(out, "/")[:len(strings.Split(out, "/"))-1], "/")
+
+	outPath = outPath + "/.static/"
+
+	_ = os.MkdirAll(outPath, 0740)
+
+	if err := os.WriteFile(outPath+"main.css", []byte(mainCSS), 0600); err != nil {
+		log.WithError(err).Error("failed to write file")
+	}
+	if err := os.WriteFile(outPath+"v38_6837.png", []byte(imageV38_6837), 0600); err != nil {
+		log.WithError(err).Error("failed to write file")
+	}
+	if err := os.WriteFile(outPath+"v38_7029.png", []byte(imageV38_7029), 0600); err != nil {
+		log.WithError(err).Error("failed to write file")
+	}
 	if err := os.WriteFile(out, []byte(r.outString.String()), 0600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}

@@ -8,60 +8,17 @@
     </script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css">
-
+    <link href="./.static/main.css" rel="stylesheet" />
     <script type="text/javascript">
         function showHideRow(row) {
             $("#" + row).toggle();
         }
     </script>
-
-    <style>
-        body {
-            margin: 0 auto;
-            padding: 0px;
-            text-align: center;
-            width: 100%;
-            font-family: "Myriad Pro",
-                "Helvetica Neue", Helvetica,
-                Arial, Sans-Serif;
-        }
-
-        #wrapper {
-            margin: 0 auto;
-            padding: 0px;
-            text-align: center;
-            width: 995px;
-        }
-
-        #wrapper h1 {
-            margin-top: 50px;
-            font-size: 45px;
-            color: #585858;
-        }
-
-        #wrapper h1 p {
-            font-size: 20px;
-        }
-
-        #table_detail {
-            width: 900px;
-            text-align: left;
-            border-collapse: collapse;
-            color: #2E2E2E;
-            border: #A4A4A4;
-        }
-
-        #table_detail tr:hover {
-            background-color: #F2F2F2;
-        }
-
-        #table_detail .hidden_row {
-            display: none;
-        }
-    </style>
+    <title>{{.ReportTitle}}</title>
 </head>
 
 <body>
-    <h1>{{.ReportTitle}}</h1>
-
-    <p>Date: {{.DateTime}}</p>
+    <div class="v38_6836">
+        <div class="v38_7029"></div>
+        <div class="v38_6837"></div>
+        <span class="v38_6838">{{.ReportTitle}} ({{.DateTime}})</span>

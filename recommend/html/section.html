@@ -1,14 +1,10 @@
-    <div id="wrapper">
-	<table align=center border=1 cellpadding=1>
-	  {{range .ImgInfo}}
-	  <tr align=left>
-		 <td>{{.Key}}</td>
-		 <td>{{.Val}}</td>
-	  </tr>
-	  {{end}}
-	</table>
-
-        <table border=1 id="table_detail" align=center cellpadding=10>
+	<div class="name"></div><span class="v38_7013">{{with index .ImgInfo 0}} {{ .Key }} {{ end }}</span><span class="v38_7014">:
+		{{with index .ImgInfo 0}} {{ .Val }} {{ end }}</span><span class="v38_7015">{{with index .ImgInfo 1}} {{ .Key }} {{ end }}</span><span class="v38_7016">:
+		{{with index .ImgInfo 1}} {{ .Val }} {{ end }}</span><span class="v38_7017">{{with index .ImgInfo 2}} {{ .Key }} {{ end }}</span><span class="v38_7018">:
+		{{with index .ImgInfo 2}} {{ .Val }} {{ end }}</span><span class="v38_7019">{{with index .ImgInfo 3}} {{ .Key }} {{ end }}</span><span class="v38_7020">:
+		{{with index .ImgInfo 3}} {{ .Val }} {{ end }}</span>
+	<div class="v38_7021">
+        <table border=0 id="table_detail" align=center cellpadding=30>
             <tr>
                 {{range .HdrCols}}
                     <th>{{.Name}}</th>
