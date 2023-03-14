@@ -50,6 +50,7 @@ func TestLogClient(t *testing.T) {
 	eventChan = make(chan EventInfo, maxEvents)
 	var o = Options{
 		EventChan: eventChan,
+		Selector:  []string{"substance=meth"},
 	}
 
 	tel, err := json.Marshal(res)
