@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/kubearmor/kubearmor-client/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,11 +76,13 @@ func k8sPortForward(c *k8s.Client, pf PortForwardOpt) error {
 		return fmt.Errorf("\nunable to create round tripper and upgrader, error=%s", err.Error())
 	}
 
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", pf.Namespace, pf.PodName)
-	hostIP := strings.TrimLeft(c.Config.Host, "https:/")
-	serverURL := url.URL{Scheme: "https", Path: path, Host: hostIP}
+	serverURL, err := url.Parse(c.Config.Host)
+	if err != nil {
+		return fmt.Errorf("\nfailed to parse apiserver URL from kubeconfig. error=%s", err.Error())
+	}
+	serverURL.Path = fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", pf.Namespace, pf.PodName)
 
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, serverURL)
 
 	StopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
 	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
