@@ -534,11 +534,7 @@ func printKubeArmorProbeOutput(buf []byte) error {
 	data = append(data, []string{" ", "Container Security:", green(strconv.FormatBool(kd.ContainerSecurity))})
 	data = append(data, []string{" ", "Container Default Posture:", green(kd.ContainerDefaultPosture.FileAction) + itwhite("(File)"), green(kd.ContainerDefaultPosture.FileAction) + itwhite("(Capabilities)"), green(kd.ContainerDefaultPosture.NetworkAction) + itwhite("(Network)")})
 	data = append(data, []string{" ", "Host Default Posture:", green(kd.HostDefaultPosture.FileAction) + itwhite("(File)"), green(kd.HostDefaultPosture.CapabilitiesAction) + itwhite("(Capabilities)"), green(kd.HostDefaultPosture.NetworkAction) + itwhite("(Network)")})
-	hv := strings.Split(kd.HostVisibility, ",")
-	for i := len(hv) - 1; i < 4; i++ { // Possible values : none/process,file,network,capabilities
-		hv = append(hv, "")
-	}
-	data = append(data, []string{" ", "Host Visibility:", green(hv[0]), green(hv[1]), green(hv[2]), green(hv[3])})
+	data = append(data, []string{" ", "Host Visibility:", green(kd.HostVisibility)})
 	renderOutputInTableWithNoBorders(data)
 	return nil
 }
