@@ -37,6 +37,8 @@ type Options struct {
 	Output        string
 	RevDNSLookup  bool
 	Aggregation   bool
+	DeployName    string
+	DeployType    string
 }
 
 // GetSummary on pods
@@ -67,6 +69,24 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 		ContainerName: o.ContainerName,
 		Aggregate:     o.Aggregation,
 		Type:          o.Type,
+		DeployName:    o.DeployName,
+	}
+
+	switch o.DeployType {
+	case "sts", "statefulset", "StatefulSet", "statefulsets", "StatefulSets":
+		data.DeployType = "StatefulSet"
+		o.DeployType = "StatefulSet"
+	case "rs", "replicaset", "ReplicaSet", "replicasets", "ReplicaSets":
+		data.DeployType = "ReplicaSet"
+		o.DeployType = "ReplicaSet"
+	case "ds", "daemonset", "DaemonSet", "daemonsets", "DaemonSets":
+		data.DeployType = "DaemonSet"
+		o.DeployType = "DaemonSet"
+	case "deploy", "Deployment", "Deployments":
+		data.DeployType = "Deployment"
+		o.DeployType = "Deployment"
+	default:
+		data.DeployType = ""
 	}
 
 	// create a client
@@ -83,8 +103,27 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		if o.Output == "" {
-			DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
+			DisplaySummaryOutput(sumResp, data, o.RevDNSLookup)
+		}
+
+		sumstr := ""
+		if o.Output == "json" {
+			arr, _ := json.MarshalIndent(sumResp, "", "    ")
+			sumstr = fmt.Sprintf("%s\n", string(arr))
+			str = append(str, sumstr)
+			return str, nil
+		}
+
+	} else if data.DeployName != "" && data.DeployType == "" {
+		sumResp, err := client.SummaryPerDeploy(context.Background(), data)
+		if err != nil {
+			return nil, err
+		}
+
+		if o.Output == "" {
+			DisplaySummaryOutput(sumResp, data, o.RevDNSLookup)
 		}
 
 		sumstr := ""
@@ -96,23 +135,26 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 		}
 
 	} else {
-		//Fetch Summary Logs
-		podNameResp, err := client.GetPodNames(context.Background(), data)
+		deployResp, err := client.GetDeployNames(context.Background(), data)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, podname := range podNameResp.PodName {
-			if podname == "" {
+		for key, value := range deployResp.DeployData {
+			if key == "" {
 				continue
 			}
-			data.PodName = podname
-			sumResp, err := client.Summary(context.Background(), data)
+			if o.DeployType != "" && value != o.DeployType {
+				continue
+			}
+			data.DeployName = key
+			data.DeployType = value
+			sumResp, err := client.SummaryPerDeploy(context.Background(), data)
 			if err != nil {
 				return nil, err
 			}
 			if o.Output == "" {
-				DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
+				DisplaySummaryOutput(sumResp, data, o.RevDNSLookup)
 			}
 
 			sumstr := ""
@@ -122,9 +164,7 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 				str = append(str, sumstr)
 			}
 		}
-		if o.Output == "json" {
-			return str, nil
-		}
+
 	}
 	return str, nil
 }

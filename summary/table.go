@@ -25,20 +25,20 @@ var (
 )
 
 // DisplaySummaryOutput function
-func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType string) {
+func DisplaySummaryOutput(resp *opb.Response, data *opb.Request, revLookUp bool) {
 
 	if len(resp.ProcessData) <= 0 && len(resp.FileData) <= 0 && len(resp.IngressConnection) <= 0 && len(resp.EgressConnection) <= 0 {
 		return
 	}
 
-	writePodInfoToTable(resp.PodName, resp.Namespace, resp.ClusterName, resp.ContainerName, resp.Label)
+	writePodInfoToTable(resp, data)
 
 	// Colored Status for Allow and Deny
 	agc := ansi.ColorFunc("green")
 	arc := ansi.ColorFunc("red")
 	ayc := ansi.ColorFunc("yellow")
 
-	if strings.Contains(requestType, "process") {
+	if strings.Contains(data.Type, "process") {
 		if len(resp.ProcessData) > 0 {
 			procRowData := [][]string{}
 			// Display process data
@@ -72,7 +72,7 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 		}
 	}
 
-	if strings.Contains(requestType, "file") {
+	if strings.Contains(data.Type, "file") {
 		if len(resp.FileData) > 0 {
 			fmt.Printf("\nFile Data\n")
 			// Display file data
@@ -106,14 +106,14 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 		}
 	}
 
-	if strings.Contains(requestType, "network") {
+	if strings.Contains(data.Type, "network") {
 		if len(resp.IngressConnection) > 0 {
 			fmt.Printf("\nIngress connections\n")
 			// Display server conn data
 			inNwRowData := [][]string{}
 			for _, ingressConnection := range resp.IngressConnection {
 				inNwStrSlice := []string{}
-				domainName := dnsLookup(ingressConnection.IP, revDNSLookup)
+				domainName := dnsLookup(ingressConnection.IP, revLookUp)
 				inNwStrSlice = append(inNwStrSlice, ingressConnection.Protocol)
 				inNwStrSlice = append(inNwStrSlice, ingressConnection.Command)
 				inNwStrSlice = append(inNwStrSlice, domainName)
@@ -134,7 +134,7 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 			outNwRowData := [][]string{}
 			for _, egressConnection := range resp.EgressConnection {
 				outNwStrSlice := []string{}
-				domainName := dnsLookup(egressConnection.IP, revDNSLookup)
+				domainName := dnsLookup(egressConnection.IP, revLookUp)
 				outNwStrSlice = append(outNwStrSlice, egressConnection.Protocol)
 				outNwStrSlice = append(outNwStrSlice, egressConnection.Command)
 				outNwStrSlice = append(outNwStrSlice, domainName)
@@ -196,17 +196,34 @@ func WriteTable(header []string, data [][]string) {
 	table.Render()
 }
 
-func writePodInfoToTable(podname, namespace, clustername, containername, labels string) {
+func writePodInfoToTable(resp *opb.Response, data *opb.Request) {
 
 	fmt.Printf("\n")
+	var podinfo [][]string
 
-	podinfo := [][]string{
-		{"Pod Name", podname},
-		{"Namespace Name", namespace},
-		{"Cluster Name", clustername},
-		{"Container Name", containername},
-		{"Labels", labels},
+	podname := strings.Join(strings.Split(resp.PodName, ","), "\n")
+	labels := strings.Join(strings.Split(resp.Label, ","), "\n")
+
+	if data.DeployName != "" {
+		podinfo = [][]string{
+			{"Name", resp.DeploymentName},
+			{"Resource Type", resp.DeployType},
+			{"Namespace Name", resp.Namespace},
+			{"Cluster Name", resp.ClusterName},
+			{"Container Name", resp.ContainerName},
+			{"Labels", labels},
+		}
+	} else {
+		podinfo = [][]string{
+			{"Name", podname},
+			{"Resource Type", "Pod"},
+			{"Namespace Name", resp.Namespace},
+			{"Cluster Name", resp.ClusterName},
+			{"Container Name", resp.ContainerName},
+			{"Labels", labels},
+		}
 	}
+
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetBorder(false)
 	table.SetTablePadding("\t")
