@@ -178,7 +178,6 @@ func DisplaySummaryOutput(resp *opb.Response, revDNSLookup bool, requestType str
 				syscallStrSlice = append(syscallStrSlice, syscallData.Parameters)
 				syscallStrSlice = append(syscallStrSlice, syscallData.Count)
 				syscallStrSlice = append(syscallStrSlice, syscallData.UpdatedTime)
-				syscallStrSlice = append(syscallStrSlice, syscallData.Result)
 				if syscallData.Result == "Allow" {
 					syscallStrSlice = append(syscallStrSlice, agc(syscallData.Result))
 				} else if syscallData.Result == "Deny" {
