@@ -357,6 +357,7 @@ type KubeArmorProbeData struct {
 	ContainerSecurity       bool
 	ContainerDefaultPosture tp.DefaultPosture
 	HostDefaultPosture      tp.DefaultPosture
+	HostVisibility          string
 }
 
 func isKubeArmorRunning(c *k8s.Client, o Options) bool {
@@ -534,6 +535,7 @@ func printKubeArmorProbeOutput(buf []byte) error {
 	data = append(data, []string{" ", "Container Security:", green(strconv.FormatBool(kd.ContainerSecurity))})
 	data = append(data, []string{" ", "Container Default Posture:", green(kd.ContainerDefaultPosture.FileAction) + itwhite("(File)"), green(kd.ContainerDefaultPosture.FileAction) + itwhite("(Capabilities)"), green(kd.ContainerDefaultPosture.NetworkAction) + itwhite("(Network)")})
 	data = append(data, []string{" ", "Host Default Posture:", green(kd.HostDefaultPosture.FileAction) + itwhite("(File)"), green(kd.HostDefaultPosture.CapabilitiesAction) + itwhite("(Capabilities)"), green(kd.HostDefaultPosture.NetworkAction) + itwhite("(Network)")})
+	data = append(data, []string{" ", "Host Visibility:", green(kd.HostVisibility)})
 	renderOutputInTableWithNoBorders(data)
 	return nil
 }
