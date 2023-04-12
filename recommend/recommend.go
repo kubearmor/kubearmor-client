@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/accuknox/accuknox-cli/k8s"
 	"github.com/fatih/color"
-	"github.com/kubearmor/kubearmor-client/k8s"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

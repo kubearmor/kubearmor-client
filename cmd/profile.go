@@ -4,7 +4,7 @@
 package cmd
 
 import (
-	profileclient "github.com/kubearmor/kubearmor-client/profile/Client"
+	profileclient "github.com/accuknox/accuknox-cli/profile/Client"
 	"github.com/spf13/cobra"
 )
 

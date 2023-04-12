@@ -10,8 +10,8 @@ import (
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 
-	"github.com/kubearmor/kubearmor-client/k8s"
-	klog "github.com/kubearmor/kubearmor-client/log"
+	"github.com/accuknox/accuknox-cli/k8s"
+	klog "github.com/accuknox/accuknox-cli/log"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
 )

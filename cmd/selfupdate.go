@@ -4,7 +4,7 @@
 package cmd
 
 import (
-	"github.com/kubearmor/kubearmor-client/selfupdate"
+	"github.com/accuknox/accuknox-cli/selfupdate"
 	"github.com/spf13/cobra"
 )
 
