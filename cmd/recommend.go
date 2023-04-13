@@ -4,7 +4,7 @@
 package cmd
 
 import (
-	"github.com/kubearmor/kubearmor-client/recommend"
+	"github.com/accuknox/accuknox-cli/recommend"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

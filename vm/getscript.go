@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kubearmor/kubearmor-client/k8s"
-	pb "github.com/kubearmor/kubearmor-client/vm/protobuf"
+	"github.com/accuknox/accuknox-cli/k8s"
+	pb "github.com/accuknox/accuknox-cli/vm/protobuf"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

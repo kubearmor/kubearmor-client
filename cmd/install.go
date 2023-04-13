@@ -6,7 +6,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kubearmor/kubearmor-client/install"
+	"github.com/accuknox/accuknox-cli/install"
 	"github.com/spf13/cobra"
 )
 

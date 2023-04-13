@@ -1,4 +1,4 @@
-module github.com/kubearmor/kubearmor-client
+module github.com/accuknox/accuknox-cli
 
 go 1.18
 

@@ -18,8 +18,8 @@ import (
 	"github.com/clarketm/json"
 	"sigs.k8s.io/yaml"
 
+	"github.com/accuknox/accuknox-cli/k8s"
 	deployments "github.com/kubearmor/KubeArmor/deployments/get"
-	"github.com/kubearmor/kubearmor-client/k8s"
 
 	"golang.org/x/mod/semver"
 	v1 "k8s.io/api/apps/v1"

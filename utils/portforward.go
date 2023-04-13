@@ -14,7 +14,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/accuknox/accuknox-cli/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
