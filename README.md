@@ -13,7 +13,7 @@ curl -sfL http://get.kubearmor.io/ | sudo sh -s -- -b /usr/local/bin
 Build karmor from source if you want to test the latest (pre-release) karmor version.
 
 ```
-git clone https://github.com/accuknox/accuknox-cli.git
+git clone https://github.com/kubearmor/kubearmor-client.git
 cd kubearmor-client
 make install
 ```

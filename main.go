@@ -4,7 +4,7 @@
 // Package main is responsible for the execution of CLI
 package main
 
-import "github.com/accuknox/accuknox-cli/cmd"
+import "github.com/kubearmor/kubearmor-client/cmd"
 
 func main() {
 	cmd.Execute()

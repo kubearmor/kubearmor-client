@@ -4,7 +4,7 @@
 package cmd
 
 import (
-	"github.com/accuknox/accuknox-cli/log"
+	"github.com/kubearmor/kubearmor-client/log"
 	"github.com/spf13/cobra"
 )
 

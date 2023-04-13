@@ -15,8 +15,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/accuknox/accuknox-cli/k8s"
-	"github.com/accuknox/accuknox-cli/utils"
+	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/utils"
 )
 
 type regexType *regexp.Regexp

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/accuknox/accuknox-cli/rotatetls"
+	"github.com/kubearmor/kubearmor-client/rotatetls"
 	"github.com/spf13/cobra"
 )
 

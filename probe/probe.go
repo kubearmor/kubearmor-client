@@ -18,12 +18,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/accuknox/accuknox-cli/deployment"
-	"github.com/accuknox/accuknox-cli/k8s"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/fatih/color"
 	jsoniter "github.com/json-iterator/go"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
+	"github.com/kubearmor/kubearmor-client/deployment"
+	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/exp/slices"
 	"golang.org/x/mod/semver"
@@ -34,7 +34,7 @@ import (
 
 	"errors"
 
-	"github.com/accuknox/accuknox-cli/install"
+	"github.com/kubearmor/kubearmor-client/install"
 	"golang.org/x/sys/unix"
 )
 

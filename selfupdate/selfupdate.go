@@ -11,9 +11,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/accuknox/accuknox-cli/k8s"
 	"github.com/blang/semver"
 	"github.com/fatih/color"
+	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 )
 
@@ -23,7 +23,7 @@ var GitSummary string
 // BuildDate for accuknox-cli git build
 var BuildDate string
 
-const ghrepo = "accuknox/accuknox-cli"
+const ghrepo = "kubearmor/kubearmor-client"
 
 func isValidVersion(ver string) bool {
 	_, err := semver.Make(ver)
