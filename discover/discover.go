@@ -11,9 +11,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/accuknox/accuknox-cli/k8s"
+	"github.com/accuknox/accuknox-cli/utils"
 	"github.com/clarketm/json"
-	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/yaml"
 

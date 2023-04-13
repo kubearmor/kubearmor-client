@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/accuknox/accuknox-cli/install"
+	"github.com/accuknox/accuknox-cli/k8s"
 	deployments "github.com/kubearmor/KubeArmor/deployments/get"
-	"github.com/kubearmor/kubearmor-client/install"
-	"github.com/kubearmor/kubearmor-client/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 )

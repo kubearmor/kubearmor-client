@@ -13,9 +13,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"sigs.k8s.io/yaml"
 
+	"github.com/accuknox/accuknox-cli/k8s"
+	"github.com/accuknox/accuknox-cli/recommend"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/recommend"
 	. "github.com/onsi/gomega"
 )
 

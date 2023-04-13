@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/accuknox/accuknox-cli/k8s"
+	"github.com/accuknox/accuknox-cli/selfupdate"
 	"github.com/fatih/color"
-	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/selfupdate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

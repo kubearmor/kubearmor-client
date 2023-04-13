@@ -7,7 +7,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/kubearmor/kubearmor-client/vm"
+	"github.com/accuknox/accuknox-cli/vm"
 	"github.com/spf13/cobra"
 )
 

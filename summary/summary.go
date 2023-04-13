@@ -12,9 +12,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/accuknox/accuknox-cli/k8s"
+	"github.com/accuknox/accuknox-cli/utils"
 	opb "github.com/accuknox/auto-policy-discovery/src/protobuf/v1/observability"
-	"github.com/kubearmor/kubearmor-client/k8s"
-	"github.com/kubearmor/kubearmor-client/utils"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
