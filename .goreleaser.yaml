@@ -1,14 +1,14 @@
-project_name: accuknox-cli
+project_name: karmor
 
 builds:
-  - binary: accuknox-cli
+  - binary: karmor
     goos:
       - darwin
       - linux
     goarch:
       - amd64
       - arm64
-    ldflags: -w -s -X github.com/accuknox/accuknox-cli/selfupdate.BuildDate={{.Date}} -X github.com/accuknox/accuknox-cli/selfupdate.GitSummary={{.Version}}
+    ldflags: -w -s -X github.com/kubearmor/kubearmor-client/selfupdate.BuildDate={{.Date}} -X github.com/kubearmor/kubearmor-client/selfupdate.GitSummary={{.Version}}
     env:
       - CGO_ENABLED=0
 

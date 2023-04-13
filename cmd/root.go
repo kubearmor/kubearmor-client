@@ -5,7 +5,7 @@
 package cmd
 
 import (
-	"github.com/accuknox/accuknox-cli/k8s"
+	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 		}
 		return nil
 	},
-	Use:   "accuknox-cli",
+	Use:   "karmor",
 	Short: "A CLI Utility to help manage KubeArmor",
 	Long: `CLI Utility to help manage KubeArmor
 	

@@ -10,14 +10,14 @@ import (
 	"os"
 	"time"
 
-	klog "github.com/accuknox/accuknox-cli/log"
-	profile "github.com/accuknox/accuknox-cli/profile"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	klog "github.com/kubearmor/kubearmor-client/log"
+	profile "github.com/kubearmor/kubearmor-client/profile"
 )
 
 // Column keys
