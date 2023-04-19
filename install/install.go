@@ -152,7 +152,7 @@ func checkPods(c *k8s.Client, o Options) {
 			fmt.Print("⚠️\tFailed verifying KubeArmor functionality ...")
 			return
 		}
-		probeData, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
+		probeData, _, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
 			Namespace: o.Namespace,
 		})
 		if err != nil || len(probeData) == 0 {
