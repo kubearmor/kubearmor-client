@@ -169,6 +169,32 @@ func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
 	return nil
 }
 
+// RecordAdmissionController addition of new HTML table row for admission controller policies
+func (r HTMLReport) RecordAdmissionController(policyName, action string, annotations map[string]string) error {
+	*r.RecordCnt = *r.RecordCnt + 1
+	policy, err := os.ReadFile(filepath.Clean(policyName))
+	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("failed to read policy %s", policyName))
+	}
+	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
+	reci := RecordInfo{
+		RowID: fmt.Sprintf("row%d", *r.RecordCnt),
+		Rec: []Col{
+			{Name: policyName},
+			{Name: annotations["recommended-policies.kubearmor.io/description"]},
+			{Name: "-"},
+			{Name: action},
+			{Name: strings.Join(strings.Split(annotations["recommended-policies.kubearmor.io/tags"], ",")[:], "\n")},
+		},
+		Policy:      string(policy),
+		Description: annotations["recommended-policies.kubearmor.io/description-detailed"],
+		// TODO: Figure out how to get the references, adding them to annotations would make them too long
+		Refs: []Ref{},
+	}
+	_ = r.record.Execute(r.outString, reci)
+	return nil
+}
+
 // SectionEnd end of section of the HTML table
 func (r HTMLReport) SectionEnd(img *ImageInfo) error {
 	return r.sectend.Execute(r.outString, nil)

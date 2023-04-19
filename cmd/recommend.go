@@ -45,6 +45,7 @@ func init() {
 
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Images, "image", "i", []string{}, "Container image list (comma separated)")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Labels, "labels", "l", []string{}, "User defined labels for policy (comma separated)")
+	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Policy, "policy", "p", recommend.DefaultPoliciesToBeRecommended, "Types of policy that can be recommended: KubeArmorPolicy|KyvernoPolicy (comma separated)")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Namespace, "namespace", "n", "", "User defined namespace value for policies")
 	recommendCmd.Flags().StringVarP(&recommendOptions.OutDir, "outdir", "o", "out", "output folder to write policies")
 	recommendCmd.Flags().StringVarP(&recommendOptions.ReportFile, "report", "r", "report.txt", "report file")

@@ -67,6 +67,7 @@ var _ = Describe("karmor", func() {
 	BeforeEach(func() {
 		testOptions.OutDir = "out"
 		testOptions.ReportFile = "report.txt"
+		testOptions.Policy = []string{"KubeArmorPolicy"}
 		//Initialise k8sClient for all child commands to inherit
 		client, err = k8s.ConnectK8sClient()
 		Expect(err).To(BeNil())

@@ -17,11 +17,22 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DefaultPoliciesToBeRecommended are the default policies to be recommended
+var DefaultPoliciesToBeRecommended = []string{KyvernoPolicy, KubeArmorPolicy}
+
+// KyvernoPolicy is alias for kyverno policy. The actual kind of Kyverno policy is 'Policy' but we use 'KyvernoPolicy'
+// to explicitly differentiate it from other policy types.
+var KyvernoPolicy = "KyvernoPolicy"
+
+// KubeArmorPolicy is alias for kubearmor policy
+var KubeArmorPolicy = "KubeArmorPolicy"
+
 // Options for karmor recommend
 type Options struct {
 	Images     []string
 	Labels     []string
 	Tags       []string
+	Policy     []string
 	Namespace  string
 	OutDir     string
 	ReportFile string
@@ -146,8 +157,9 @@ func Recommend(c *k8s.Client, o Options) error {
 	o.Tags = unique(o.Tags)
 	options = o
 
+	defer closeConnectionToDiscoveryEngine()
 	for _, dp := range deployments {
-		err := handleDeployment(dp)
+		err := handleDeployment(dp, c)
 		if err != nil {
 			log.Error(err)
 		}
@@ -157,7 +169,7 @@ func Recommend(c *k8s.Client, o Options) error {
 	return nil
 }
 
-func handleDeployment(dp Deployment) error {
+func handleDeployment(dp Deployment, c *k8s.Client) error {
 
 	var err error
 	for _, img := range dp.Images {
@@ -165,7 +177,7 @@ func handleDeployment(dp Deployment) error {
 		if err != nil {
 			log.WithError(err).Error("could not create temp dir")
 		}
-		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img, options.Config)
+		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img, c)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"image": img,

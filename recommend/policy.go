@@ -12,6 +12,7 @@ import (
 	"github.com/clarketm/json"
 	"github.com/fatih/color"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
+	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/yaml"
@@ -135,6 +136,32 @@ func (img *ImageInfo) writePolicyFile(ms MatchSpec) {
 
 }
 
+func (img *ImageInfo) writeAdmissionControllerPolicy(policy kyvernov1.Policy) {
+	policyName := strings.ReplaceAll(policy.Name, img.Name+"-", "")
+	outFile := img.getPolicyFile(policyName)
+	_ = os.MkdirAll(filepath.Dir(outFile), 0750)
+
+	f, err := os.Create(filepath.Clean(outFile))
+	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
+
+	}
+
+	arr, _ := json.Marshal(policy)
+	yamlArr, _ := yaml.JSONToYAML(arr)
+	if _, err := f.WriteString(string(yamlArr)); err != nil {
+		log.WithError(err).Error("WriteString failed")
+	}
+	if err := f.Sync(); err != nil {
+		log.WithError(err).Error("file sync failed")
+	}
+	if err := f.Close(); err != nil {
+		log.WithError(err).Error("file close failed")
+	}
+	_ = ReportAdmissionControllerRecord(outFile, policy.Spec.ValidationFailureAction, policy.Annotations)
+	color.Green("created policy %s ...", outFile)
+}
+
 func (img *ImageInfo) getPolicyFromImageInfo() {
 	if img.OS != "linux" {
 		color.Red("non-linux platforms are not supported, yet.")
@@ -155,7 +182,11 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 
 	ms, err = getNextRule(&idx)
 	for ; err == nil; ms, err = getNextRule(&idx) {
-		// matches preconditions
+
+		// Kyverno policies are fetched from Discovery-Engine
+		if ms.KyvernoPolicySpec != nil {
+			continue
+		}
 
 		if !matchTags(ms) {
 			continue
@@ -166,6 +197,4 @@ func (img *ImageInfo) getPolicyFromImageInfo() {
 		}
 		img.writePolicyFile(ms)
 	}
-
-	_ = ReportSectEnd(img)
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/fatih/color"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
+	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/moby/term"
 	log "github.com/sirupsen/logrus"
 )
@@ -477,37 +478,82 @@ func getImageDetails(img ImageInfo) error {
 	// step 3: getImageInfo
 	img.getImageInfo()
 
+	if len(img.RepoTags) == 0 {
+		img.RepoTags = append(img.RepoTags, img.Name)
+	}
 	// step 4: get policy from image info
 	img.getPolicyFromImageInfo()
 
 	return nil
 }
 
-func imageHandler(namespace, deployment string, labels LabelMap, imageName string, config string) error {
-	dockerConfigPath = config
-	log.WithFields(log.Fields{
-		"image": imageName,
-	}).Info("pulling image")
+func imageHandler(namespace, deployment string, labels LabelMap, imageName string, c *k8s.Client) error {
+	dockerConfigPath = options.Config
 	img := ImageInfo{
 		Name:       imageName,
 		Namespace:  namespace,
 		Deployment: deployment,
 		Labels:     labels,
 	}
+
+	policiesToBeRecommendedSet := make(map[string]bool)
+	for _, policy := range options.Policy {
+		policiesToBeRecommendedSet[policy] = true
+	}
+
+	for policyToBeRecommended := range policiesToBeRecommendedSet {
+		switch policyToBeRecommended {
+		case KyvernoPolicy:
+			if len(img.RepoTags) == 0 {
+				img.RepoTags = append(img.RepoTags, img.Name)
+			}
+			if _, ok := policiesToBeRecommendedSet[KubeArmorPolicy]; !ok {
+				if err := ReportStart(&img); err != nil {
+					log.WithError(err).Error("report start failed")
+					return err
+				}
+			}
+			err := initClientConnection(c)
+			if err != nil {
+				log.WithError(err).Error("failed to initialize client connection.")
+				return err
+			}
+			err = recommendAdmissionControllerPolicies(img)
+			if err != nil {
+				log.WithError(err).Error("failed to recommend admission controller policies.")
+				return err
+			}
+		case KubeArmorPolicy:
+			err := recommendKubeArmorPolicies(imageName, img)
+			if err != nil {
+				log.WithError(err).Error("failed to recommend kubearmor policies.")
+				return err
+			}
+		default:
+			return fmt.Errorf("policy of kind %s cannot be generated", policyToBeRecommended)
+		}
+	}
+	_ = ReportSectEnd(&img)
+
+	return nil
+}
+
+func recommendKubeArmorPolicies(imageName string, img ImageInfo) error {
+	log.WithFields(log.Fields{
+		"image": imageName,
+	}).Info("pulling image")
 	err := pullImage(imageName)
 	if err != nil {
 		log.Warn("Failed to pull image. Dumping generic policies.")
 		img.OS = "linux"
 		img.RepoTags = append(img.RepoTags, img.Name)
 		img.getPolicyFromImageInfo()
-		return nil
+	} else {
+		err = getImageDetails(img)
+		if err != nil {
+			return err
+		}
 	}
-
-	err = getImageDetails(img)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
