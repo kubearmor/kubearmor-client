@@ -101,6 +101,8 @@ github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5P
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/cilium/cilium v1.13.0 h1:EvNLY130la48c9TqvB1LLmy921osJbw/qSiUBzfeXb8=
 github.com/cilium/cilium v1.13.0/go.mod h1:X9PvyHYj5he3V/n9wj1/0XPIfdsll4abdzbF9sAf35E=
+github.com/cilium/cilium v1.13.2 h1:BWHxoqWQP4iK6KWHLiWvVZ/eyvqpP0tvkWnEVg1gDyk=
+github.com/cilium/cilium v1.13.2/go.mod h1:AkOABrMt0qsqZUN0Vl2mGY/PRUwkH7kcS1JHsQVEk5Q=
 github.com/cilium/proxy v0.0.0-20230205220247-5b9c892d59cd h1:OX8lvava1esVfx8RhOTSm4aomVw7NZtL0ELaofsekq0=
 github.com/clarketm/json v1.17.1 h1:U1IxjqJkJ7bRK4L6dyphmoO840P6bdhPdbbLySourqI=
 github.com/clarketm/json v1.17.1/go.mod h1:ynr2LRfb0fQU34l07csRNBTcivjySLLiY1YzQqKVfdo=

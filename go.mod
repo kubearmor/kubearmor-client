@@ -13,7 +13,7 @@ replace (
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/cilium/cilium v1.13.0
+	github.com/cilium/cilium v1.13.2
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/fatih/color v1.13.0
@@ -54,11 +54,11 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/onsi/ginkgo/v2 v2.5.1
 	github.com/onsi/gomega v1.24.1
-	k8s.io/api v0.26.0
-	k8s.io/apiextensions-apiserver v0.26.0
-	k8s.io/apimachinery v0.26.0
+	k8s.io/api v0.26.4
+	k8s.io/apiextensions-apiserver v0.26.4
+	k8s.io/apimachinery v0.26.4
 	k8s.io/cli-runtime v0.23.2
-	k8s.io/client-go v0.26.0
+	k8s.io/client-go v0.26.4
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
