@@ -75,6 +75,19 @@ func (r TextReport) Record(ms MatchSpec, policyName string) error {
 	return nil
 }
 
+// RecordAdmissionController adds new row to table for admission controller policies
+func (r TextReport) RecordAdmissionController(policyName, action string, annotations map[string]string) error {
+	var rec []string
+	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
+	rec = append(rec, wrapPolicyName(policyName, 35))
+	rec = append(rec, annotations["recommended-policies.kubearmor.io/description"])
+	rec = append(rec, "-")
+	rec = append(rec, action)
+	rec = append(rec, strings.Join(strings.Split(annotations["recommended-policies.kubearmor.io/tags"], ",")[:], "\n"))
+	r.table.Append(rec)
+	return nil
+}
+
 func wrapPolicyName(name string, limit int) string {
 	line := ""
 	lines := []string{}

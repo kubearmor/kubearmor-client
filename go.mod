@@ -37,7 +37,7 @@ require (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230307064047-4bb4ca0b527c
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230412181753-bb7037ee5965
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
@@ -50,19 +50,21 @@ require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20221130063629-a2dd0301b858
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230307164000-b087f0a8bf7f
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230307075632-73ce4fa43639
+	github.com/kyverno/kyverno v1.6.10
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/onsi/ginkgo/v2 v2.5.1
 	github.com/onsi/gomega v1.24.1
 	k8s.io/api v0.26.0
 	k8s.io/apiextensions-apiserver v0.26.0
 	k8s.io/apimachinery v0.26.0
-	k8s.io/cli-runtime v0.0.0
+	k8s.io/cli-runtime v0.23.2
 	k8s.io/client-go v0.26.0
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
@@ -94,6 +96,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.3 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-openapi/validate v0.22.0 // indirect
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -105,7 +108,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf // indirect
@@ -124,6 +127,7 @@ require (
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -154,6 +158,7 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
+	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.22.10 // indirect
@@ -170,7 +175,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	go.mongodb.org/mongo-driver v1.10.0 // indirect
+	go.mongodb.org/mongo-driver v1.11.4 // indirect
 	go.opentelemetry.io/otel v1.11.2 // indirect
 	go.opentelemetry.io/otel/trace v1.11.2 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
@@ -186,6 +191,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect

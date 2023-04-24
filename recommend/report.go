@@ -57,6 +57,17 @@ func ReportRecord(ms MatchSpec, policyName string) error {
 	return errors.New("unknown reporter type")
 }
 
+// ReportAdmissionControllerRecord called once per admission controller policy
+func ReportAdmissionControllerRecord(policyName, action string, annotations map[string]string) error {
+	switch v := Handler.(type) {
+	case HTMLReport:
+		return v.RecordAdmissionController(policyName, action, annotations)
+	case TextReport:
+		return v.RecordAdmissionController(policyName, action, annotations)
+	}
+	return errors.New("unknown reporter type")
+}
+
 // ReportSectEnd called once per container image at the end
 func ReportSectEnd(img *ImageInfo) error {
 	switch v := Handler.(type) {

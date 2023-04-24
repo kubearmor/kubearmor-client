@@ -5,24 +5,25 @@ package recommend
 
 import (
 	_ "embed" // need for embedding
-
 	"errors"
-
 	"github.com/clarketm/json"
 	"sigs.k8s.io/yaml"
 
 	"github.com/fatih/color"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
+	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	log "github.com/sirupsen/logrus"
 )
 
 // MatchSpec spec to match for defining policy
 type MatchSpec struct {
-	Name         string                  `json:"name" yaml:"name"`
-	Precondition []string                `json:"precondition" yaml:"precondition"`
-	Description  Description             `json:"description" yaml:"description"`
-	Yaml         string                  `json:"yaml" yaml:"yaml"`
-	Spec         pol.KubeArmorPolicySpec `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Name              string                  `json:"name" yaml:"name"`
+	Precondition      []string                `json:"precondition" yaml:"precondition"`
+	Description       Description             `json:"description" yaml:"description"`
+	Yaml              string                  `json:"yaml" yaml:"yaml"`
+	Spec              pol.KubeArmorPolicySpec `json:"spec,omitempty" yaml:"spec,omitempty"`
+	KyvernoPolicySpec *kyvernov1.Spec         `json:"kyvernoPolicySpec,omitempty" yaml:"kyvernoPolicySpec,omitempty"`
+	KyvernoPolicyTags []string                `json:"kyvernoPolicyTags,omitempty" yaml:"kyvernoPolicyTags,omitempty"`
 }
 
 // Ref for the policy rules
