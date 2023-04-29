@@ -15,6 +15,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
+
           go-version: v1.18
 
       - name: Build karmor
@@ -69,4 +70,3 @@ jobs:
 
       - name: Run unit tests
         run: make test
-

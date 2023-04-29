@@ -2,15 +2,24 @@
 
 **karmor** is a client tool to help manage [KubeArmor](https://github.com/kubearmor/KubeArmor).
 
+
 ## Installation
 
+The following sections show how to install the kArmor. It can be installed either from source, or from pre-built binary releases.
+
+### From Script
+
+kArmor has an installer script that will automatically grab the latest version of kArmor and install it locally.
+
 ```
+
 curl -sfL http://get.kubearmor.io/ | sudo sh -s -- -b /usr/local/bin
 ```
 
 ### Installing from Source 
 
 Build karmor from source if you want to test the latest (pre-release) karmor version.
+
 
 ```
 git clone https://github.com/kubearmor/kubearmor-client.git

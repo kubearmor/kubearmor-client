@@ -27,6 +27,7 @@ install: build
 clean:
 	cd $(CURDIR); rm -f karmor
 
+
 .PHONY: test
 test:
 	cd $(CURDIR); go test -v $(go list ./... | grep -v recommend)
