@@ -496,42 +496,51 @@ func imageHandler(namespace, deployment string, labels LabelMap, imageName strin
 		Labels:     labels,
 	}
 
+	if len(options.Policy) == 0 {
+		return fmt.Errorf("no policy specified, specify at least one policy to be recommended")
+	}
+
 	policiesToBeRecommendedSet := make(map[string]bool)
 	for _, policy := range options.Policy {
 		policiesToBeRecommendedSet[policy] = true
 	}
 
-	for policyToBeRecommended := range policiesToBeRecommendedSet {
-		switch policyToBeRecommended {
-		case KyvernoPolicy:
-			if len(img.RepoTags) == 0 {
-				img.RepoTags = append(img.RepoTags, img.Name)
-			}
-			if _, ok := policiesToBeRecommendedSet[KubeArmorPolicy]; !ok {
-				if err := ReportStart(&img); err != nil {
-					log.WithError(err).Error("report start failed")
-					return err
-				}
-			}
-			err := initClientConnection(c)
-			if err != nil {
-				log.WithError(err).Error("failed to initialize client connection.")
-				return err
-			}
-			err = recommendAdmissionControllerPolicies(img)
-			if err != nil {
-				log.WithError(err).Error("failed to recommend admission controller policies.")
-				return err
-			}
-		case KubeArmorPolicy:
-			err := recommendKubeArmorPolicies(imageName, img)
-			if err != nil {
-				log.WithError(err).Error("failed to recommend kubearmor policies.")
-				return err
-			}
-		default:
-			return fmt.Errorf("policy of kind %s cannot be generated", policyToBeRecommended)
+	_, containsKubeArmorPolicy := policiesToBeRecommendedSet[KubeArmorPolicy]
+	if containsKubeArmorPolicy {
+		err := recommendKubeArmorPolicies(imageName, img)
+		if err != nil {
+			log.WithError(err).Error("failed to recommend kubearmor policies.")
+			return err
 		}
+	}
+
+	_, containsKyvernoPolicy := policiesToBeRecommendedSet[KyvernoPolicy]
+
+	// Admission Controller Policies are not recommended based on an image
+	if len(options.Images) == 0 && containsKyvernoPolicy {
+		if len(img.RepoTags) == 0 {
+			img.RepoTags = append(img.RepoTags, img.Name)
+		}
+		if !containsKubeArmorPolicy {
+			if err := ReportStart(&img); err != nil {
+				log.WithError(err).Error("report start failed")
+				return err
+			}
+		}
+		err := initClientConnection(c)
+		if err != nil {
+			log.WithError(err).Error("failed to initialize client connection.")
+			return err
+		}
+		err = recommendAdmissionControllerPolicies(img)
+		if err != nil {
+			log.WithError(err).Error("failed to recommend admission controller policies.")
+			return err
+		}
+	}
+
+	if !containsKyvernoPolicy && !containsKubeArmorPolicy {
+		return fmt.Errorf("policy type not supported: %v", options.Policy)
 	}
 	_ = ReportSectEnd(&img)
 
