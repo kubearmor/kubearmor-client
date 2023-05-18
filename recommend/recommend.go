@@ -109,7 +109,7 @@ func Recommend(c *k8s.Client, o Options) error {
 			return err
 		}
 		log.WithFields(log.Fields{
-			"Updated Version": CurrentVersion,
+			"Updated Version": LatestVersion,
 		}).Info("policy-templates updated")
 	}
 
