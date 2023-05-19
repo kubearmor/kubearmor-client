@@ -422,6 +422,19 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		printYAML = append(printYAML, annotationsControllerMutationAdmissionConfiguration)
 	}
 
+	kubearmorConfigMap := deployments.GetKubearmorConfigMap(o.Namespace, deployments.KubeArmorConfigMapName)
+	if !o.Save {
+		printMessage("🚀  KubeArmor ConfigMap Creation  ", true)
+		if _, err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).Create(context.Background(), kubearmorConfigMap, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			printMessage("ℹ️   KubeArmor ConfigMap already exists  ", false)
+		}
+	} else {
+		printYAML = append(printYAML, kubearmorConfigMap)
+	}
+
 	// Save the Generated YAML to file
 	if o.Save {
 		currDir, err := os.Getwd()
@@ -616,6 +629,14 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 			return err
 		}
 		fmt.Print("ℹ️   KubeArmor Host Policy Manager Deployment not found ...\n")
+	}
+
+	fmt.Print("❌   KubeArmor ConfigMap ...\n")
+	if err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).Delete(context.Background(), deployments.KubeArmorConfigMapName, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		fmt.Print("ℹ️   KubeArmor ConfigMap not found ...\n")
 	}
 
 	if o.Force {
