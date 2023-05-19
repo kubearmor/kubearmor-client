@@ -158,7 +158,7 @@ func (img *ImageInfo) writeAdmissionControllerPolicy(policy kyvernov1.Policy) {
 	if err := f.Close(); err != nil {
 		log.WithError(err).Error("file close failed")
 	}
-	_ = ReportAdmissionControllerRecord(outFile, policy.Spec.ValidationFailureAction, policy.Annotations)
+	_ = ReportAdmissionControllerRecord(outFile, string(policy.Spec.ValidationFailureAction), policy.Annotations)
 	color.Green("created policy %s ...", outFile)
 }
 
