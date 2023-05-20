@@ -5,6 +5,14 @@ go 1.20
 replace (
 	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
+
+	// only until https://github.com/kubernetes-sigs/controller-runtime/pull/2223 makes it into a release
+	k8s.io/api => k8s.io/api v0.26.4
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.4
+	k8s.io/apimachinery => k8s.io/apimachinery v0.26.4
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.26.4
+	k8s.io/client-go => k8s.io/client-go v0.26.4
+	k8s.io/component-base => k8s.io/component-base v0.26.4
 )
 
 require (
@@ -43,18 +51,18 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20221130063629-a2dd0301b858
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230307164000-b087f0a8bf7f
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230307075632-73ce4fa43639
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230519075515-e8b45043a53d
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230519075515-e8b45043a53d
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230519075515-e8b45043a53d
 	github.com/kyverno/kyverno v1.9.2
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/onsi/ginkgo/v2 v2.9.4
 	github.com/onsi/gomega v1.27.6
-	k8s.io/api v0.26.4
-	k8s.io/apiextensions-apiserver v0.26.4
-	k8s.io/apimachinery v0.26.4
+	k8s.io/api v0.27.1
+	k8s.io/apiextensions-apiserver v0.27.1
+	k8s.io/apimachinery v0.27.1
 	k8s.io/cli-runtime v0.26.4
-	k8s.io/client-go v0.26.4
+	k8s.io/client-go v0.27.1
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 )
 
@@ -319,7 +327,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/component-base v0.26.4 // indirect
+	k8s.io/component-base v0.27.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/kubectl v0.26.4 // indirect
