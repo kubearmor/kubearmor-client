@@ -298,10 +298,10 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 	if err != nil {
 		return
 	}
-
 	// Filter Telemetry based on provided options
-	if len(o.Selector) != 0 {
-		val := selectLabels(o, res["Labels"].(string))
+	if len(o.Selector) != 0 && res["Labels"] != nil {
+		labels := strings.Split(res["Labels"].(string), ",")
+		val := selectLabels(o, labels)
 		if val != nil {
 			return
 		}
@@ -465,11 +465,14 @@ func (fd *Feeder) DestroyClient() error {
 	return nil
 }
 
-func selectLabels(o Options, labels string) error {
+func selectLabels(o Options, labels []string) error {
 	for _, val := range o.Selector {
-		if val == labels {
-			return nil
+		for _, label := range labels {
+			if val == label {
+				return nil
+			}
 		}
+
 	}
 	return errors.New("Not found any flag")
 }
