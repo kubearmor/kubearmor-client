@@ -27,6 +27,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/exp/slices"
 	"golang.org/x/mod/semver"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -369,11 +370,26 @@ func isKubeArmorRunning(c *k8s.Client, o Options) bool {
 func getKubeArmorDaemonset(c *k8s.Client, o Options) (bool, error) {
 	var data [][]string
 	// KubeArmor DaemonSet
-	w, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Get(context.Background(), "kubearmor", metav1.GetOptions{})
+	daemonsets, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app",
+	})
 	if err != nil {
 		return false, err
 	}
-	color.Green("\nFound KubeArmor running in Kubernetes\n\n")
+	w := &v1.DaemonSet{}
+	//w, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Get(context.Background(), "kubearmor", metav1.GetOptions{})
+	for _, daemonset := range daemonsets.Items {
+		if daemonset.Spec.Selector.MatchLabels["kubearmor-app"] == "kubearmor" {
+			color.Green("\nFound KubeArmor running in Kubernetes\n\n")
+			err = nil
+			w = &daemonset
+			break
+		}
+	}
+	if w == (&v1.DaemonSet{}) {
+		return false, err
+	}
+
 	_, err = boldWhite.Printf("Daemonset :\n")
 	if err != nil {
 		color.Red(" Error while printing")
