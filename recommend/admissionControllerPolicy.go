@@ -3,6 +3,10 @@ package recommend
 import (
 	"context"
 	"errors"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/accuknox/auto-policy-discovery/src/libs"
 	"github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
 	"github.com/clarketm/json"
@@ -14,9 +18,6 @@ import (
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"os"
-	"strconv"
-	"strings"
 )
 
 var connection *grpc.ClientConn
@@ -86,7 +87,7 @@ func recommendAdmissionControllerPolicies(img ImageInfo) error {
 			if err != nil {
 				return err
 			}
-			if matchAdmissionControllerPolicyTags(&kyvernoPolicy) {
+			if namespaceMatches(kyvernoPolicy.Namespace) && matchAdmissionControllerPolicyTags(&kyvernoPolicy) {
 				img.writeAdmissionControllerPolicy(kyvernoPolicy)
 			}
 		}
@@ -105,4 +106,8 @@ func matchAdmissionControllerPolicyTags(policy *kyvernov1.Policy) bool {
 		}
 	}
 	return false
+}
+
+func namespaceMatches(policyNamespace string) bool {
+	return options.Namespace == "" || options.Namespace == policyNamespace
 }

@@ -14,6 +14,8 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // HTMLReport Report in HTML format
@@ -141,6 +143,7 @@ type RecordInfo struct {
 	Rec         []Col
 	Policy      string
 	Description string
+	PolicyType  string
 	Refs        []Ref
 }
 
@@ -162,6 +165,7 @@ func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
 			{Name: strings.Join(ms.Spec.Tags[:], "\n")},
 		},
 		Policy:      string(policy),
+		PolicyType:  "Kubearmor Security Policy",
 		Description: ms.Description.Detailed,
 		Refs:        ms.Description.Refs,
 	}
@@ -183,10 +187,11 @@ func (r HTMLReport) RecordAdmissionController(policyName, action string, annotat
 			{Name: policyName},
 			{Name: annotations["recommended-policies.kubearmor.io/description"]},
 			{Name: "-"},
-			{Name: action},
+			{Name: cases.Title(language.English).String(action)},
 			{Name: strings.Join(strings.Split(annotations["recommended-policies.kubearmor.io/tags"], ",")[:], "\n")},
 		},
 		Policy:      string(policy),
+		PolicyType:  "Kyverno Policy",
 		Description: annotations["recommended-policies.kubearmor.io/description-detailed"],
 		// TODO: Figure out how to get the references, adding them to annotations would make them too long
 		Refs: []Ref{},

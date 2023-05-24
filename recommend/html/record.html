@@ -6,7 +6,11 @@
 						</td>
 					{{else if eq $i 2}}
 						<td>
-						{{.Name}}/10
+						{{if eq .Name "-"}}
+							{{.Name}}
+						{{else}}
+							{{.Name}}/10
+						{{end}}
 						</td>
 					{{else if eq $i 3}}
 						{{if eq .Name "Block"}}
@@ -17,6 +21,10 @@
 							<td>
 								<div class="v38_6985"><span class="v38_6986">{{.Name}}</span></div>
 							</td>
+				        {{else if eq .Name "Enforce"}}
+				            <td>
+					            <div class="v38_6859"><span class="v38_6860">{{.Name}}</span></div>
+				            </td>
 						{{end}}
 					{{else}}
 						<td>{{.Name}}</td>	
@@ -27,7 +35,7 @@
             </tr>
             <tr id="{{.RowID}}" class="hidden_row">
                 <td colspan="100%">
-					<h3>Kubearmor Security Policy</h3>
+					<h3>{{.PolicyType}}</h3>
 <pre>
 {{.Policy}}
 </pre>
