@@ -253,6 +253,9 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	relayDeployment := deployments.GetRelayDeployment(o.Namespace)
+	if o.Local {
+		relayDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+	}
 	if !o.Save {
 		printMessage("🛰   KubeArmor Relay Deployment  ", true)
 		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), relayDeployment, metav1.CreateOptions{}); err != nil {
@@ -327,6 +330,10 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	policyManagerDeployment := deployments.GetPolicyManagerDeployment(o.Namespace)
+	if o.Local {
+		policyManagerDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+		policyManagerDeployment.Spec.Template.Spec.Containers[1].ImagePullPolicy = "IfNotPresent"
+	}
 	if !o.Save {
 		printMessage("🤖  KubeArmor Policy Manager Deployment  ", true)
 		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), policyManagerDeployment, metav1.CreateOptions{}); err != nil {
@@ -353,6 +360,10 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	hostPolicyManagerDeployment := deployments.GetHostPolicyManagerDeployment(o.Namespace)
+	if o.Local {
+		hostPolicyManagerDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+		hostPolicyManagerDeployment.Spec.Template.Spec.Containers[1].ImagePullPolicy = "IfNotPresent"
+	}
 	if !o.Save {
 		printMessage("🛡   KubeArmor Host Policy Manager Deployment  ", true)
 		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), hostPolicyManagerDeployment, metav1.CreateOptions{}); err != nil {
@@ -384,6 +395,10 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	annotationsControllerDeployment := deployments.GetAnnotationsControllerDeployment(o.Namespace)
+	if o.Local {
+		annotationsControllerDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+		annotationsControllerDeployment.Spec.Template.Spec.Containers[1].ImagePullPolicy = "IfNotPresent"
+	}
 	if !o.Save {
 		printMessage("🚀  KubeArmor Annotation Controller Deployment  ", true)
 		if _, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Create(context.Background(), annotationsControllerDeployment, metav1.CreateOptions{}); err != nil {
