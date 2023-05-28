@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.20
+          go-version: "v1.20"
 
       - name: Build karmor
         run: make
@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.20
+          go-version: "v1.20"
 
       - name: Check gofmt
         run: make gofmt
@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.20
+          go-version: "v1.20"
 
       - name: Run Gosec Security Scanner
         run: make gosec
@@ -65,7 +65,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: v1.20
+          go-version: "v1.20"
 
       - name: Run unit tests
         run: make test
