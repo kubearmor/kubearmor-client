@@ -2,14 +2,18 @@
     <br>
     <div class="v38_6837"></div>
     <div class="wrapper">
-	    <table align=center border=0 cellpadding=2>
-	        {{range .ImgInfo}}
-	            <tr align=left>
-		            <td>{{.Key}}</td>
-		            <td>: {{.Val}}</td>
-	            </tr>
-	        {{end}}
-	    </table>
+        {{if .GenericAdmissionControllerPolicy}}
+            <h3 class="v38_7030" align="center">Generic Kyverno Policies</h3>
+        {{else}}
+            <table align=center border=0 cellpadding=2>
+                {{range .ImgInfo}}
+                <tr align=left>
+                    <td>{{.Key}}</td>
+                    <td>: {{.Val}}</td>
+                </tr>
+                {{end}}
+            </table>
+        {{end}}
     </div>
     <div class="div-main">
         <br>

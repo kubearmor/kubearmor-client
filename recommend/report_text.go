@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/accuknox/auto-policy-discovery/src/types"
 	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
 )
@@ -54,8 +55,20 @@ func (r TextReport) Start(img *ImageInfo) error {
 	return nil
 }
 
+func (r TextReport) StartGenericAdmissionControllerPolicies() error {
+	t := tablewriter.NewWriter(r.outString)
+	t.SetBorder(false)
+	t.Rich([]string{"Generic Kyverno Policies"}, []tablewriter.Colors{{tablewriter.Bold}})
+	t.Render()
+
+	r.table.SetHeader([]string{"Policy", "Short Desc", "Severity", "Action", "Tags"})
+	r.table.SetAlignment(tablewriter.ALIGN_LEFT)
+	r.table.SetRowLine(true)
+	return nil
+}
+
 // SectionEnd end of section of the text table
-func (r TextReport) SectionEnd(img *ImageInfo) error {
+func (r TextReport) SectionEnd() error {
 	r.table.Render()
 	r.table.ClearRows()
 	r.outString.WriteString("\n")
@@ -76,14 +89,14 @@ func (r TextReport) Record(ms MatchSpec, policyName string) error {
 }
 
 // RecordAdmissionController adds new row to table for admission controller policies
-func (r TextReport) RecordAdmissionController(policyName, action string, annotations map[string]string) error {
+func (r TextReport) RecordAdmissionController(policyFilePath, action string, annotations map[string]string) error {
 	var rec []string
-	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
-	rec = append(rec, wrapPolicyName(policyName, 35))
-	rec = append(rec, annotations["recommended-policies.kubearmor.io/description"])
+	policyFilePath = policyFilePath[strings.LastIndex(policyFilePath, "/")+1:]
+	rec = append(rec, wrapPolicyName(policyFilePath, 35))
+	rec = append(rec, annotations[types.RecommendedPolicyTitleAnnotation])
 	rec = append(rec, "-")
 	rec = append(rec, action)
-	rec = append(rec, strings.Join(strings.Split(annotations["recommended-policies.kubearmor.io/tags"], ",")[:], "\n"))
+	rec = append(rec, strings.Join(strings.Split(annotations[types.RecommendedPolicyTagsAnnotation], ",")[:], "\n"))
 	r.table.Append(rec)
 	return nil
 }

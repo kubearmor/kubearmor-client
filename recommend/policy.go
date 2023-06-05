@@ -136,30 +136,96 @@ func (img *ImageInfo) writePolicyFile(ms MatchSpec) {
 
 }
 
-func (img *ImageInfo) writeAdmissionControllerPolicy(policy kyvernov1.Policy) {
-	policyName := strings.ReplaceAll(policy.Name, img.Name+"-", "")
+func (img *ImageInfo) writeAdmissionControllerPolicy(policyInterface kyvernov1.PolicyInterface) {
+	policyName := strings.ReplaceAll(policyInterface.GetName(), img.Name+"-", "")
 	outFile := img.getPolicyFile(policyName)
-	_ = os.MkdirAll(filepath.Dir(outFile), 0750)
+	err := os.MkdirAll(filepath.Dir(outFile), 0750)
+	if err != nil {
+		log.WithError(err).Error("create dir failed")
+		return
+	}
 
 	f, err := os.Create(filepath.Clean(outFile))
 	if err != nil {
 		log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
-
+		return
 	}
-
-	arr, _ := json.Marshal(policy)
-	yamlArr, _ := yaml.JSONToYAML(arr)
-	if _, err := f.WriteString(string(yamlArr)); err != nil {
+	var jsonBytes []byte
+	var yamlBytes []byte
+	jsonBytes, err = convertKyvernoPolicyInterfaceToJSON(policyInterface)
+	if err != nil {
+		log.WithError(err).Error("json marshal failed")
+		return
+	}
+	yamlBytes, err = yaml.JSONToYAML(jsonBytes)
+	if err != nil {
+		log.WithError(err).Error("yaml marshal failed")
+		return
+	}
+	if _, err := f.WriteString(string(yamlBytes)); err != nil {
 		log.WithError(err).Error("WriteString failed")
+		return
 	}
 	if err := f.Sync(); err != nil {
 		log.WithError(err).Error("file sync failed")
+		return
 	}
 	if err := f.Close(); err != nil {
 		log.WithError(err).Error("file close failed")
+		return
 	}
-	_ = ReportAdmissionControllerRecord(outFile, string(policy.Spec.ValidationFailureAction), policy.Annotations)
-	color.Green("created policy %s ...", outFile)
+	err = ReportAdmissionControllerRecord(outFile, string(policyInterface.GetSpec().ValidationFailureAction), policyInterface.GetAnnotations())
+	if err != nil {
+		log.WithError(err).Error("report admission controller record failed")
+	} else {
+		color.Green("created policy %s ...", outFile)
+	}
+}
+
+func writeGenericAdmissionControllerPolicy(policyInterface kyvernov1.PolicyInterface) {
+	policyName := policyInterface.GetName()
+	outFile := filepath.Join(options.OutDir, "genericKyvernoPolicies", policyName+".yaml")
+	err := os.MkdirAll(filepath.Dir(outFile), 0750)
+	if err != nil {
+		log.WithError(err).Error("create dir failed")
+		return
+	}
+
+	f, err := os.Create(filepath.Clean(outFile))
+	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
+		return
+	}
+	var jsonBytes []byte
+	var yamlBytes []byte
+	jsonBytes, err = convertKyvernoPolicyInterfaceToJSON(policyInterface)
+	if err != nil {
+		log.WithError(err).Error("json marshal failed")
+		return
+	}
+	yamlBytes, err = yaml.JSONToYAML(jsonBytes)
+	if err != nil {
+		log.WithError(err).Error("yaml marshal failed")
+		return
+	}
+	if _, err := f.WriteString(string(yamlBytes)); err != nil {
+		log.WithError(err).Error("WriteString failed")
+		return
+	}
+	if err := f.Sync(); err != nil {
+		log.WithError(err).Error("file sync failed")
+		return
+	}
+	if err := f.Close(); err != nil {
+		log.WithError(err).Error("file close failed")
+		return
+	}
+	err = ReportAdmissionControllerRecord(outFile, string(policyInterface.GetSpec().ValidationFailureAction), policyInterface.GetAnnotations())
+	if err != nil {
+		log.WithError(err).Error("report admission controller record failed")
+	} else {
+		color.Green("created policy %s ...", outFile)
+	}
 }
 
 func (img *ImageInfo) getPolicyFromImageInfo() {
