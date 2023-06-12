@@ -529,13 +529,14 @@ func imageHandler(namespace, deployment string, labels LabelMap, imageName strin
 		}
 		err := initClientConnection(c)
 		if err != nil {
-			log.WithError(err).Error("failed to initialize client connection.")
-			return err
-		}
-		err = recommendAdmissionControllerPolicies(img)
-		if err != nil {
-			log.WithError(err).Error("failed to recommend admission controller policies.")
-			return err
+			log.WithError(err).Error("failed to initialize DE client connection. Won't recommend admission controller policies.")
+			//return err
+		} else {
+			err = recommendAdmissionControllerPolicies(img)
+			if err != nil {
+				log.WithError(err).Error("failed to recommend admission controller policies.")
+				return err
+			}
 		}
 	}
 
