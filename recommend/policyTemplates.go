@@ -17,7 +17,6 @@ import (
 	"github.com/google/go-github/github"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
-	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )
@@ -209,12 +208,9 @@ func updatePolicyRules(filePath string) error {
 				}
 				apiVersion := policy["apiVersion"].(string)
 				if strings.Contains(apiVersion, "kyverno") {
-					var kyvernoPolicy kyvernov1.Policy
-					err = yaml.Unmarshal(newYaml, &kyvernoPolicy)
-					if err != nil {
-						return err
-					}
-					ms.KyvernoPolicySpec = &kyvernoPolicy.Spec
+					// No need to add Kyverno policies to 'rules.yaml'
+					// Kyverno policies are fetched from discovery engine
+					continue
 				} else if strings.Contains(apiVersion, "kubearmor") {
 					var kubeArmorPolicy pol.KubeArmorPolicy
 					err = yaml.Unmarshal(newYaml, &kubeArmorPolicy)

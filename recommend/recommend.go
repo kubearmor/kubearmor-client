@@ -165,6 +165,20 @@ func Recommend(c *k8s.Client, o Options) error {
 		}
 	}
 
+	recommendKyvernoPolicies := false
+	for _, policy := range options.Policy {
+		if policy == KyvernoPolicy {
+			recommendKyvernoPolicies = true
+		}
+	}
+
+	if recommendKyvernoPolicies {
+		err = recommendGenericAdmissionControllerPolicies()
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
 	finalReport()
 	return nil
 }

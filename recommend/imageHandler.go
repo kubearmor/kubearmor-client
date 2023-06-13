@@ -542,7 +542,11 @@ func imageHandler(namespace, deployment string, labels LabelMap, imageName strin
 	if !containsKyvernoPolicy && !containsKubeArmorPolicy {
 		return fmt.Errorf("policy type not supported: %v", options.Policy)
 	}
-	_ = ReportSectEnd(&img)
+	err := ReportSectEnd()
+	if err != nil {
+		log.WithError(err).Error("report section end failed")
+		return err
+	}
 
 	return nil
 }

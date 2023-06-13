@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/accuknox/auto-policy-discovery/src/types"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -72,8 +73,9 @@ type HeaderInfo struct {
 
 // SectionInfo Section information
 type SectionInfo struct {
-	HdrCols []Col
-	ImgInfo []Info
+	HdrCols                          []Col
+	ImgInfo                          []Info
+	GenericAdmissionControllerPolicy bool
 }
 
 // NewHTMLReport instantiation on new html report
@@ -137,6 +139,21 @@ func (r HTMLReport) Start(img *ImageInfo) error {
 	return nil
 }
 
+func (r HTMLReport) StartGenericAdmissionControllerPolicies() error {
+	secInfo := SectionInfo{
+		HdrCols: []Col{
+			{Name: "POLICY"},
+			{Name: "DESCRIPTION"},
+			{Name: "SEVERITY"},
+			{Name: "ACTION"},
+			{Name: "TAGS"},
+		},
+		GenericAdmissionControllerPolicy: true,
+	}
+	_ = r.section.Execute(r.outString, secInfo)
+	return nil
+}
+
 // RecordInfo new row information in table
 type RecordInfo struct {
 	RowID       string
@@ -174,34 +191,33 @@ func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
 }
 
 // RecordAdmissionController addition of new HTML table row for admission controller policies
-func (r HTMLReport) RecordAdmissionController(policyName, action string, annotations map[string]string) error {
+func (r HTMLReport) RecordAdmissionController(policyFilePath, action string, annotations map[string]string) error {
 	*r.RecordCnt = *r.RecordCnt + 1
-	policy, err := os.ReadFile(filepath.Clean(policyName))
+	policy, err := os.ReadFile(filepath.Clean(policyFilePath))
 	if err != nil {
-		log.WithError(err).Error(fmt.Sprintf("failed to read policy %s", policyName))
+		log.WithError(err).Error(fmt.Sprintf("failed to read policy %s", policyFilePath))
 	}
-	policyName = policyName[strings.LastIndex(policyName, "/")+1:]
+	policyFilePath = policyFilePath[strings.LastIndex(policyFilePath, "/")+1:]
 	reci := RecordInfo{
 		RowID: fmt.Sprintf("row%d", *r.RecordCnt),
 		Rec: []Col{
-			{Name: policyName},
-			{Name: annotations["recommended-policies.kubearmor.io/description"]},
+			{Name: policyFilePath},
+			{Name: annotations[types.RecommendedPolicyTitleAnnotation]},
 			{Name: "-"},
 			{Name: cases.Title(language.English).String(action)},
-			{Name: strings.Join(strings.Split(annotations["recommended-policies.kubearmor.io/tags"], ",")[:], "\n")},
+			{Name: strings.Join(strings.Split(annotations[types.RecommendedPolicyTagsAnnotation], ",")[:], "\n")},
 		},
 		Policy:      string(policy),
 		PolicyType:  "Kyverno Policy",
-		Description: annotations["recommended-policies.kubearmor.io/description-detailed"],
+		Description: annotations[types.RecommendedPolicyDescriptionAnnotation],
 		// TODO: Figure out how to get the references, adding them to annotations would make them too long
 		Refs: []Ref{},
 	}
-	_ = r.record.Execute(r.outString, reci)
-	return nil
+	return r.record.Execute(r.outString, reci)
 }
 
 // SectionEnd end of section of the HTML table
-func (r HTMLReport) SectionEnd(img *ImageInfo) error {
+func (r HTMLReport) SectionEnd() error {
 	return r.sectend.Execute(r.outString, nil)
 }
 

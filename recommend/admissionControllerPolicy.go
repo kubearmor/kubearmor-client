@@ -3,12 +3,14 @@ package recommend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/accuknox/auto-policy-discovery/src/libs"
 	"github.com/accuknox/auto-policy-discovery/src/protobuf/v1/worker"
+	"github.com/accuknox/auto-policy-discovery/src/types"
 	"github.com/clarketm/json"
 	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/k8s"
@@ -18,6 +20,7 @@ import (
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"sigs.k8s.io/yaml"
 )
 
 var connection *grpc.ClientConn
@@ -74,7 +77,7 @@ func recommendAdmissionControllerPolicies(img ImageInfo) error {
 	resp, err := client.Convert(context.Background(), &worker.WorkerRequest{
 		Labels:     labels,
 		Namespace:  img.Namespace,
-		Policytype: "AdmissionControllerPolicy",
+		Policytype: types.PolicyTypeAdmissionController,
 	})
 	if err != nil {
 		color.Red(err.Error())
@@ -82,21 +85,65 @@ func recommendAdmissionControllerPolicies(img ImageInfo) error {
 	}
 	if resp.AdmissionControllerPolicy != nil {
 		for _, policy := range resp.AdmissionControllerPolicy {
-			var kyvernoPolicy kyvernov1.Policy
-			err := json.Unmarshal(policy.Data, &kyvernoPolicy)
+			var kyvernoPolicyInterface kyvernov1.PolicyInterface
+			kyvernoPolicyInterface, err = getKyvernoPolicy(policy.Data)
 			if err != nil {
 				return err
 			}
-			if namespaceMatches(kyvernoPolicy.Namespace) && matchAdmissionControllerPolicyTags(&kyvernoPolicy) {
-				img.writeAdmissionControllerPolicy(kyvernoPolicy)
+			if namespaceMatches(kyvernoPolicyInterface.GetNamespace()) && matchAdmissionControllerPolicyTags(kyvernoPolicyInterface.GetAnnotations()) {
+				img.writeAdmissionControllerPolicy(kyvernoPolicyInterface)
 			}
 		}
 	}
 	return nil
 }
 
-func matchAdmissionControllerPolicyTags(policy *kyvernov1.Policy) bool {
-	policyTags := strings.Split(policy.Annotations["recommended-policies.kubearmor.io/tags"], ",")
+func recommendGenericAdmissionControllerPolicies() error {
+	client := worker.NewWorkerClient(connection)
+	resp, err := client.Convert(context.Background(), &worker.WorkerRequest{
+		Policytype: types.PolicyTypeAdmissionControllerGeneric,
+	})
+	if err != nil {
+		color.Red(err.Error())
+		return err
+	}
+	if resp.AdmissionControllerPolicy != nil {
+		reportStarted := false
+		for _, policy := range resp.AdmissionControllerPolicy {
+			var kyvernoPolicyInterface kyvernov1.PolicyInterface
+			kyvernoPolicyInterface, err = getKyvernoPolicy(policy.Data)
+			if err != nil {
+				if reportStarted {
+					err := ReportSectEnd()
+					if err != nil {
+						return err
+					}
+				}
+				return err
+			}
+			if matchAdmissionControllerPolicyTags(kyvernoPolicyInterface.GetAnnotations()) {
+				if !reportStarted {
+					err := ReportStartGenericAdmissionControllerPolicies()
+					if err != nil {
+						return err
+					}
+					reportStarted = true
+				}
+				writeGenericAdmissionControllerPolicy(kyvernoPolicyInterface)
+			}
+		}
+		if reportStarted {
+			err := ReportSectEnd()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func matchAdmissionControllerPolicyTags(policyAnnotations map[string]string) bool {
+	policyTags := strings.Split(policyAnnotations[types.RecommendedPolicyTagsAnnotation], ",")
 	if len(options.Tags) <= 0 {
 		return true
 	}
@@ -110,4 +157,56 @@ func matchAdmissionControllerPolicyTags(policy *kyvernov1.Policy) bool {
 
 func namespaceMatches(policyNamespace string) bool {
 	return options.Namespace == "" || options.Namespace == policyNamespace
+}
+
+func getKyvernoPolicy(policyYaml []byte) (kyvernov1.PolicyInterface, error) {
+	var policy map[string]interface{}
+	err := yaml.Unmarshal(policyYaml, &policy)
+	if err != nil {
+		return nil, err
+	}
+	policyKind := policy["kind"].(string)
+
+	var kyvernoPolicyInterface kyvernov1.PolicyInterface
+	switch policyKind {
+	case "Policy":
+		var kyvernoPolicy kyvernov1.Policy
+		err = yaml.Unmarshal(policyYaml, &kyvernoPolicy)
+		if err != nil {
+			return nil, err
+		}
+		kyvernoPolicyInterface = &kyvernoPolicy
+	case "ClusterPolicy":
+		var kyvernoClusterPolicy kyvernov1.ClusterPolicy
+		err = yaml.Unmarshal(policyYaml, &kyvernoClusterPolicy)
+		if err != nil {
+			return nil, err
+		}
+		kyvernoPolicyInterface = &kyvernoClusterPolicy
+	default:
+		return nil, fmt.Errorf("unexpected policy kind: %s", policyKind)
+	}
+	return kyvernoPolicyInterface, nil
+}
+
+func convertKyvernoPolicyInterfaceToJSON(policyInterface kyvernov1.PolicyInterface) ([]byte, error) {
+	var jsonBytes []byte
+	var err error
+	switch policyInterface.(type) {
+	case *kyvernov1.ClusterPolicy:
+		kyvernoClusterPolicy := policyInterface.(*kyvernov1.ClusterPolicy)
+		jsonBytes, err = json.Marshal(*kyvernoClusterPolicy)
+		if err != nil {
+			log.WithError(err).Error("json marshal failed")
+			return nil, err
+		}
+	case *kyvernov1.Policy:
+		kyvernoPolicy := policyInterface.(*kyvernov1.Policy)
+		jsonBytes, err = json.Marshal(*kyvernoPolicy)
+		if err != nil {
+			log.WithError(err).Error("json marshal failed")
+			return nil, err
+		}
+	}
+	return jsonBytes, nil
 }

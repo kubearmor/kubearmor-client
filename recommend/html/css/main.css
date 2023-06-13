@@ -99,6 +99,11 @@ body {
   position: fixed;
   overflow: hidden;
 }
+.v38_7030 {
+  color: #0b4296;
+  font-family: 'Red Hat Display';
+  font-weight: Bold;
+}
 #wrapper {
   text-align: center;
   overflow: hidden;
