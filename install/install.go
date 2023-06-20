@@ -36,6 +36,7 @@ type Options struct {
 	Tag            string
 	Audit          string
 	Block          string
+	Visibility     string
 	Force          bool
 	Local          bool
 	Save           bool
@@ -423,6 +424,9 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	kubearmorConfigMap := deployments.GetKubearmorConfigMap(o.Namespace, deployments.KubeArmorConfigMapName)
+	if o.Visibility != "" && o.Visibility != kubearmorConfigMap.Data["visibility"] {
+		kubearmorConfigMap.Data["visibility"] = o.Visibility
+	}
 	if !o.Save {
 		printMessage("🚀  KubeArmor ConfigMap Creation  ", true)
 		if _, err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).Create(context.Background(), kubearmorConfigMap, metav1.CreateOptions{}); err != nil {
