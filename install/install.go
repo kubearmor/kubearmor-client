@@ -105,7 +105,7 @@ func printAnimation(msg string, flag bool) int {
 	if flag {
 		progress++
 	}
-	printBar("    KubeArmor Installing ", 16)
+	printBar("    KubeArmor Installing ", 17)
 	return 0
 }
 
@@ -141,23 +141,41 @@ func checkPods(c *k8s.Client, o Options) {
 			break
 		}
 	}
-	probeData, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
-		Namespace: o.Namespace,
-	})
-	if err != nil || len(probeData) == 0 {
-		return
-	}
-	enforcing := true
-	for _, k := range probeData {
-		if k.ActiveLSM == "" || !k.ContainerSecurity {
-			enforcing = false
-			break
+	fmt.Print("\n🔧  Verifying KubeArmor functionality (this may take upto a minute) ...")
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+
+	for {
+		select {
+		case <-time.After(1 * time.Second):
+		case <-ctx.Done():
+			fmt.Print("⚠️  Failed verifying KubeArmor functionality ...")
+			return
 		}
-	}
-	if enforcing {
-		fmt.Print(color.New(color.FgWhite, color.Bold).Sprint("\n\t🛡️  Your Cluster is Armored Up Now! \n"))
-	} else {
-		color.Yellow("\n\t⚠️  KubeArmor is running in Audit mode, only Observability will be available and Policy Enforcement won't work. \n")
+		probeData, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
+			Namespace: o.Namespace,
+		})
+		if err != nil || len(probeData) == 0 {
+			fmt.Printf("\r🔧  Verifying KubeArmor functionality (this may take upto a minute) ... %s", cursor[cursorcount])
+			cursorcount++
+			if cursorcount == 4 {
+				cursorcount = 0
+			}
+			continue
+		}
+		enforcing := true
+		for _, k := range probeData {
+			if k.ActiveLSM == "" || !k.ContainerSecurity {
+				enforcing = false
+				break
+			}
+		}
+		if enforcing {
+			fmt.Print(color.New(color.FgWhite, color.Bold).Sprint("\n\n\t🛡️  Your Cluster is Armored Up! \n"))
+		} else {
+			color.Yellow("\n\n\t⚠️  KubeArmor is running in Audit mode, only Observability will be available and Policy Enforcement won't work. \n")
+		}
+		break
 	}
 
 }
