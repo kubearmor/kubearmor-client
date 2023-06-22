@@ -34,7 +34,6 @@ import (
 
 	"errors"
 
-	"github.com/kubearmor/kubearmor-client/install"
 	"golang.org/x/sys/unix"
 )
 
@@ -75,7 +74,7 @@ func probeDaemonUninstaller(c *k8s.Client, o Options) error {
 // PrintProbeResult prints the result for the  host and k8s probing kArmor does to check compatibility with KubeArmor
 func PrintProbeResult(c *k8s.Client, o Options) error {
 	if runtime.GOOS != "linux" {
-		env := install.AutoDetectEnvironment(c)
+		env := k8s.AutoDetectEnvironment(c)
 		if env == "none" {
 			return errors.New("unsupported environment or cluster not configured correctly")
 		}
@@ -90,9 +89,16 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 	if isKubeArmorRunning(c, o) {
 		getKubeArmorDeployments(c, o)
 		getKubeArmorContainers(c, o)
-		err := probeRunningKubeArmorNodes(c, o)
+		probeData, err := ProbeRunningKubeArmorNodes(c, o)
 		if err != nil {
 			log.Println("error occured when probing kubearmor nodes", err)
+		}
+		for i, pd := range probeData {
+			_, err := boldWhite.Printf("Node %d : \n", i+1)
+			if err != nil {
+				color.Red(" Error")
+			}
+			printKubeArmorProbeOutput(pd)
 		}
 		err = getAnnotatedPods(c)
 		if err != nil {
@@ -226,7 +232,7 @@ func checkKernelHeaderPresent() bool {
 	return false
 }
 
-func execIntoPod(c *k8s.Client, podname, namespace, containername string, cmd string) (string, error) {
+func execIntoPod(c *k8s.Client, podname, namespace, cmd string) (string, error) {
 	buf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
 	request := c.K8sClientset.CoreV1().RESTClient().
@@ -243,7 +249,10 @@ func execIntoPod(c *k8s.Client, podname, namespace, containername string, cmd st
 			TTY:     true,
 		}, scheme.ParameterCodec)
 	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", request.URL())
-	err = exec.Stream(remotecommand.StreamOptions{
+	if err != nil {
+		return "none", err
+	}
+	err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 		Stdout: buf,
 		Stderr: errBuf,
 	})
@@ -255,8 +264,8 @@ func execIntoPod(c *k8s.Client, podname, namespace, containername string, cmd st
 	return buf.String(), nil
 }
 
-func findFileInDir(c *k8s.Client, podname, namespace, containername string, cmd string) bool {
-	s, err := execIntoPod(c, podname, namespace, containername, cmd)
+func findFileInDir(c *k8s.Client, podname, namespace, cmd string) bool {
+	s, err := execIntoPod(c, podname, namespace, cmd)
 	if err != nil {
 		return false
 	}
@@ -268,7 +277,7 @@ func findFileInDir(c *k8s.Client, podname, namespace, containername string, cmd 
 }
 
 // Check for BTF Information or Kernel Headers Availability
-func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string, kernelVersion string) bool {
+func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string) bool {
 	pods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=" + deployment.Karmorprobe,
 		FieldSelector: "spec.nodeName=" + nodeName,
@@ -277,9 +286,9 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string, ker
 		return false
 	}
 
-	if findFileInDir(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "find /sys/kernel/btf/ -name vmlinux") ||
-		findFileInDir(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "find -L /usr/src -maxdepth 2 -path \"*$(uname -r)*\" -name \"Kconfig\"") ||
-		findFileInDir(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "find -L /lib/modules/ -maxdepth 3 -path \"*$(uname -r)*\" -name \"Kconfig\"") {
+	if findFileInDir(c, pods.Items[0].Name, o.Namespace, "find /sys/kernel/btf/ -name vmlinux") ||
+		findFileInDir(c, pods.Items[0].Name, o.Namespace, "find -L /usr/src -maxdepth 2 -path \"*$(uname -r)*\" -name \"Kconfig\"") ||
+		findFileInDir(c, pods.Items[0].Name, o.Namespace, "find -L /lib/modules/ -maxdepth 3 -path \"*$(uname -r)*\" -name \"Kconfig\"") {
 		return true
 	}
 
@@ -315,7 +324,7 @@ func getNodeLsmSupport(c *k8s.Client, o Options, nodeName string) (string, error
 		return "none", err
 	}
 
-	s, err := execIntoPod(c, pods.Items[0].Name, o.Namespace, pods.Items[0].Spec.Containers[0].Name, "cat "+srcPath)
+	s, err := execIntoPod(c, pods.Items[0].Name, o.Namespace, "cat "+srcPath)
 	if err != nil {
 		return "none", err
 	}
@@ -332,7 +341,7 @@ func probeNode(c *k8s.Client, o Options) {
 			}
 			fmt.Printf("\t Observability/Audit:")
 			kernelVersion := item.Status.NodeInfo.KernelVersion
-			check2 := checkNodeKernelHeaderPresent(c, o, item.Name, kernelVersion)
+			check2 := checkNodeKernelHeaderPresent(c, o, item.Name)
 			checkAuditSupport(kernelVersion, check2)
 			lsm, err := getNodeLsmSupport(c, o, item.Name)
 			if err != nil {
@@ -380,7 +389,6 @@ func getKubeArmorDaemonset(c *k8s.Client, o Options) (bool, error) {
 	}
 	desired, ready, available := w.Status.DesiredNumberScheduled, w.Status.NumberReady, w.Status.NumberAvailable
 	if desired != ready && desired != available {
-		data = append(data, []string{" ", "kubearmor ", "Desired: " + strconv.Itoa(int(desired)), "Ready: " + strconv.Itoa(int(ready)), "Available: " + strconv.Itoa(int(available))})
 		return false, nil
 	}
 	data = append(data, []string{" ", "kubearmor ", "Desired: " + strconv.Itoa(int(desired)), "Ready: " + strconv.Itoa(int(ready)), "Available: " + strconv.Itoa(int(available))})
@@ -437,42 +445,38 @@ func getKubeArmorContainers(c *k8s.Client, o Options) {
 
 }
 
-func probeRunningKubeArmorNodes(c *k8s.Client, o Options) error {
-
-	// // KubeArmor Nodes
+// ProbeRunningKubeArmorNodes extracts data from running KubeArmor daemonset  by executing into the container and reading /tmp/kubearmor.cfg
+func ProbeRunningKubeArmorNodes(c *k8s.Client, o Options) ([]KubeArmorProbeData, error) {
+	// KubeArmor Nodes
 	nodes, err := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		log.Println("error getting nodes", err)
-		return err
+		return []KubeArmorProbeData{}, fmt.Errorf("error occured when getting nodes %s", err.Error())
 	}
 
-	if len(nodes.Items) > 0 {
+	if len(nodes.Items) == 0 {
+		return []KubeArmorProbeData{}, fmt.Errorf("no nodes found")
+	}
 
-		for i, item := range nodes.Items {
-			_, err := boldWhite.Printf("Node %d : \n", i+1)
-			if err != nil {
-				color.Red(" Error while printing")
-			}
-			err = readDataFromKubeArmor(c, o, item.Name)
-			if err != nil {
-				return err
-			}
+	var dataList []KubeArmorProbeData
+	for _, item := range nodes.Items {
+		data, err := readDataFromKubeArmor(c, o, item.Name)
+		if err != nil {
+			return []KubeArmorProbeData{}, err
 		}
-	} else {
-		fmt.Println("No kubernetes environment found")
+		dataList = append(dataList, data)
 	}
-	return nil
+
+	return dataList, nil
 }
 
-func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) error {
+func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmorProbeData, error) {
 	srcPath := "/tmp/karmorProbeData.cfg"
 	pods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=kubearmor",
 		FieldSelector: "spec.nodeName=" + nodeName,
 	})
 	if err != nil {
-		log.Println("error occured while getting kubeArmor pods", err)
-		return err
+		return KubeArmorProbeData{}, fmt.Errorf("error occured while getting kubeArmor pods %s", err.Error())
 	}
 	reader, outStream := io.Pipe()
 	cmdArr := []string{"cat", srcPath}
@@ -491,13 +495,12 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) error {
 			TTY:       false,
 		}, scheme.ParameterCodec)
 	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
-
 	if err != nil {
-		return err
+		return KubeArmorProbeData{}, err
 	}
 	go func() {
 		defer outStream.Close()
-		err = exec.Stream(remotecommand.StreamOptions{
+		err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 			Stdin:  os.Stdin,
 			Stdout: outStream,
 			Stderr: os.Stderr,
@@ -506,26 +509,19 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) error {
 	}()
 	buf, err := io.ReadAll(reader)
 	if err != nil {
-		log.Println("an error occured when reading file", err)
-		return err
+		return KubeArmorProbeData{}, fmt.Errorf("error occured while reading data from kubeArmor pod %s", err.Error())
 	}
-	err = printKubeArmorProbeOutput(buf)
+	var kd KubeArmorProbeData
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	err = json.Unmarshal(buf, &kd)
 	if err != nil {
-		log.Println("an error occured when printing output", err)
-		return err
+		return KubeArmorProbeData{}, fmt.Errorf("error occured while parsing data from kubeArmor pod %s", err.Error())
 	}
-	return nil
+	return kd, nil
 }
 
-func printKubeArmorProbeOutput(buf []byte) error {
-	var kd *KubeArmorProbeData
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+func printKubeArmorProbeOutput(kd KubeArmorProbeData) {
 	var data [][]string
-	err := json.Unmarshal(buf, &kd)
-	if err != nil {
-		log.Println("an error occured when parsing file", err)
-		return err
-	}
 	data = append(data, []string{" ", "OS Image:", green(kd.OSImage)})
 	data = append(data, []string{" ", "Kernel Version:", green(kd.KernelVersion)})
 	data = append(data, []string{" ", "Kubelet Version:", green(kd.KubeletVersion)})
@@ -537,7 +533,6 @@ func printKubeArmorProbeOutput(buf []byte) error {
 	data = append(data, []string{" ", "Host Default Posture:", green(kd.HostDefaultPosture.FileAction) + itwhite("(File)"), green(kd.HostDefaultPosture.CapabilitiesAction) + itwhite("(Capabilities)"), green(kd.HostDefaultPosture.NetworkAction) + itwhite("(Network)")})
 	data = append(data, []string{" ", "Host Visibility:", green(kd.HostVisibility)})
 	renderOutputInTableWithNoBorders(data)
-	return nil
 }
 
 // sudo systemctl status kubearmor
@@ -567,11 +562,13 @@ func probeSystemdMode() error {
 	if err != nil {
 		color.Red(" Error")
 	}
-	err = printKubeArmorProbeOutput(buf)
+	var kd KubeArmorProbeData
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	err = json.Unmarshal(buf, &kd)
 	if err != nil {
-		log.Println("an error occured when printing output", err)
 		return err
 	}
+	printKubeArmorProbeOutput(kd)
 	return nil
 }
 

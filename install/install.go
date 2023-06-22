@@ -16,12 +16,13 @@ import (
 	"time"
 
 	"github.com/clarketm/json"
+	"github.com/fatih/color"
 	"sigs.k8s.io/yaml"
 
 	deployments "github.com/kubearmor/KubeArmor/deployments/get"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/probe"
 
-	"golang.org/x/mod/semver"
 	v1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,7 +116,7 @@ func printMessage(msg string, flag bool) int {
 	return 0
 }
 
-func checkPods(c *k8s.Client) int {
+func checkPods(c *k8s.Client, o Options) {
 	cursor := [4]string{"|", "/", "—", "\\"}
 	fmt.Printf("😋   Checking if KubeArmor pods are running ...")
 	stime := time.Now()
@@ -140,7 +141,25 @@ func checkPods(c *k8s.Client) int {
 			break
 		}
 	}
-	return 0
+	probeData, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
+		Namespace: o.Namespace,
+	})
+	if err != nil || len(probeData) == 0 {
+		return
+	}
+	enforcing := true
+	for _, k := range probeData {
+		if k.ActiveLSM == "" || !k.ContainerSecurity {
+			enforcing = false
+			break
+		}
+	}
+	if enforcing {
+		fmt.Print(color.New(color.FgWhite, color.Bold).Sprint("\n\t🛡️  Your Cluster is Armored Up Now! \n"))
+	} else {
+		color.Yellow("\n\t⚠️  KubeArmor is running in Audit mode, only Observability will be available and Policy Enforcement won't work. \n")
+	}
+
 }
 
 func checkTerminatingPods(c *k8s.Client) int {
@@ -176,7 +195,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	animation = o.Animation
 	var env string
 	if o.Env.Auto {
-		env = AutoDetectEnvironment(c)
+		env = k8s.AutoDetectEnvironment(c)
 		if env == "none" {
 			return errors.New("unsupported environment or cluster not configured correctly")
 		}
@@ -278,7 +297,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
 	daemonset.Spec.Template.Spec.InitContainers[0].Image = o.InitImage
-	if o.Local == true {
+	if o.Local {
 		daemonset.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
 		daemonset.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = "IfNotPresent"
 	}
@@ -471,7 +490,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	}
 	if animation {
-		checkPods(c)
+		checkPods(c, o)
 	}
 	return nil
 }
@@ -666,80 +685,6 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		checkTerminatingPods(c)
 	}
 	return nil
-}
-
-// AutoDetectEnvironment detect the environment for a given k8s context
-func AutoDetectEnvironment(c *k8s.Client) (name string) {
-	env := "none"
-
-	contextName := c.RawConfig.CurrentContext
-	clusterContext, exists := c.RawConfig.Contexts[contextName]
-	if !exists {
-		return env
-	}
-
-	clusterName := clusterContext.Cluster
-	cluster := c.RawConfig.Clusters[clusterName]
-	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	if len(nodes.Items) <= 0 {
-		return env
-	}
-	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
-	nodeImage := nodes.Items[0].Status.NodeInfo.OSImage
-
-	// Detecting Environment based on cluster name and context or OSImage
-	if clusterName == "minikube" || contextName == "minikube" {
-		env = "minikube"
-		return env
-	}
-
-	if strings.HasPrefix(clusterName, "microk8s-") || contextName == "microk8s" {
-		env = "microk8s"
-		return env
-	}
-
-	if strings.HasPrefix(clusterName, "gke_") {
-		env = "gke"
-		return env
-	}
-
-	if strings.Contains(nodeImage, "Bottlerocket") {
-		env = "bottlerocket"
-		return env
-	}
-
-	if strings.HasSuffix(clusterName, ".eksctl.io") || strings.HasSuffix(cluster.Server, "eks.amazonaws.com") {
-		env = "eks"
-		return env
-	}
-
-	// Environment is Self Managed K8s, checking container runtime and it's version
-
-	if strings.Contains(containerRuntime, "k3s") {
-		env = "k3s"
-		return env
-	}
-
-	s := strings.Split(containerRuntime, "://")
-	runtime := s[0]
-	version := "v" + s[1]
-
-	if runtime == "docker" && semver.Compare(version, "v18.9") >= 0 {
-		env = "docker"
-		return env
-	}
-
-	if runtime == "cri-o" {
-		env = "oke"
-		return env
-	}
-
-	if (runtime == "docker" && semver.Compare(version, "v19.3") >= 0) || runtime == "containerd" {
-		env = "generic"
-		return env
-	}
-
-	return env
 }
 
 func writeToYAML(f *os.File, o interface{}) error {
