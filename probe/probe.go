@@ -475,8 +475,8 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 		LabelSelector: "kubearmor-app=kubearmor",
 		FieldSelector: "spec.nodeName=" + nodeName,
 	})
-	if err != nil {
-		return KubeArmorProbeData{}, fmt.Errorf("error occured while getting kubeArmor pods %s", err.Error())
+	if err != nil || pods == nil || len(pods.Items) == 0 {
+		return KubeArmorProbeData{}, fmt.Errorf("error occured while getting KubeArmor pods %s", err.Error())
 	}
 	reader, outStream := io.Pipe()
 	cmdArr := []string{"cat", srcPath}

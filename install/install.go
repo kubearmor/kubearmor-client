@@ -486,10 +486,10 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			return err
 		}
 		s3 := f.Name()
-		printMessage("🤩   KubeArmor manifest file saved to \033[1m"+s3+"\033[0m", false)
+		printMessage("🤩  KubeArmor manifest file saved to \033[1m"+s3+"\033[0m", false)
 
 	}
-	if animation {
+	if animation && !o.Save {
 		checkPods(c, o)
 	}
 	return nil
