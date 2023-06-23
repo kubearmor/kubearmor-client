@@ -142,14 +142,14 @@ func checkPods(c *k8s.Client, o Options) {
 		}
 	}
 	fmt.Print("\n🔧  Verifying KubeArmor functionality (this may take upto a minute) ...")
-	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-time.After(10 * time.Second):
 		case <-ctx.Done():
-			fmt.Print("⚠️  Failed verifying KubeArmor functionality ...")
+			fmt.Print("\n⚠️  Failed verifying KubeArmor functionality ...")
 			return
 		}
 		probeData, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
@@ -173,7 +173,7 @@ func checkPods(c *k8s.Client, o Options) {
 		if enforcing {
 			fmt.Print(color.New(color.FgWhite, color.Bold).Sprint("\n\n\t🛡️  Your Cluster is Armored Up! \n"))
 		} else {
-			color.Yellow("\n\n\t⚠️  KubeArmor is running in Audit mode, only Observability will be available and Policy Enforcement won't work. \n")
+			color.Yellow("\n\n\t⚠️  KubeArmor is running in Audit mode, only Observability will be available and Policy Enforcement won't be available. \n")
 		}
 		break
 	}
