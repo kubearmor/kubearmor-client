@@ -489,9 +489,9 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 		VersionedParams(&corev1.PodExecOptions{
 			Container: pods.Items[0].Spec.Containers[0].Name,
 			Command:   cmdArr,
-			Stdin:     true,
+			Stdin:     false,
 			Stdout:    true,
-			Stderr:    true,
+			Stderr:    false,
 			TTY:       false,
 		}, scheme.ParameterCodec)
 	exec, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
@@ -501,9 +501,7 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 	go func() {
 		defer outStream.Close()
 		err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
-			Stdin:  os.Stdin,
 			Stdout: outStream,
-			Stderr: os.Stderr,
 			Tty:    false,
 		})
 	}()
