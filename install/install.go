@@ -41,7 +41,7 @@ type Options struct {
 	Force          bool
 	Local          bool
 	Save           bool
-	Animation      bool
+	Verify         bool
 	Env            envOption
 }
 
@@ -50,7 +50,7 @@ type envOption struct {
 	Environment string
 }
 
-var animation bool
+var verify bool
 var progress int
 var cursorcount int
 var validEnvironments = []string{"k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
@@ -102,17 +102,17 @@ func printBar(msg string, total int) int {
 func printAnimation(msg string, flag bool) int {
 	clearLine(90)
 	fmt.Printf(msg + "\n")
-	if flag {
-		progress++
+	if verify {
+		if flag {
+			progress++
+		}
+		printBar("\tKubeArmor Installing ", 17)
 	}
-	printBar("\tKubeArmor Installing ", 17)
 	return 0
 }
 
 func printMessage(msg string, flag bool) int {
-	if animation {
-		printAnimation(msg, flag)
-	}
+	printAnimation(msg, flag)
 	return 0
 }
 
@@ -142,7 +142,8 @@ func checkPods(c *k8s.Client, o Options) {
 		}
 	}
 	fmt.Print("\n🔧\tVerifying KubeArmor functionality (this may take upto a minute) ...")
-	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+
 	defer cancel()
 
 	for {
@@ -210,7 +211,7 @@ func checkTerminatingPods(c *k8s.Client) int {
 
 // K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
-	animation = o.Animation
+	verify = o.Verify
 	var env string
 	if o.Env.Auto {
 		env = k8s.AutoDetectEnvironment(c)
@@ -353,8 +354,9 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	if o.Block == "all" || strings.Contains(o.Block, "capabilities") {
 		daemonset.Spec.Template.Spec.Containers[0].Args = append(daemonset.Spec.Template.Spec.Containers[0].Args, "-defaultCapabilitiesPosture=block")
 	}
-	s := strings.Join(daemonset.Spec.Template.Spec.Containers[0].Args, " ")
-	printMessage("🛡\tKubeArmor DaemonSet - Init "+daemonset.Spec.Template.Spec.InitContainers[0].Image+", Container "+daemonset.Spec.Template.Spec.Containers[0].Image+s+"  ", true)
+
+	args := strings.Join(daemonset.Spec.Template.Spec.Containers[0].Args, " ")
+	printMessage("🛡\tKubeArmor DaemonSet - Init "+daemonset.Spec.Template.Spec.InitContainers[0].Image+", Container "+daemonset.Spec.Template.Spec.Containers[0].Image+"  "+args+"  ", true)
 
 	if !o.Save {
 		if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
@@ -369,7 +371,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	caCert, tlsCrt, tlsKey, err := GeneratePki(o.Namespace, deployments.KubeArmorControllerWebhookServiceName)
 	if err != nil {
-		printMessage("C\tldn't generate TLS secret  ", false)
+		printMessage("Couldn't generate TLS secret  ", false)
 		return err
 	}
 	kubearmorControllerTLSSecret := deployments.GetKubeArmorControllerTLSSecret(o.Namespace, caCert.String(), tlsCrt.String(), tlsKey.String())
@@ -561,7 +563,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		printMessage("🤩\tKubeArmor manifest file saved to \033[1m"+s3+"\033[0m", false)
 
 	}
-	if animation && !o.Save {
+	if verify && !o.Save {
 		checkPods(c, o)
 	}
 	return nil
@@ -616,7 +618,7 @@ func removeAnnotations(c *k8s.Client) {
 
 // K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
-	animation = o.Animation
+	verify = o.Verify
 
 	fmt.Print("❌   KubeArmor Deployments ...\n")
 	kaDeployments, _ := c.K8sClientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
@@ -787,7 +789,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 
 		removeAnnotations(c)
 	}
-	if animation {
+	if verify {
 		checkTerminatingPods(c)
 	}
 	return nil
