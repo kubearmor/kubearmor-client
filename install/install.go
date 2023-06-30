@@ -617,6 +617,15 @@ func removeAnnotations(c *k8s.Client) {
 // K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	animation = o.Animation
+
+	fmt.Print("❌   KubeArmor Deployments ...\n")
+	kaDeployments, _ := c.K8sClientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	for _, d := range kaDeployments.Items {
+		if err := c.K8sClientset.AppsV1().Deployments(d.Namespace).Delete(context.Background(), d.Name, metav1.DeleteOptions{}); err != nil {
+			fmt.Printf("ℹ️   Error while uninstalling KubeArmor Deployment %s : %s\n", d.Name, err.Error())
+		}
+	}
+
 	fmt.Print("❌   Mutation Admission Registration ...\n")
 	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerMutatingWebhookConfiguration, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -641,14 +650,6 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		fmt.Print("ℹ️   KubeArmor Controller Metrics Service not found ...\n")
 	}
 
-	fmt.Print("❌   KubeArmor Controller Deployment ...\n")
-	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerDeploymentName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   KubeArmor Controller Deployment not found ...\n")
-	}
-
 	fmt.Print("❌   KubeArmor Controller Service Account ...\n")
 	if err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerServiceAccountName, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
@@ -671,8 +672,8 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	}
 
 	if err := c.K8sClientset.RbacV1().Roles(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerLeaderElectionRoleName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not foundists") {
-			fmt.Print("Error while uninstalKubeArmor Controller Roleling \n")
+		if !strings.Contains(err.Error(), "not found") {
+			fmt.Print("Error while uninstalling KubeArmor Controller Role\n")
 		}
 	}
 
@@ -749,14 +750,6 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 			return err
 		}
 		fmt.Print("ℹ️   KubeArmor Relay Service not found ...\n")
-	}
-
-	fmt.Print("❌   KubeArmor Relay Deployment ...\n")
-	if err := c.K8sClientset.AppsV1().Deployments(o.Namespace).Delete(context.Background(), relayDeploymentName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   KubeArmor Relay Deployment not found ...\n")
 	}
 
 	fmt.Print("❌   KubeArmor DaemonSet ...\n")
