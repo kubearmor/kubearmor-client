@@ -18,7 +18,6 @@ var installCmd = &cobra.Command{
 	Short: "Install KubeArmor in a Kubernetes Cluster",
 	Long:  `Install KubeArmor in a Kubernetes Clusters`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		installOptions.Animation = true
 		if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
 			return fmt.Errorf("error in checking environment option: %v", err)
 		}
@@ -40,6 +39,7 @@ func init() {
 	installCmd.Flags().StringVarP(&installOptions.Block, "block", "b", "", "Kubearmor Block Posture Context [all,file,network,capabilities]")
 	installCmd.Flags().StringVarP(&installOptions.Visibility, "viz", "", "", "Kubearmor Telemetry Visibility [process,file,network,none]")
 	installCmd.Flags().BoolVar(&installOptions.Save, "save", false, "Save KubeArmor Manifest ")
+	installCmd.Flags().BoolVar(&installOptions.Verify, "verify", true, "Verify whether all KubeArmor resources are created, running and also probes whether KubeArmor has armored the cluster or not")
 	installCmd.Flags().BoolVar(&installOptions.Local, "local", false, "Use Local KubeArmor Images (sets ImagePullPolicy to 'IfNotPresent') ")
 	installCmd.Flags().StringVarP(&installOptions.Env.Environment, "env", "e", "", "Supported KubeArmor Environment [k3s,microK8s,minikube,gke,bottlerocket,eks,docker,oke,generic]")
 
