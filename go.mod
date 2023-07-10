@@ -43,7 +43,8 @@ require (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230605060121-abe7d0b9770d
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277
+	github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/charmbracelet/bubbles v0.15.0
 	github.com/charmbracelet/bubbletea v0.23.2
@@ -53,19 +54,19 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230626102117-7ce0284b7dc1
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230704182508-0dd8f8bb9507
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230626102117-7ce0284b7dc1
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230626060245-4f5b8ac4f298
 	github.com/kyverno/kyverno v1.9.2
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
-	github.com/onsi/ginkgo/v2 v2.9.4
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/ginkgo/v2 v2.9.5
+	github.com/onsi/gomega v1.27.7
 	golang.org/x/text v0.10.0
 	k8s.io/api v0.27.3
 	k8s.io/apiextensions-apiserver v0.27.3
 	k8s.io/apimachinery v0.27.3
 	k8s.io/cli-runtime v0.27.1
-	k8s.io/client-go v0.27.1
+	k8s.io/client-go v0.27.2
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 )
 
@@ -328,12 +329,12 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/component-base v0.27.1 // indirect
+	k8s.io/component-base v0.27.2 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/kubectl v0.27.1 // indirect
 	k8s.io/pod-security-admission v0.27.1 // indirect
-	sigs.k8s.io/controller-runtime v0.14.6 // indirect
+	sigs.k8s.io/controller-runtime v0.15.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.2 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
