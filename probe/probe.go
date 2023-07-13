@@ -525,6 +525,7 @@ func getPostureData(probeData []KubeArmorProbeData) map[string]string {
 		postureData["filePosture"] = probeData[0].ContainerDefaultPosture.FileAction
 		postureData["capabilitiesPosture"] = probeData[0].ContainerDefaultPosture.CapabilitiesAction
 		postureData["networkPosture"] = probeData[0].ContainerDefaultPosture.NetworkAction
+		postureData["visibility"] = probeData[0].HostVisibility
 	}
 
 	return postureData
@@ -590,6 +591,7 @@ func getNsSecurityPostureAndVisibility(c *k8s.Client, postureData map[string]str
 		filePosture := postureData["filePosture"]
 		capabilityPosture := postureData["capabilitiesPosture"]
 		networkPosture := postureData["networkPosture"]
+		visibility := postureData["visibility"]
 
 		if len(ns.Annotations["kubearmor-file-posture"]) > 0 {
 			filePosture = ns.Annotations["kubearmor-file-posture"]
@@ -603,14 +605,18 @@ func getNsSecurityPostureAndVisibility(c *k8s.Client, postureData map[string]str
 			networkPosture = ns.Annotations["kubearmor-network-posture"]
 		}
 
+		if len(ns.Annotations["kubearmor-visibility"]) > 0 {
+			visibility = ns.Annotations["kubearmor-visibility"]
+		}
+
 		mp[ns.Name] = &NamespaceData{
 			NsDefaultPosture:   tp.DefaultPosture{FileAction: filePosture, CapabilitiesAction: capabilityPosture, NetworkAction: networkPosture},
-			NsVisibilityString: ns.Annotations["kubearmor-visibility"],
+			NsVisibilityString: visibility,
 			NsVisibility: Visibility{
-				Process:      strings.Contains(ns.Annotations["kubearmor-visibility"], "process"),
-				File:         strings.Contains(ns.Annotations["kubearmor-visibility"], "file"),
-				Network:      strings.Contains(ns.Annotations["kubearmor-visibility"], "network"),
-				Capabilities: strings.Contains(ns.Annotations["kubearmor-visibility"], "capabilities"),
+				Process:      strings.Contains(visibility, "process"),
+				File:         strings.Contains(visibility, "file"),
+				Network:      strings.Contains(visibility, "network"),
+				Capabilities: strings.Contains(visibility, "capabilities"),
 			},
 			NsPostureString: "File(" + filePosture + "), Capabilities(" + capabilityPosture + "), Network (" + networkPosture + ")",
 		}
