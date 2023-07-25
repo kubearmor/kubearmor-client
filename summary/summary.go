@@ -40,8 +40,8 @@ type Options struct {
 }
 
 // GetSummary on pods
-func GetSummary(c *k8s.Client, o Options) ([]string, error) {
-	var str []string
+func GetSummary(c *k8s.Client, o Options) ([]*opb.Response, error) {
+	var jsonObs []*opb.Response
 	gRPC := ""
 	targetSvc := "discovery-engine"
 
@@ -87,12 +87,9 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 			DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
 		}
 
-		sumstr := ""
 		if o.Output == "json" {
-			arr, _ := json.MarshalIndent(sumResp, "", "    ")
-			sumstr = fmt.Sprintf("%s\n", string(arr))
-			str = append(str, sumstr)
-			return str, nil
+			jsonObs = append(jsonObs, sumResp)
+			return jsonObs, nil
 		}
 
 	} else {
@@ -115,31 +112,29 @@ func GetSummary(c *k8s.Client, o Options) ([]string, error) {
 				DisplaySummaryOutput(sumResp, o.RevDNSLookup, o.Type)
 			}
 
-			sumstr := ""
 			if o.Output == "json" {
-				arr, _ := json.MarshalIndent(sumResp, "", "    ")
-				sumstr = fmt.Sprintf("%s\n", string(arr))
-				str = append(str, sumstr)
+				jsonObs = append(jsonObs, sumResp)
 			}
 		}
 		if o.Output == "json" {
-			return str, nil
+			return jsonObs, nil
 		}
 	}
-	return str, nil
+	return jsonObs, nil
 }
 
 // Summary - printing the summary output
 func Summary(c *k8s.Client, o Options) error {
-
 	summary, err := GetSummary(c, o)
 	if err != nil {
 		return err
 	}
-	for _, sum := range summary {
-		if o.Output == "json" {
-			fmt.Printf("%s", sum)
+	if o.Output == "json" {
+		summaryJson, err := json.MarshalIndent(summary, "", "    ")
+		if err != nil {
+			return err
 		}
+		fmt.Printf("%s", string(summaryJson))
 	}
 	return nil
 }
