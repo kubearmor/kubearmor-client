@@ -6,10 +6,7 @@ package profileclient
 
 import (
 	"fmt"
-	"log"
-	"strings"
-	"time"
-
+	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,6 +15,10 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
+	"log"
+	"os"
+	"strings"
+	"time"
 )
 
 // Column keys
@@ -61,6 +62,8 @@ type Options struct {
 	Namespace string
 	Pod       string
 	GRPC      string
+	Container string
+	limit     uint32
 }
 
 // Model for main Bubble Tea
@@ -125,7 +128,7 @@ func generateColumns(Operation string) []table.Column {
 
 // Init calls initial functions if needed
 func (m Model) Init() tea.Cmd {
-	go profile.GetLogs(o1.GRPC)
+	go profile.GetLogs(o1.GRPC, o1.limit)
 	return tea.Batch(
 		waitForActivity(),
 	)
@@ -296,11 +299,12 @@ func (m Model) View() string {
 
 // Profile Row Data to display
 type Profile struct {
-	Namespace string
-	PodName   string
-	Process   string
-	Resource  string
-	Result    string
+	Namespace     string
+	ContainerName string
+	Process       string
+	Resource      string
+	Result        string
+	Data          string
 }
 
 // Frequency and Timestamp data for another map
@@ -334,32 +338,45 @@ func isLaterTimestamp(timestamp1, timestamp2 string) bool {
 	return t1.After(t2)
 }
 
-func mergeFrequencies(inputMap map[Profile]*Frequency) map[Profile]*Frequency {
+// AggregateSummary used to aggregate summary data for a less cluttered view of file and process data
+func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Profile]*Frequency {
 	outputMap := make(map[Profile]*Frequency)
-	for profile, count := range inputMap {
-		// Split the resource path using '/'
-		parts := strings.Split(profile.Resource, "/")
-
-		// Reconstruct the common prefix
-		if len(parts) > 1 {
-			profile.Resource = "/" + parts[1]
-		}
-
-		if existingFreq, ok := outputMap[profile]; ok {
-			// If the profile already exists, update the frequency and timestamp if needed
-			existingFreq.freq += count.freq
-
-			if isLaterTimestamp(count.time, existingFreq.time) {
-				existingFreq.time = count.time
-			}
+	var fileArr []string
+	fileSumMap := make(map[Profile]*Frequency)
+	updatedSumMap := make(map[Profile]*Frequency)
+	if Operation == "Network" || Operation == "Syscall" {
+		return inputMap
+	}
+	for prof, count := range inputMap {
+		if Operation == "File" || Operation == "Process" {
+			fileArr = append(fileArr, prof.Resource)
+			fileSumMap[prof] = count
 		} else {
-			// If the profile does not exist, add it to the output map
-			outputMap[profile] = &Frequency{
-				freq: count.freq,
-				time: count.time,
-			}
+			updatedSumMap[prof] = count
 		}
 	}
+	inputMap = updatedSumMap
+	aggregatedPaths := common.AggregatePaths(fileArr)
+	for summary, countTime := range fileSumMap {
+		for _, path := range aggregatedPaths {
+			if strings.HasPrefix(summary.Resource, path.Path) && (len(summary.Resource) == len(path.Path) || summary.Resource[len(strings.TrimSuffix(path.Path, "/"))] == '/') {
+				summary.Resource = path.Path
+				break
+			}
+		}
+		if existingFreq, ok := outputMap[summary]; ok {
+			// If the prof already exists, update the frequency and timestamp if needed
+			existingFreq.freq += countTime.freq
+
+			if isLaterTimestamp(countTime.time, existingFreq.time) {
+				existingFreq.time = countTime.time
+			}
+			outputMap[summary] = existingFreq
+		} else {
+			outputMap[summary] = countTime
+		}
+	}
+
 	return outputMap
 }
 
@@ -368,33 +385,61 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
+		if Operation == "File" || Operation == "Process" || Operation == "Network" {
+			if entry.Operation == Operation {
+				if (entry.NamespaceName == o1.Namespace) ||
+					(entry.PodName == o1.Pod) ||
+					(len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
 
-		if (entry.Operation == Operation && entry.NamespaceName == o1.Namespace) ||
-			(entry.Operation == Operation && entry.PodName == o1.Pod) ||
-			(entry.Operation == Operation && len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
+					p := Profile{
+						Namespace:     entry.NamespaceName,
+						ContainerName: entry.ContainerName,
+						Process:       entry.ProcessName,
+						Resource:      entry.Resource,
+						Result:        entry.Result,
+					}
+					f := &Frequency{
+						time: entry.UpdatedTime,
+					}
+					w[p] = f
+					m[p]++
+					w[p].freq = m[p]
 
-			// res := getTopMostFolder(entry.Resource)
-			p := Profile{
-				Namespace: entry.NamespaceName,
-				PodName:   entry.PodName,
-				Process:   entry.ProcessName,
-				Resource:  entry.Resource,
-				Result:    entry.Result,
+				}
 			}
-			f := &Frequency{
-				time: entry.UpdatedTime,
+		} else if Operation == "Syscall" {
+			if entry.Operation == Operation {
+				if (entry.NamespaceName == o1.Namespace) ||
+					(entry.PodName == o1.Pod) ||
+					((entry.NamespaceName == o1.Namespace) && (entry.PodName == o1.Pod)) ||
+					(entry.ContainerName == o1.Container) ||
+					(len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
+
+					p := Profile{
+						Namespace:     entry.NamespaceName,
+						ContainerName: entry.ContainerName,
+						Process:       entry.ProcessName,
+						Resource:      entry.Data,
+						Result:        entry.Result,
+					}
+					f := &Frequency{
+						time: entry.UpdatedTime,
+					}
+					w[p] = f
+					m[p]++
+					w[p].freq = m[p]
+
+				}
 			}
-			w[p] = f
-			m[p]++
-			w[p].freq = m[p]
 		}
+
 	}
 
-	finalmap := mergeFrequencies(w)
+	finalmap := AggregateSummary(w, Operation)
 	for r, frequency := range finalmap {
 		row := table.NewRow(table.RowData{
 			ColumnNamespace:   r.Namespace,
-			ColumnPodname:     r.PodName,
+			ColumnPodname:     r.ContainerName,
 			ColumnProcessName: r.Process,
 			ColumnResource:    r.Resource,
 			ColumnResult:      r.Result,
@@ -408,10 +453,13 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 
 // Start entire TUI
 func Start(o Options) {
-	// os.Stderr = nil
-	o1.Namespace = o.Namespace
-	o1.Pod = o.Pod
-	o1.GRPC = o.GRPC
+	os.Stderr = nil
+	o1 = Options{
+		Namespace: o.Namespace,
+		Pod:       o.Pod,
+		GRPC:      o.GRPC,
+		Container: o.Container,
+	}
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatal(err)
