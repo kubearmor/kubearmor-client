@@ -31,5 +31,5 @@ func init() {
 	profilecmd.Flags().StringVar(&logOptions.Resource, "resource", "", "command used by the user")
 	profilecmd.Flags().StringVar(&logOptions.Source, "source", "", "binary used by the system ")
 	profilecmd.Flags().Uint32Var(&logOptions.Limit, "limit", 0, "number of logs you want to see")
-	profilecmd.Flags().StringSliceVarP(&logOptions.Selector, "labels", "l", []string{}, "use the labels to select the endpoints")
+	//profilecmd.Flags().StringSliceVarP(&logOptions.Selector, "labels", "l", []string{}, "use the labels to select the endpoints")
 }

@@ -353,7 +353,7 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 	}
 
 	if o.PodName != "" {
-		pn, ok := res["PodName"].(string)
+		pn, ok := res["ContainerName"].(string)
 		if !ok {
 			return
 		}
@@ -411,7 +411,7 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 			"ClusterName",
 			"HostName",
 			"NamespaceName",
-			"PodName",
+			"ContainerName",
 			"Labels",
 			"ContainerName",
 			"ContainerID",
