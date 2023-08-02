@@ -184,6 +184,7 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 		res, err := fd.msgStream.Recv()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to receive a message (%s)\n", err.Error())
+			UnblockSignal = err
 			break
 		}
 
@@ -237,18 +238,18 @@ func (fd *Feeder) WatchAlerts(o Options) error {
 
 		}
 		Limitchan <- true
-
-	} else {
-		for fd.Running {
-			res, err := fd.alertStream.Recv()
-			if err != nil {
-				break
-			}
-
-			t, _ := json.Marshal(res)
-			WatchTelemetryHelper(t, "Alert", o)
-
+		return nil
+	}
+	for fd.Running {
+		res, err := fd.alertStream.Recv()
+		if err != nil {
+			UnblockSignal = err
+			break
 		}
+
+		t, _ := json.Marshal(res)
+		WatchTelemetryHelper(t, "Alert", o)
+
 	}
 
 	fmt.Fprintln(os.Stderr, "Stopped WatchAlerts")
@@ -273,17 +274,17 @@ func (fd *Feeder) WatchLogs(o Options) error {
 
 		}
 		Limitchan <- true
-	} else {
-		for fd.Running {
-			res, err := fd.logStream.Recv()
-			if err != nil {
-				break
-			}
-
-			t, _ := json.Marshal(res)
-			WatchTelemetryHelper(t, "Log", o)
-
+		return nil
+	}
+	for fd.Running {
+		res, err := fd.logStream.Recv()
+		if err != nil {
+			UnblockSignal = err
+			break
 		}
+
+		t, _ := json.Marshal(res)
+		WatchTelemetryHelper(t, "Log", o)
 	}
 
 	fmt.Fprintln(os.Stderr, "Stopped WatchLogs")
