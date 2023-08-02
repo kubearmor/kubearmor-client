@@ -54,7 +54,9 @@ type Options struct {
 // StopChan Channel
 var StopChan chan struct{}
 var sigChan chan os.Signal
-var unblockSignal = false
+
+// UnblockSignal is a flag to check whether the Watch* APIs have exited or signal has rcvd
+var UnblockSignal error
 var matchLabels = map[string]string{"kubearmor-app": "kubearmor-relay"}
 var port int64 = 32767
 
@@ -182,22 +184,21 @@ func StartObserver(c *k8s.Client, o Options) error {
 		}
 	}
 
+	ctrlc := false
 	if o.Limit != 0 {
+		<-Limitchan
 		if o.LogFilter == "all" {
-			<-Limitchan
-			<-Limitchan
-		} else {
 			<-Limitchan
 		}
 	} else {
 		// listen for interrupt signals
-		unblockSignal = false
+		UnblockSignal = nil
 		sigChan = GetOSSigChannel()
-		for !unblockSignal {
+		for UnblockSignal == nil && !ctrlc {
 			time.Sleep(50 * time.Millisecond)
 			select {
 			case <-sigChan:
-				unblockSignal = true
+				ctrlc = true
 			default:
 			}
 		}
@@ -208,10 +209,9 @@ func StartObserver(c *k8s.Client, o Options) error {
 	logClient.Running = false
 
 	// destroy the client
-	return logClient.DestroyClient()
-}
-
-// StopObserver unblocks signal
-func StopObserver() {
-	unblockSignal = true
+	_ = logClient.DestroyClient()
+	if ctrlc {
+		return nil
+	}
+	return UnblockSignal
 }
