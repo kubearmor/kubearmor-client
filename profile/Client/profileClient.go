@@ -5,6 +5,7 @@
 package profileclient
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
@@ -31,6 +32,8 @@ const (
 	ColumnCount       = "Count"
 	ColumnTimestamp   = "Timestamp"
 )
+
+var errbuf bytes.Buffer
 
 // session state for switching views
 type sessionState uint
@@ -128,7 +131,6 @@ func generateColumns(Operation string) []table.Column {
 
 // Init calls initial functions if needed
 func (m Model) Init() tea.Cmd {
-	go profile.GetLogs(o1.GRPC, o1.limit)
 	return tea.Batch(
 		waitForActivity(),
 	)
@@ -313,15 +315,6 @@ type Frequency struct {
 	time string
 }
 
-//	func getTopMostFolder(path string) string {
-//		re := regexp.MustCompile(`^/([^/]+)`)
-//		match := re.FindStringSubmatch(path)
-//		if len(match) == 2 {
-//			return "/" + match[1]
-//		}
-//		return path
-//	}
-
 func isLaterTimestamp(timestamp1, timestamp2 string) bool {
 	t1, err := time.Parse(time.RFC3339, timestamp1)
 	if err != nil {
@@ -385,54 +378,40 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
-		if Operation == "File" || Operation == "Process" || Operation == "Network" {
-			if entry.Operation == Operation {
-				if (entry.NamespaceName == o1.Namespace) ||
-					(entry.PodName == o1.Pod) ||
-					(len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
 
-					p := Profile{
-						Namespace:     entry.NamespaceName,
-						ContainerName: entry.ContainerName,
-						Process:       entry.ProcessName,
-						Resource:      entry.Resource,
-						Result:        entry.Result,
-					}
-					f := &Frequency{
-						time: entry.UpdatedTime,
-					}
-					w[p] = f
-					m[p]++
-					w[p].freq = m[p]
+		if entry.Operation == Operation {
+			if (entry.NamespaceName == o1.Namespace) ||
+				(entry.PodName == o1.Pod) ||
+				(len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
+				var p Profile
 
-				}
-			}
-		} else if Operation == "Syscall" {
-			if entry.Operation == Operation {
-				if (entry.NamespaceName == o1.Namespace) ||
-					(entry.PodName == o1.Pod) ||
-					((entry.NamespaceName == o1.Namespace) && (entry.PodName == o1.Pod)) ||
-					(entry.ContainerName == o1.Container) ||
-					(len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
-
-					p := Profile{
+				if entry.Operation == "Syscall" {
+					p = Profile{
 						Namespace:     entry.NamespaceName,
 						ContainerName: entry.ContainerName,
 						Process:       entry.ProcessName,
 						Resource:      entry.Data,
 						Result:        entry.Result,
 					}
-					f := &Frequency{
-						time: entry.UpdatedTime,
+				} else {
+					p = Profile{
+						Namespace:     entry.NamespaceName,
+						ContainerName: entry.ContainerName,
+						Process:       entry.ProcessName,
+						Resource:      entry.Resource,
+						Result:        entry.Result,
 					}
-					w[p] = f
-					m[p]++
-					w[p].freq = m[p]
-
 				}
+
+				f := &Frequency{
+					time: entry.UpdatedTime,
+				}
+				w[p] = f
+				m[p]++
+				w[p].freq = m[p]
+
 			}
 		}
-
 	}
 
 	finalmap := AggregateSummary(w, Operation)
@@ -453,15 +432,24 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 
 // Start entire TUI
 func Start(o Options) {
-	os.Stderr = nil
 	o1 = Options{
 		Namespace: o.Namespace,
 		Pod:       o.Pod,
 		GRPC:      o.GRPC,
 		Container: o.Container,
 	}
+
+	go func() {
+		err := profile.GetLogs(o1.GRPC, o1.limit)
+		if err != nil {
+			log.Println(err)
+			//p.Quit()
+		}
+	}()
+	os.Stderr = nil
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatal(err)
 	}
+
 }
