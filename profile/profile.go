@@ -6,14 +6,12 @@ package profile
 
 import (
 	"errors"
-	"sync"
-
 	pb "github.com/kubearmor/KubeArmor/protobuf"
-
 	"github.com/kubearmor/kubearmor-client/k8s"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
+	"sync"
 )
 
 var eventChan chan klog.EventInfo
@@ -26,8 +24,8 @@ var Telemetry []pb.Log
 var TelMutex sync.RWMutex
 
 // GetLogs to fetch logs
-func GetLogs(grpc string, limit uint32) error {
-	err := KarmorProfileStart("system", grpc, limit)
+func GetLogs(grpc string) error {
+	err := KarmorProfileStart("system", grpc)
 	if err != nil {
 		return err
 	}
@@ -56,28 +54,26 @@ func GetLogs(grpc string, limit uint32) error {
 }
 
 // KarmorProfileStart starts observer
-func KarmorProfileStart(logFilter string, grpc string, limit uint32) error {
+func KarmorProfileStart(logFilter string, grpc string) error {
 	if eventChan == nil {
 		eventChan = make(chan klog.EventInfo)
 	}
-	var err error
-	client, err = k8s.ConnectK8sClient()
+	client, err := k8s.ConnectK8sClient()
 	if err != nil {
-
 		return err
 	}
+	//errs := make(chan error, 1)
 	go func() {
 		err = klog.StartObserver(client, klog.Options{
 			LogFilter: logFilter,
 			MsgPath:   "none",
 			EventChan: eventChan,
 			GRPC:      grpc,
-			Limit:     limit,
 		})
 		if err != nil {
-			return
+			log.Errorf("failed to start observer. Error=%s", err.Error())
 		}
-
 	}()
+
 	return err
 }

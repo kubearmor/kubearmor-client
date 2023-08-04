@@ -66,7 +66,6 @@ type Options struct {
 	Pod       string
 	GRPC      string
 	Container string
-	limit     uint32
 }
 
 // Model for main Bubble Tea
@@ -438,14 +437,7 @@ func Start(o Options) {
 		GRPC:      o.GRPC,
 		Container: o.Container,
 	}
-
-	go func() {
-		err := profile.GetLogs(o1.GRPC, o1.limit)
-		if err != nil {
-			log.Println(err)
-			//p.Quit()
-		}
-	}()
+	go profile.GetLogs(o1.GRPC)
 	os.Stderr = nil
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
