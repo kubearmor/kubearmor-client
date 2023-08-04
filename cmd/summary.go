@@ -29,7 +29,7 @@ func init() {
 	summaryCmd.Flags().StringVar(&summaryOptions.GRPC, "gRPC", "", "gRPC server information")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Labels, "labels", "l", "", "Labels")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Namespace, "namespace", "n", "", "Namespace")
-	summaryCmd.Flags().StringVarP(&summaryOptions.PodName, "pod", "p", "", "ContainerName")
+	summaryCmd.Flags().StringVarP(&summaryOptions.PodName, "pod", "p", "", "PodName")
 	summaryCmd.Flags().StringVarP(&summaryOptions.Type, "type", "t", summary.DefaultReqType, "Summary filter type : process|file|network ")
 	summaryCmd.Flags().StringVar(&summaryOptions.ClusterName, "cluster", "", "Cluster name")
 	summaryCmd.Flags().StringVar(&summaryOptions.ContainerName, "container", "", "Container name")
