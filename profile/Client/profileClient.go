@@ -16,7 +16,7 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"time"
@@ -381,7 +381,8 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 		if entry.Operation == Operation {
 			if (entry.NamespaceName == o1.Namespace) ||
 				(entry.PodName == o1.Pod) ||
-				(len(o1.Namespace) == 0 && len(o1.Pod) == 0) {
+				(entry.ContainerName == o1.Container) ||
+				(len(o1.Namespace) == 0 && len(o1.Pod) == 0 && len(o1.Container) == 0) {
 				var p Profile
 
 				if entry.Operation == "Syscall" {
@@ -437,11 +438,24 @@ func Start(o Options) {
 		GRPC:      o.GRPC,
 		Container: o.Container,
 	}
-	go profile.GetLogs(o1.GRPC)
-	os.Stderr = nil
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
+	go func() {
+		err := profile.GetLogs(o1.GRPC)
+		if err != nil {
+			p.Quit()
+			profile.ErrChan <- err
+		}
+	}()
+
+	os.Stderr = nil
 	if err := p.Start(); err != nil {
 		log.Fatal(err)
+	}
+	select {
+	case err := <-profile.ErrChan:
+		log.Errorf("failed to start observer. Error=%s", err.Error())
+	default:
+		break
 	}
 
 }
