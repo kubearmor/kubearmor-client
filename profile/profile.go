@@ -6,18 +6,18 @@ package profile
 
 import (
 	"errors"
-	"sync"
-
 	pb "github.com/kubearmor/KubeArmor/protobuf"
-
 	"github.com/kubearmor/kubearmor-client/k8s"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
+	"sync"
 )
 
 var eventChan chan klog.EventInfo
-var client *k8s.Client
+
+// ErrChan to make error channels from goroutines
+var ErrChan chan error
 
 // Telemetry to store incoming log events
 var Telemetry []pb.Log
@@ -27,64 +27,63 @@ var TelMutex sync.RWMutex
 
 // GetLogs to fetch logs
 func GetLogs(grpc string) error {
-	err := KarmorProfileStart("system", grpc)
-	if err != nil {
-		return err
-	}
+	errCh := KarmorProfileStart("system", grpc)
+	var err error
 	if eventChan == nil {
 		log.Error("event channel not set. Did you call KarmorQueueLog()?")
 		return errors.New("event channel not set")
 	}
 
 	for eventChan != nil {
-		evtin := <-eventChan
-		if evtin.Type == "Log" {
-			log := pb.Log{}
-			err := protojson.Unmarshal(evtin.Data, &log)
-			if err != nil {
-				return err
+		select {
+		case evtin := <-eventChan:
+			if evtin.Type == "Log" {
+				log := pb.Log{}
+				err := protojson.Unmarshal(evtin.Data, &log)
+				if err != nil {
+					return err
+				}
+				TelMutex.Lock()
+				Telemetry = append(Telemetry, log)
+				TelMutex.Unlock()
+			} else {
+				log.Errorf("UNKNOWN EVT type %s", evtin.Type)
 			}
-			TelMutex.Lock()
-			Telemetry = append(Telemetry, log)
-			TelMutex.Unlock()
-		} else {
-			log.Errorf("UNKNOWN EVT type %s", evtin.Type)
-		}
 		// }
+		case err := <-errCh:
+			return err
+		}
 	}
 	return err
 }
 
 // KarmorProfileStart starts observer
-func KarmorProfileStart(logFilter string, grpc string) error {
+func KarmorProfileStart(logFilter string, grpc string) <-chan error {
+	ErrChan = make(chan error, 1)
 	if eventChan == nil {
 		eventChan = make(chan klog.EventInfo)
 	}
-	var err error
-	client, err = k8s.ConnectK8sClient()
+	client, err := k8s.ConnectK8sClient()
 	if err != nil {
-
-		return err
+		ErrChan <- err
 	}
+
 	go func() {
-		// if len(grpc) != 0 {
+		//defer close(ErrChan)
 		err = klog.StartObserver(client, klog.Options{
 			LogFilter: logFilter,
 			MsgPath:   "none",
 			EventChan: eventChan,
 			GRPC:      grpc,
 		})
-		// } else {
-		// 	err = klog.StartObserver(client, klog.Options{
-		// 		LogFilter: logFilter,
-		// 		MsgPath:   "none",
-		// 		EventChan: eventChan,
-		// 	})
-		// }
-		if err != nil {
-			return
-		}
 
+		select {
+		case ErrChan <- err:
+			log.Errorf("failed to start observer. Error=%s", err.Error())
+		default:
+			break
+		}
 	}()
-	return err
+
+	return ErrChan
 }
