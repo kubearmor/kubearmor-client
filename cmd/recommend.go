@@ -5,11 +5,13 @@ package cmd
 
 import (
 	"github.com/kubearmor/kubearmor-client/recommend"
+	"github.com/kubearmor/kubearmor-client/recommend/common"
+	genericpolicies "github.com/kubearmor/kubearmor-client/recommend/engines/generic_policies"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var recommendOptions recommend.Options
+var recommendOptions common.Options
 
 // recommendCmd represents the recommend command
 var recommendCmd = &cobra.Command{
@@ -17,7 +19,7 @@ var recommendCmd = &cobra.Command{
 	Short: "Recommend Policies",
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := recommend.Recommend(client, recommendOptions); err != nil {
+		if err := recommend.Recommend(client, recommendOptions, genericpolicies.GenericPolicy{}); err != nil {
 			return err
 		}
 		return nil
@@ -29,11 +31,11 @@ var updateCmd = &cobra.Command{
 	Long:  "Updates the local cache of policy-templates ($HOME/.cache/karmor)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if _, err := recommend.DownloadAndUnzipRelease(); err != nil {
+		if _, err := genericpolicies.DownloadAndUnzipRelease(); err != nil {
 			return err
 		}
 		log.WithFields(log.Fields{
-			"Current Version": recommend.CurrentVersion,
+			"Current Version": genericpolicies.CurrentVersion,
 		}).Info("policy-templates updated")
 		return nil
 	},
@@ -45,10 +47,9 @@ func init() {
 
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Images, "image", "i", []string{}, "Container image list (comma separated)")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Labels, "labels", "l", []string{}, "User defined labels for policy (comma separated)")
-	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Policy, "policy", "p", recommend.DefaultPoliciesToBeRecommended, "Types of policy that can be recommended: KubeArmorPolicy|KyvernoPolicy (comma separated)")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Namespace, "namespace", "n", "", "User defined namespace value for policies")
 	recommendCmd.Flags().StringVarP(&recommendOptions.OutDir, "outdir", "o", "out", "output folder to write policies")
 	recommendCmd.Flags().StringVarP(&recommendOptions.ReportFile, "report", "r", "report.txt", "report file")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "tags (comma-separated) to apply. Eg. PCI-DSS, MITRE")
-	recommendCmd.Flags().StringVarP(&recommendOptions.Config, "config", "c", recommend.UserHome()+"/.docker/config.json", "absolute path to image registry configuration file")
+	recommendCmd.Flags().StringVarP(&recommendOptions.Config, "config", "c", genericpolicies.UserHome()+"/.docker/config.json", "absolute path to image registry configuration file")
 }

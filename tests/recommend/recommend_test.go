@@ -16,17 +16,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/recommend"
+	"github.com/kubearmor/kubearmor-client/recommend/common"
+	genericpolicies "github.com/kubearmor/kubearmor-client/recommend/engines/generic_policies"
+
 	. "github.com/onsi/gomega"
 )
 
-var testOptions recommend.Options
+var testOptions common.Options
 var err error
 
 var client *k8s.Client
 
 func compareData(file1, file2 string) bool {
 
-	var pol1, pol2 recommend.MatchSpec
+	var pol1, pol2 common.MatchSpec
 	data1, err := os.ReadFile(filepath.Clean(file1))
 	if err != nil {
 		return false
@@ -74,7 +77,7 @@ var _ = Describe("karmor", func() {
 	})
 
 	AfterEach(func() {
-		testOptions = recommend.Options{}
+		testOptions = common.Options{}
 	})
 
 	Describe("recommend", func() {
@@ -83,7 +86,7 @@ var _ = Describe("karmor", func() {
 
 			It("should fetch the latest policy-template release and modify the rule under ~/.cache/karmor/", func() {
 				//os.MkdirAll(testOptions.OutDir, 0777)
-				_, err := recommend.DownloadAndUnzipRelease()
+				_, err := genericpolicies.DownloadAndUnzipRelease()
 				Expect(err).To(BeNil())
 				files, err := os.ReadDir(fmt.Sprintf("%s/.cache/karmor", os.Getenv("HOME")))
 				Expect(err).To(BeNil())
@@ -97,7 +100,7 @@ var _ = Describe("karmor", func() {
 			count := 0
 			It("should fetch the ubuntu:18.04 image and create a directory `ubuntu-18-04` under `out` folder", func() {
 				testOptions.Images = []string{"ubuntu:18.04"}
-				err = recommend.Recommend(client, testOptions)
+				err = recommend.Recommend(client, testOptions, genericpolicies.GenericPolicy{})
 				Expect(err).To(BeNil())
 				files, err = os.ReadDir(fmt.Sprintf("%s/ubuntu-18-04", testOptions.OutDir))
 				Expect(len(files)).To(BeNumerically(">=", 1))
@@ -127,7 +130,7 @@ var _ = Describe("karmor", func() {
 			It("should fetch the ubuntu:18.04 image and create a directory `ubuntu-18-04` under `ubuntu-test` folder", func() {
 				testOptions.OutDir = "ubuntu-test"
 				testOptions.Images = []string{"ubuntu:18.04"}
-				err = recommend.Recommend(client, testOptions)
+				err = recommend.Recommend(client, testOptions, genericpolicies.GenericPolicy{})
 				Expect(err).To(BeNil())
 				files, err = os.ReadDir(fmt.Sprintf("%s/ubuntu-18-04", testOptions.OutDir))
 				Expect(len(files)).To(BeNumerically(">=", 1))
@@ -157,7 +160,7 @@ var _ = Describe("karmor", func() {
 			It("should fetch the image and create a folder wordpress-mysql-wordpress under `out` directory", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
-				err = recommend.Recommend(client, testOptions)
+				err = recommend.Recommend(client, testOptions, genericpolicies.GenericPolicy{})
 				Expect(err).To(BeNil())
 				files, err = os.ReadDir(fmt.Sprintf("%s/wordpress-mysql-wordpress", testOptions.OutDir))
 				Expect(len(files)).To(BeNumerically(">=", 1))
@@ -189,7 +192,7 @@ var _ = Describe("karmor", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				testOptions.OutDir = "wordpress-test"
-				err = recommend.Recommend(client, testOptions)
+				err = recommend.Recommend(client, testOptions, genericpolicies.GenericPolicy{})
 				Expect(err).To(BeNil())
 				files, err = os.ReadDir(fmt.Sprintf("%s/wordpress-mysql-wordpress", testOptions.OutDir))
 				Expect(len(files)).To(BeNumerically(">=", 1))
