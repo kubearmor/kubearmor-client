@@ -1,6 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 Authors of KubeArmor
-
+// Package recommend provides policies by policy generators
 package recommend
 
 import (
@@ -13,34 +11,18 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/recommend/common"
+	"github.com/kubearmor/kubearmor-client/recommend/engines"
+	"github.com/kubearmor/kubearmor-client/recommend/image"
+	"github.com/kubearmor/kubearmor-client/recommend/registry"
+	"github.com/kubearmor/kubearmor-client/recommend/report"
+	"sigs.k8s.io/yaml"
+
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DefaultPoliciesToBeRecommended are the default policies to be recommended
-var DefaultPoliciesToBeRecommended = []string{ /*KyvernoPolicy, */ KubeArmorPolicy}
-
-// KyvernoPolicy is alias for kyverno policy. The actual kind of Kyverno policy is 'Policy' but we use 'KyvernoPolicy'
-// to explicitly differentiate it from other policy types.
-var KyvernoPolicy = "KyvernoPolicy"
-
-// KubeArmorPolicy is alias for kubearmor policy
-var KubeArmorPolicy = "KubeArmorPolicy"
-
-// Options for karmor recommend
-type Options struct {
-	Images     []string
-	Labels     []string
-	Tags       []string
-	Policy     []string
-	Namespace  string
-	OutDir     string
-	ReportFile string
-	Config     string
-}
-
-// LabelMap is an alias for map[string]string
-type LabelMap = map[string]string
+var options common.Options
 
 // Deployment contains brief information about a k8s deployment
 type Deployment struct {
@@ -50,7 +32,35 @@ type Deployment struct {
 	Images    []string
 }
 
-var options Options
+// LabelMap is an alias for map[string]string
+type LabelMap = map[string]string
+
+func labelSplitter(r rune) bool {
+	return r == ':' || r == '='
+}
+
+func labelArrayToLabelMap(labels []string) LabelMap {
+	labelMap := LabelMap{}
+	for _, label := range labels {
+		kvPair := strings.FieldsFunc(label, labelSplitter)
+		if len(kvPair) != 2 {
+			continue
+		}
+		labelMap[kvPair[0]] = kvPair[1]
+	}
+	return labelMap
+}
+
+func matchLabels(filter, selector LabelMap) bool {
+	match := true
+	for k, v := range filter {
+		if selector[k] != v {
+			match = false
+			break
+		}
+	}
+	return match
+}
 
 func unique(s []string) []string {
 	inResult := make(map[string]bool)
@@ -83,7 +93,9 @@ func createOutDir(dir string) error {
 
 func finalReport() {
 	repFile := filepath.Clean(filepath.Join(options.OutDir, options.ReportFile))
-	_ = ReportRender(repFile)
+	if err := report.Render(repFile); err != nil {
+		log.WithError(err).Error("report render failed")
+	}
 	color.Green("output report in %s ...", repFile)
 	if strings.Contains(repFile, ".html") {
 		return
@@ -96,33 +108,39 @@ func finalReport() {
 	fmt.Println(string(data))
 }
 
-// Recommend handler for karmor cli tool
-func Recommend(c *k8s.Client, o Options) error {
-	deployments := []Deployment{}
-	var err error
-	if !isLatest() {
-		log.WithFields(log.Fields{
-			"Current Version": CurrentVersion,
-		}).Info("Found outdated version of policy-templates")
-		log.Info("Downloading latest version [", LatestVersion, "]")
-		if _, err := DownloadAndUnzipRelease(); err != nil {
-			return err
+func writePolicyFile(policMap map[string][]byte, msMap map[string]interface{}) {
+	for outFile, policy := range policMap {
+		f, err := os.OpenFile(filepath.Clean(outFile), os.O_RDWR, 0)
+		if err != nil {
+			log.WithError(err).Error(fmt.Sprintf("create file %s failed", outFile))
 		}
-		log.WithFields(log.Fields{
-			"Updated Version": LatestVersion,
-		}).Info("policy-templates updated")
-	}
 
-	if err = createOutDir(o.OutDir); err != nil {
-		return err
-	}
+		yamlPolicy, _ := yaml.JSONToYAML(policy)
+		if _, err = f.WriteString(string(yamlPolicy)); err != nil {
+			log.WithError(err).Error("WriteString failed")
+		}
+		if err = f.Sync(); err != nil {
+			log.WithError(err).Error("file sync failed")
+		}
+		if err = f.Close(); err != nil {
+			log.WithError(err).Error("file close failed")
+		}
+		if err = report.Record(msMap[outFile], outFile); err != nil {
+			log.WithError(err).Error("report record failed")
+		}
 
-	if o.ReportFile != "" {
-		ReportInit(o.ReportFile)
+		color.Green("created policy %s ...", outFile)
 	}
+}
+
+// Recommend handler for karmor cli tool
+func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engine) error {
+	var policyMap map[string][]byte
+	var msMap map[string]interface{}
+	var err error
+	deployments := []Deployment{}
 
 	labelMap := labelArrayToLabelMap(o.Labels)
-
 	if len(o.Images) == 0 {
 		// recommendation based on k8s manifest
 		dps, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{})
@@ -130,26 +148,20 @@ func Recommend(c *k8s.Client, o Options) error {
 			return err
 		}
 		for _, dp := range dps.Items {
-			if !matchLabels(labelMap, dp.Spec.Template.Labels) {
-				continue
-			}
-			images := []string{}
-			for _, container := range dp.Spec.Template.Spec.Containers {
-				images = append(images, container.Image)
-			}
 
-			deployments = append(deployments, Deployment{
-				Name:      dp.Name,
-				Namespace: dp.Namespace,
-				Labels:    dp.Spec.Template.Labels,
-				Images:    images,
-			})
-		}
-		if len(deployments) == 0 {
-			log.WithFields(log.Fields{
-				"namespace": o.Namespace,
-			}).Error("no k8s deployments found, hence nothing to recommend!")
-			return nil
+			if matchLabels(labelMap, dp.Spec.Template.Labels) {
+				images := []string{}
+				for _, container := range dp.Spec.Template.Spec.Containers {
+					images = append(images, container.Image)
+				}
+
+				deployments = append(deployments, Deployment{
+					Name:      dp.Name,
+					Namespace: dp.Namespace,
+					Labels:    dp.Spec.Template.Labels,
+					Images:    images,
+				})
+			}
 		}
 	} else {
 		deployments = append(deployments, Deployment{
@@ -159,79 +171,43 @@ func Recommend(c *k8s.Client, o Options) error {
 		})
 	}
 
-	// o.Images = unique(o.Images)
 	o.Tags = unique(o.Tags)
 	options = o
+	reg := registry.New(o.Config)
 
-	defer closeConnectionToDiscoveryEngine()
-	for _, dp := range deployments {
-		err := handleDeployment(dp, c)
-		if err != nil {
-			log.Error(err)
-		}
+	if err = createOutDir(o.OutDir); err != nil {
+		return err
 	}
 
-	recommendKyvernoPolicies := false
-	for _, policy := range options.Policy {
-		if policy == KyvernoPolicy {
-			recommendKyvernoPolicies = true
+	for _, gen := range policyGenerators {
+		if o.ReportFile != "" {
+			report.Init(o.ReportFile)
 		}
-	}
-
-	if recommendKyvernoPolicies {
-		err = recommendGenericAdmissionControllerPolicies()
-		if err != nil {
-			log.Error(err)
+		if err := gen.Init(); err != nil {
+			log.WithError(err).Error("policy generator init failed")
 		}
-	}
-
-	finalReport()
-	return nil
-}
-
-func handleDeployment(dp Deployment, c *k8s.Client) error {
-
-	var err error
-	for _, img := range dp.Images {
-		tempDir, err = os.MkdirTemp("", "karmor")
-		if err != nil {
-			log.WithError(err).Error("could not create temp dir")
+		for _, deployment := range deployments {
+			for _, i := range deployment.Images {
+				img := image.Info{
+					Name:       i,
+					Namespace:  deployment.Namespace,
+					Labels:     deployment.Labels,
+					Image:      i,
+					Deployment: deployment.Name,
+				}
+				reg.Analyze(&img)
+				if policyMap, msMap, err = gen.Scan(&img, o); err != nil {
+					log.WithError(err).Error("policy generator scan failed")
+				}
+				writePolicyFile(policyMap, msMap)
+				if err := report.SectEnd(); err != nil {
+					log.WithError(err).Error("report section end failed")
+					return err
+				}
+			}
 		}
-		err = imageHandler(dp.Namespace, dp.Name, dp.Labels, img, c)
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"image": img,
-			}).Error("could not handle container image")
-		}
-		_ = os.RemoveAll(tempDir)
+		finalReport()
 	}
 
 	return nil
-}
-
-func matchLabels(filter, selector LabelMap) bool {
-	match := true
-	for k, v := range filter {
-		if selector[k] != v {
-			match = false
-			break
-		}
-	}
-	return match
-}
-
-func labelArrayToLabelMap(labels []string) LabelMap {
-	labelMap := LabelMap{}
-	for _, label := range labels {
-		kvPair := strings.FieldsFunc(label, labelSplitter)
-		if len(kvPair) != 2 {
-			continue
-		}
-		labelMap[kvPair[0]] = kvPair[1]
-	}
-	return labelMap
-}
-
-func labelSplitter(r rune) bool {
-	return r == ':' || r == '='
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 Authors of KubeArmor
 
-// Package recommend package
-package recommend
+// Package report package
+package report
 
 import (
 	_ "embed" // need for embedding
@@ -13,10 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/accuknox/auto-policy-discovery/src/types"
+	"github.com/kubearmor/kubearmor-client/recommend/common"
+	"github.com/kubearmor/kubearmor-client/recommend/image"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 // HTMLReport Report in HTML format
@@ -73,9 +72,8 @@ type HeaderInfo struct {
 
 // SectionInfo Section information
 type SectionInfo struct {
-	HdrCols                          []Col
-	ImgInfo                          []Info
-	GenericAdmissionControllerPolicy bool
+	HdrCols []Col
+	ImgInfo []Info
 }
 
 // NewHTMLReport instantiation on new html report
@@ -105,7 +103,10 @@ func NewHTMLReport() HTMLReport {
 		ReportTitle: "Security Report",
 		DateTime:    time.Now().Format("02-Jan-2006 15:04:05"),
 	}
-	_ = header.Execute(str, hdri)
+	err = header.Execute(str, hdri)
+	if err != nil {
+		log.WithError(err).Error("failed to execute report header")
+	}
 	recordcnt := 0
 	return HTMLReport{
 		header:    header,
@@ -119,7 +120,7 @@ func NewHTMLReport() HTMLReport {
 }
 
 // Start of HTML report section
-func (r HTMLReport) Start(img *ImageInfo) error {
+func (r HTMLReport) Start(img *image.Info, outDir string, currentVersion string) error {
 	seci := SectionInfo{
 		HdrCols: []Col{
 			{Name: "POLICY"},
@@ -131,26 +132,14 @@ func (r HTMLReport) Start(img *ImageInfo) error {
 		ImgInfo: []Info{
 			{Key: "Container", Val: img.RepoTags[0]},
 			{Key: "OS/Arch/Distro", Val: img.OS + "/" + img.Arch + "/" + img.Distro},
-			{Key: "Output Directory", Val: img.getPolicyDir()},
-			{Key: "policy-template version", Val: CurrentVersion},
+			{Key: "Output Directory", Val: img.GetPolicyDir(outDir)},
+			{Key: "policy-template version", Val: currentVersion},
 		},
 	}
-	_ = r.section.Execute(r.outString, seci)
-	return nil
-}
-
-func (r HTMLReport) StartGenericAdmissionControllerPolicies() error {
-	secInfo := SectionInfo{
-		HdrCols: []Col{
-			{Name: "POLICY"},
-			{Name: "DESCRIPTION"},
-			{Name: "SEVERITY"},
-			{Name: "ACTION"},
-			{Name: "TAGS"},
-		},
-		GenericAdmissionControllerPolicy: true,
+	err := r.section.Execute(r.outString, seci)
+	if err != nil {
+		log.WithError(err)
 	}
-	_ = r.section.Execute(r.outString, secInfo)
 	return nil
 }
 
@@ -161,11 +150,11 @@ type RecordInfo struct {
 	Policy      string
 	Description string
 	PolicyType  string
-	Refs        []Ref
+	Refs        []common.Ref
 }
 
 // Record addition of new HTML table row
-func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
+func (r HTMLReport) Record(ms common.MatchSpec, policyName string) error {
 	*r.RecordCnt = *r.RecordCnt + 1
 	policy, err := os.ReadFile(filepath.Clean(policyName))
 	if err != nil {
@@ -186,34 +175,11 @@ func (r HTMLReport) Record(ms MatchSpec, policyName string) error {
 		Description: ms.Description.Detailed,
 		Refs:        ms.Description.Refs,
 	}
-	_ = r.record.Execute(r.outString, reci)
-	return nil
-}
-
-// RecordAdmissionController addition of new HTML table row for admission controller policies
-func (r HTMLReport) RecordAdmissionController(policyFilePath, action string, annotations map[string]string) error {
-	*r.RecordCnt = *r.RecordCnt + 1
-	policy, err := os.ReadFile(filepath.Clean(policyFilePath))
+	err = r.record.Execute(r.outString, reci)
 	if err != nil {
-		log.WithError(err).Error(fmt.Sprintf("failed to read policy %s", policyFilePath))
+		log.WithError(err)
 	}
-	policyFilePath = policyFilePath[strings.LastIndex(policyFilePath, "/")+1:]
-	reci := RecordInfo{
-		RowID: fmt.Sprintf("row%d", *r.RecordCnt),
-		Rec: []Col{
-			{Name: policyFilePath},
-			{Name: annotations[types.RecommendedPolicyTitleAnnotation]},
-			{Name: "-"},
-			{Name: cases.Title(language.English).String(action)},
-			{Name: strings.Join(strings.Split(annotations[types.RecommendedPolicyTagsAnnotation], ",")[:], "\n")},
-		},
-		Policy:      string(policy),
-		PolicyType:  "Kyverno Policy",
-		Description: annotations[types.RecommendedPolicyDescriptionAnnotation],
-		// TODO: Figure out how to get the references, adding them to annotations would make them too long
-		Refs: []Ref{},
-	}
-	return r.record.Execute(r.outString, reci)
+	return nil
 }
 
 // SectionEnd end of section of the HTML table
@@ -223,13 +189,19 @@ func (r HTMLReport) SectionEnd() error {
 
 // Render output the table
 func (r HTMLReport) Render(out string) error {
-	_ = r.footer.Execute(r.outString, nil)
+	err := r.footer.Execute(r.outString, nil)
+	if err != nil {
+		log.WithError(err)
+	}
 
 	outPath := strings.Join(strings.Split(out, "/")[:len(strings.Split(out, "/"))-1], "/")
 
 	outPath = outPath + "/.static/"
 
-	_ = os.MkdirAll(outPath, 0740)
+	err = os.MkdirAll(outPath, 0740)
+	if err != nil {
+		log.WithError(err)
+	}
 
 	if err := os.WriteFile(outPath+"main.css", []byte(mainCSS), 0600); err != nil {
 		log.WithError(err).Error("failed to write file")

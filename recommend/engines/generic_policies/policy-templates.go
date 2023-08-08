@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 Authors of KubeArmor
-
-package recommend
+package genericpolicies
 
 import (
 	"archive/zip"
 	"context"
+	_ "embed" // need for embedding
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -14,25 +14,50 @@ import (
 	"strings"
 
 	"github.com/cavaliergopher/grab/v3"
+	"github.com/fatih/color"
 	"github.com/google/go-github/github"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
+	"github.com/kubearmor/kubearmor-client/recommend/common"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
-)
-
-const (
-	org   = "kubearmor"
-	repo  = "policy-templates"
-	url   = "https://github.com/kubearmor/policy-templates/archive/refs/tags/"
-	cache = ".cache/karmor/"
 )
 
 // CurrentVersion stores the current version of policy-template
 var CurrentVersion string
 
-// LatestVersion stores the latest version of policy-template
-var LatestVersion string
+func isLatest() bool {
+	LatestVersion := latestRelease()
+	CurrentVersion = CurrentRelease()
+	if LatestVersion == "" {
+		// error while fetching latest release tag
+		// assume the current release is the latest one
+		return true
+	}
+	return (CurrentVersion == LatestVersion)
+}
+
+func latestRelease() string {
+	latestRelease, _, err := github.NewClient(nil).Repositories.GetLatestRelease(context.Background(), org, repo)
+	if err != nil {
+		log.WithError(err)
+		return ""
+	}
+	return *latestRelease.TagName
+}
+
+// CurrentRelease gets the current release of policy-templates
+func CurrentRelease() string {
+	CurrentVersion := ""
+	path, err := os.ReadFile(fmt.Sprintf("%s%s", getCachePath(), "rules.yaml"))
+	if err != nil {
+		CurrentVersion = strings.Trim(updateRulesYAML([]byte{}), "\"")
+	} else {
+
+		CurrentVersion = strings.Trim(updateRulesYAML(path), "\"")
+	}
+	return CurrentVersion
+}
 
 func getCachePath() string {
 	cache := fmt.Sprintf("%s/%s", UserHome(), cache)
@@ -52,38 +77,34 @@ func UserHome() string {
 	return os.Getenv("HOME")
 }
 
-func latestRelease() string {
-	latestRelease, _, err := github.NewClient(nil).Repositories.GetLatestRelease(context.Background(), org, repo)
+//go:embed yaml/rules.yaml
+
+var policyRulesYAML []byte
+
+var policyRules []common.MatchSpec
+
+func updateRulesYAML(yamlFile []byte) string {
+	policyRules = []common.MatchSpec{}
+	if len(yamlFile) < 30 {
+		yamlFile = policyRulesYAML
+	}
+	policyRulesJSON, err := yaml.YAMLToJSON(yamlFile)
 	if err != nil {
-		log.WithError(err)
-		return ""
+		color.Red("failed to convert policy rules yaml to json")
+		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
 	}
-	return *latestRelease.TagName
-}
-
-// CurrentRelease gets the current release of policy-templates
-func CurrentRelease() string {
-
-	path, err := os.ReadFile(fmt.Sprintf("%s%s", getCachePath(), "rules.yaml"))
+	var jsonRaw map[string]json.RawMessage
+	err = json.Unmarshal(policyRulesJSON, &jsonRaw)
 	if err != nil {
-		CurrentVersion = strings.Trim(updateRulesYAML([]byte{}), "\"")
-	} else {
-
-		CurrentVersion = strings.Trim(updateRulesYAML(path), "\"")
+		color.Red("failed to unmarshal policy rules json")
+		log.WithError(err).Fatal("failed to unmarshal policy rules json")
 	}
-
-	return CurrentVersion
-}
-
-func isLatest() bool {
-	LatestVersion = latestRelease()
-
-	if LatestVersion == "" {
-		// error while fetching latest release tag
-		// assume the current release is the latest one
-		return true
+	err = json.Unmarshal(jsonRaw["policyRules"], &policyRules)
+	if err != nil {
+		color.Red("failed to unmarshal policy rules")
+		log.WithError(err).Fatal("failed to unmarshal policy rules")
 	}
-	return (CurrentVersion == LatestVersion)
+	return string(jsonRaw["version"])
 }
 
 func removeData(file string) error {
@@ -91,24 +112,35 @@ func removeData(file string) error {
 	return err
 }
 
-func init() {
-	CurrentVersion = CurrentRelease()
-}
-
 // DownloadAndUnzipRelease downloads the latest version of policy-templates
 func DownloadAndUnzipRelease() (string, error) {
+	latestVersion := latestRelease()
+	currentVersion := CurrentRelease()
 
-	LatestVersion = latestRelease()
+	if isLatest() {
+		return latestVersion, nil
+	}
 
-	_ = removeData(getCachePath())
-	err := os.MkdirAll(filepath.Dir(getCachePath()), 0750)
+	log.WithFields(log.Fields{
+		"Current Version": currentVersion,
+	}).Info("Found outdated version of policy-templates")
+	log.Info("Downloading latest version [", latestVersion, "]")
+
+	err := removeData(getCachePath())
+	if err != nil {
+		log.WithError(err).Error("failed to remove cache files")
+	}
+	err = os.MkdirAll(filepath.Dir(getCachePath()), 0750)
 	if err != nil {
 		return "", err
 	}
-	downloadURL := fmt.Sprintf("%s%s.zip", url, LatestVersion)
+	downloadURL := fmt.Sprintf("%s%s.zip", url, latestVersion)
 	resp, err := grab.Get(getCachePath(), downloadURL)
 	if err != nil {
-		_ = removeData(getCachePath())
+		err = removeData(getCachePath())
+		if err != nil {
+			log.WithError(err).Error("failed to remove cache files")
+		}
 		return "", err
 	}
 	err = unZip(resp.Filename, getCachePath())
@@ -117,11 +149,26 @@ func DownloadAndUnzipRelease() (string, error) {
 	}
 	err = removeData(resp.Filename)
 	if err != nil {
-		return "", err
+		log.WithError(err).Error("failed to remove cache files")
 	}
-	_ = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"))
-	CurrentVersion = CurrentRelease()
-	return LatestVersion, nil
+	err = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"))
+	if err != nil {
+		log.WithError(err).Error("failed to update policy rules")
+	}
+	log.WithFields(log.Fields{
+		"Updated Version": latestVersion,
+	}).Info("policy-templates updated")
+	return latestVersion, nil
+}
+
+// Sanitize archive file pathing from "G305: Zip Slip vulnerability"
+func sanitizeArchivePath(d, t string) (v string, err error) {
+	v = filepath.Join(d, t)
+	if strings.HasPrefix(v, filepath.Clean(d)) {
+		return v, nil
+	}
+
+	return "", fmt.Errorf("%s: %s", "content filepath is tainted", t)
 }
 
 func unZip(source, dest string) error {
@@ -142,7 +189,10 @@ func unZip(source, dest string) error {
 		if err != nil {
 			return err
 		}
-		_ = os.MkdirAll(path.Dir(name), 0750)
+		err = os.MkdirAll(path.Dir(name), 0750)
+		if err != nil {
+			log.WithError(err).Error("failed to create directory")
+		}
 		create, err := os.Create(filepath.Clean(name))
 		if err != nil {
 			return err
@@ -161,6 +211,18 @@ func unZip(source, dest string) error {
 		}()
 	}
 	return nil
+}
+
+func getNextRule(idx *int) (common.MatchSpec, error) {
+	if *idx < 0 {
+		(*idx)++
+	}
+	if *idx >= len(policyRules) {
+		return common.MatchSpec{}, errors.New("no rule at idx")
+	}
+	r := policyRules[*idx]
+	(*idx)++
+	return r, nil
 }
 
 func updatePolicyRules(filePath string) error {
@@ -184,7 +246,7 @@ func updatePolicyRules(filePath string) error {
 	}
 
 	var yamlFile []byte
-	var completePolicy []MatchSpec
+	var completePolicy []common.MatchSpec
 	var version string
 
 	for _, file := range files {
@@ -207,23 +269,22 @@ func updatePolicyRules(filePath string) error {
 					return err
 				}
 				apiVersion := policy["apiVersion"].(string)
-				if strings.Contains(apiVersion, "kyverno") {
-					// No need to add Kyverno policies to 'rules.yaml'
-					// Kyverno policies are fetched from discovery engine
-					continue
-				} else if strings.Contains(apiVersion, "kubearmor") {
+				if strings.Contains(apiVersion, "kubearmor") {
 					var kubeArmorPolicy pol.KubeArmorPolicy
 					err = yaml.Unmarshal(newYaml, &kubeArmorPolicy)
 					if err != nil {
 						return err
 					}
 					ms.Spec = kubeArmorPolicy.Spec
+				} else {
+					continue
 				}
 				ms.Yaml = ""
 			}
 			completePolicy = append(completePolicy, ms)
 		}
 	}
+	policyRules = completePolicy
 	yamlFile, err = yaml.Marshal(completePolicy)
 	if err != nil {
 		return err
@@ -239,5 +300,6 @@ func updatePolicyRules(filePath string) error {
 	if err := f.Close(); err != nil {
 		log.WithError(err).Error("file close failed")
 	}
+
 	return nil
 }

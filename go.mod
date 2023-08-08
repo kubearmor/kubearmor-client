@@ -57,17 +57,14 @@ require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230704182508-0dd8f8bb9507
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230626102117-7ce0284b7dc1
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230626060245-4f5b8ac4f298
-	github.com/kyverno/kyverno v1.9.2
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
-	golang.org/x/text v0.10.0
 	k8s.io/api v0.27.3
 	k8s.io/apiextensions-apiserver v0.27.3
 	k8s.io/apimachinery v0.27.3
 	k8s.io/cli-runtime v0.27.1
 	k8s.io/client-go v0.27.2
-	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 )
 
 require (
@@ -209,6 +206,7 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/kyverno/kyverno v1.9.2 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230426205424-1c7e0fd1d876 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -319,6 +317,7 @@ require (
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/term v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
 	google.golang.org/api v0.122.0 // indirect
@@ -334,6 +333,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/kubectl v0.27.1 // indirect
 	k8s.io/pod-security-admission v0.27.1 // indirect
+	k8s.io/utils v0.0.0-20230505201702-9f6742963106 // indirect
 	sigs.k8s.io/controller-runtime v0.15.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.2 // indirect
