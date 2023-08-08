@@ -18,7 +18,7 @@ import (
 )
 
 // DefaultPoliciesToBeRecommended are the default policies to be recommended
-var DefaultPoliciesToBeRecommended = []string{KyvernoPolicy, KubeArmorPolicy}
+var DefaultPoliciesToBeRecommended = []string{ /*KyvernoPolicy, */ KubeArmorPolicy}
 
 // KyvernoPolicy is alias for kyverno policy. The actual kind of Kyverno policy is 'Policy' but we use 'KyvernoPolicy'
 // to explicitly differentiate it from other policy types.
@@ -130,20 +130,26 @@ func Recommend(c *k8s.Client, o Options) error {
 			return err
 		}
 		for _, dp := range dps.Items {
-
-			if matchLabels(labelMap, dp.Spec.Template.Labels) {
-				images := []string{}
-				for _, container := range dp.Spec.Template.Spec.Containers {
-					images = append(images, container.Image)
-				}
-
-				deployments = append(deployments, Deployment{
-					Name:      dp.Name,
-					Namespace: dp.Namespace,
-					Labels:    dp.Spec.Template.Labels,
-					Images:    images,
-				})
+			if !matchLabels(labelMap, dp.Spec.Template.Labels) {
+				continue
 			}
+			images := []string{}
+			for _, container := range dp.Spec.Template.Spec.Containers {
+				images = append(images, container.Image)
+			}
+
+			deployments = append(deployments, Deployment{
+				Name:      dp.Name,
+				Namespace: dp.Namespace,
+				Labels:    dp.Spec.Template.Labels,
+				Images:    images,
+			})
+		}
+		if len(deployments) == 0 {
+			log.WithFields(log.Fields{
+				"namespace": o.Namespace,
+			}).Error("no k8s deployments found, hence nothing to recommend!")
+			return nil
 		}
 	} else {
 		deployments = append(deployments, Deployment{
