@@ -4,7 +4,9 @@
 
 2. If you feel adventurous and would like to take a challenging issue, we would love to have you contribute on issues [tagged help-wanted](https://github.com/kubearmor/kubearmor-client/labels/help%20wanted).
 
-3. There is a [Contribution Guide](contribution/contribution_guide.md) that explains how to create a fork and raise PR on GitHub.
+3. There is a [Contribution Guide](https://github.com/kubearmor/KubeArmor/blob/main/contribution/contribution_guide.md) that explains how to create a fork and raise PR on GitHub.
+
+4. If the issue involves code changes you need to install development env using this [Development Guide](https://github.com/kubearmor/KubeArmor/blob/main/contribution/development_guide.md).
 
 # Scope of Contribution
 
