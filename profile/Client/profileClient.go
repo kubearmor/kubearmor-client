@@ -24,13 +24,13 @@ import (
 
 // Column keys
 const (
-	ColumnNamespace   = "Namespace"
-	ColumnPodname     = "Podname"
-	ColumnProcessName = "Procname"
-	ColumnResource    = "Resource"
-	ColumnResult      = "Result"
-	ColumnCount       = "Count"
-	ColumnTimestamp   = "Timestamp"
+	ColumnNamespace     = "Namespace"
+	ColumnContainerName = "ContainerName"
+	ColumnProcessName   = "ProcName"
+	ColumnResource      = "Resource"
+	ColumnResult        = "Result"
+	ColumnCount         = "Count"
+	ColumnTimestamp     = "Timestamp"
 )
 
 var errbuf bytes.Buffer
@@ -104,7 +104,7 @@ func generateColumns(Operation string) []table.Column {
 
 	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
 
-	PodName := table.NewFlexColumn(ColumnPodname, "ContainerName", 4).WithStyle(ColumnStyle).WithFiltered(true)
+	ContainerName := table.NewFlexColumn(ColumnContainerName, "ContainerName", 4).WithStyle(ColumnStyle).WithFiltered(true)
 
 	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle).WithFiltered(true)
 
@@ -119,7 +119,7 @@ func generateColumns(Operation string) []table.Column {
 
 	return []table.Column{
 		Namespace,
-		PodName,
+		ContainerName,
 		ProcName,
 		Resource,
 		Result,
@@ -228,13 +228,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case klog.EventInfo:
 		profile.TelMutex.RLock()
 		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns("File"))
-		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns("Process"))
-		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns("Network"))
-		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		m.Syscall = m.Syscall.WithRows(generateRowsFromData(profile.Telemetry, "Syscall")).WithColumns(generateColumns("Syscall"))
-		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		profile.TelMutex.RUnlock()
 
 		return m, waitForActivity()
@@ -417,13 +417,13 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	finalmap := AggregateSummary(w, Operation)
 	for r, frequency := range finalmap {
 		row := table.NewRow(table.RowData{
-			ColumnNamespace:   r.Namespace,
-			ColumnPodname:     r.ContainerName,
-			ColumnProcessName: r.Process,
-			ColumnResource:    r.Resource,
-			ColumnResult:      r.Result,
-			ColumnCount:       frequency.freq,
-			ColumnTimestamp:   frequency.time,
+			ColumnNamespace:     r.Namespace,
+			ColumnContainerName: r.ContainerName,
+			ColumnProcessName:   r.Process,
+			ColumnResource:      r.Resource,
+			ColumnResult:        r.Result,
+			ColumnCount:         frequency.freq,
+			ColumnTimestamp:     frequency.time,
 		})
 		s.rows = append(s.rows, row)
 	}
