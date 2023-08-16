@@ -104,7 +104,7 @@ func generateColumns(Operation string) []table.Column {
 
 	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
 
-	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(ColumnStyle).WithFiltered(true)
+	PodName := table.NewFlexColumn(ColumnPodname, "ContainerName", 4).WithStyle(ColumnStyle).WithFiltered(true)
 
 	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle).WithFiltered(true)
 
