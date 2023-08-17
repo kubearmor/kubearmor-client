@@ -324,8 +324,6 @@ func (img *ImageInfo) WritePolicyFile(ms common.MatchSpec, r common.Report, opti
 	if err := f.Close(); err != nil {
 		log.WithError(err).Error("file close failed")
 	}
-	if err = r.ReportRecord(ms, outFile); err != nil {
-		log.WithError(err).Error("report record failed")
-	}
+	r.ReportRecord(ms, outFile)
 	color.Green("created policy %s ...", outFile)
 }

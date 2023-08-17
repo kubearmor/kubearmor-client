@@ -15,7 +15,9 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
@@ -29,6 +31,12 @@ import (
 )
 
 const karmorTempDirPattern = "karmor"
+
+var random *rand.Rand
+
+func init() {
+	random = rand.New(rand.NewSource(time.Now().UnixNano())) // random seed init for random string generator
+}
 
 type RegistryScanner struct {
 	authConfiguration authConfigurations
@@ -104,7 +112,7 @@ func New(dockerConfigPath string) *RegistryScanner {
 	return &scanner
 }
 
-func (r *RegistryScanner) Analyze(img *image.ImageInfo) {
+func (r *RegistryScanner) Analyze(img *image.ImageInfo) (err error) {
 	if val, ok := r.cache[img.Name]; ok {
 		log.WithFields(log.Fields{
 			"image": img.Name,
@@ -116,7 +124,7 @@ func (r *RegistryScanner) Analyze(img *image.ImageInfo) {
 		img.Labels = val.Labels
 		img.OS = val.OS
 		img.RepoTags = val.RepoTags
-		return
+		return nil
 	}
 	tmpDir, err := os.MkdirTemp("", karmorTempDirPattern)
 	if err != nil {
@@ -138,6 +146,7 @@ func (r *RegistryScanner) Analyze(img *image.ImageInfo) {
 	}
 
 	r.cache[img.Name] = *img
+	return nil
 }
 
 // The randomizer used in this function is not used for any cryptographic
@@ -290,4 +299,19 @@ func saveImageToTar(imageName string, cli *client.Client, tempDir string) string
 		"tar": tarname,
 	}).Info("dumped image to tar")
 	return tarname
+}
+
+func checkForSpec(spec string, fl []string) []string {
+	var matches []string
+	if !strings.HasSuffix(spec, "*") {
+		spec = fmt.Sprintf("%s$", spec)
+	}
+
+	re := regexp.MustCompile(spec)
+	for _, name := range fl {
+		if re.Match([]byte(name)) {
+			matches = append(matches, name)
+		}
+	}
+	return matches
 }

@@ -34,9 +34,7 @@ func (P GenericPolicy) Init() error {
 }
 
 func (P GenericPolicy) Scan(img *image.ImageInfo, options common.Options, tags []string) error {
-	if err := getPolicyFromImageInfo(img, options, tags); err != nil {
-		log.WithError(err).Error("policy generation from image info failed")
-	}
+	getPolicyFromImageInfo(img, options, tags)
 	return nil
 }
 
@@ -78,17 +76,17 @@ func checkPreconditions(img *image.ImageInfo, ms *common.MatchSpec) bool {
 	return len(matches) >= len(ms.Precondition)
 }
 
-func getPolicyFromImageInfo(img *image.ImageInfo, options common.Options, tags []string) error {
+func getPolicyFromImageInfo(img *image.ImageInfo, options common.Options, tags []string) {
 	if img.OS != "linux" {
 		color.Red("non-linux platforms are not supported, yet.")
-		return nil
+		return
 	}
 
 	idx := 0
-
+	// TODO
 	if err := report.ReportStart(img, options, CurrentVersion); err != nil {
 		log.WithError(err).Error("report start failed")
-		return err
+		return
 	}
 	var ms common.MatchSpec
 	var err error
@@ -106,5 +104,4 @@ func getPolicyFromImageInfo(img *image.ImageInfo, options common.Options, tags [
 		record := &report.Report{}
 		img.WritePolicyFile(ms, record, options)
 	}
-	return nil
 }

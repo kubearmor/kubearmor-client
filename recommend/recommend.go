@@ -137,9 +137,7 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 		if o.ReportFile != "" {
 			report.ReportInit(o.ReportFile)
 		}
-		if err := gen.Init(); err != nil {
-			log.WithError(err).Error("policy generator init failed")
-		}
+		gen.Init()
 		for _, deployment := range deployments {
 			for _, i := range deployment.Images {
 				img := image.ImageInfo{
@@ -150,11 +148,9 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 					Deployment: deployment.Name,
 				}
 				reg.Analyze(&img)
-
-				if err := gen.Scan(&img, o, []string{}); err != nil {
-					log.WithError(err).Error("policy generator scan failed")
-				}
-				if err := report.ReportSectEnd(); err != nil {
+				gen.Scan(&img, o, []string{})
+				err := report.ReportSectEnd()
+				if err != nil {
 					log.WithError(err).Error("report section end failed")
 					return err
 				}
