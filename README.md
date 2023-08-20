@@ -1,3 +1,5 @@
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/kubearmor/kubearmor-client/badge)](https://securityscorecards.dev/viewer/?uri=github.com/kubearmor/kubearmor-client)
+
 # karmor
 
 **karmor** is a client tool to help manage [KubeArmor](https://github.com/kubearmor/KubeArmor).
