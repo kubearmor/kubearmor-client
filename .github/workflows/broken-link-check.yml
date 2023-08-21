@@ -1,6 +1,9 @@
 name: Broken link check
 on: [push]
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   broken_link_checker_job:
     runs-on: ubuntu-latest
