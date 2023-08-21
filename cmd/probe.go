@@ -31,7 +31,7 @@ the supported KubeArmor features in the environment, the pods being handled by K
 
 func init() {
 	rootCmd.AddCommand(probeCmd)
-	probeCmd.Flags().StringVarP(&probeInstallOptions.Namespace, "namespace", "n", "kube-system", "Namespace for resources")
+	probeCmd.Flags().StringVarP(&probeInstallOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 	probeCmd.Flags().BoolVar(&probeInstallOptions.Full, "full", false, `If KubeArmor is not running, it deploys a daemonset to have access to more
 information on KubeArmor support in the environment and deletes daemonset after probing`)
 	probeCmd.Flags().StringVarP(&probeInstallOptions.Output, "format", "f", "text", " Format: json or text ")

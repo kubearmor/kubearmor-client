@@ -68,7 +68,9 @@ func Collect(c *k8s.Client, o Options) error {
 
 	// KubeArmor DaemonSet
 	errs.Go(func() error {
-		v, err := c.K8sClientset.AppsV1().DaemonSets("kube-system").Get(context.Background(), "kubearmor", metav1.GetOptions{})
+		v, err := c.K8sClientset.AppsV1().DaemonSets("").List(context.Background(), metav1.ListOptions{
+			LabelSelector: "kubearmor-app=kubearmor",
+		})
 		if err != nil {
 			fmt.Printf("kubearmor daemonset not found. (possible if kubearmor is running in process mode)\n")
 			return nil
@@ -94,7 +96,7 @@ func Collect(c *k8s.Client, o Options) error {
 
 	// KubeArmor Pod
 	errs.Go(func() error {
-		pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 			LabelSelector: "kubearmor-app=kubearmor",
 		})
 		if err != nil {
@@ -105,7 +107,8 @@ func Collect(c *k8s.Client, o Options) error {
 		for _, p := range pods.Items {
 			// KubeArmor Logs
 			fmt.Printf("getting logs from %s\n", p.Name)
-			v := c.K8sClientset.CoreV1().Pods("kube-system").GetLogs(p.Name, &corev1.PodLogOptions{})
+
+			v := c.K8sClientset.CoreV1().Pods(p.Namespace).GetLogs(p.Name, &corev1.PodLogOptions{})
 			s, err := v.Stream(context.Background())
 			if err != nil {
 				fmt.Printf("failed getting logs from pod=%s err=%s\n", p.Name, err)
@@ -231,7 +234,7 @@ func writeYaml(p string, o runtime.Object) error {
 }
 
 func copyFromPod(srcPath string, d string, c *k8s.Client) error {
-	pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=kubearmor",
 	})
 	if err != nil {
@@ -244,7 +247,7 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 		cmdArr := []string{"tar", "cf", "-", srcPath}
 		req := c.K8sClientset.CoreV1().RESTClient().
 			Get().
-			Namespace("kube-system").
+			Namespace(pod.Namespace).
 			Resource("pods").
 			Name(pod.Name).
 			SubResource("exec").
