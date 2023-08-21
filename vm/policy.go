@@ -66,17 +66,20 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) er
 
 	if kind == KubeArmorHostPolicy {
 		resp, err := client.HostPolicy(context.Background(), &req)
-		if err != nil || resp.Status != 1 {
+		if err != nil {
 			return fmt.Errorf("failed to send policy")
 		}
-	} else {
-		resp, err := client.ContainerPolicy(context.Background(), &req)
-		if err != nil || resp.Status != 1 {
-			return fmt.Errorf("failed to send policy")
-		}
+		fmt.Printf("Policy %s \n", resp.Status)
+		return nil
+
 	}
-	fmt.Println("Success")
+	resp, err := client.ContainerPolicy(context.Background(), &req)
+	if err != nil {
+		return fmt.Errorf("failed to send policy")
+	}
+	fmt.Printf("Policy %s \n", resp.Status)
 	return nil
+
 }
 
 func sendPolicyOverHTTP(address string, kind string, policyEventData []byte) error {
