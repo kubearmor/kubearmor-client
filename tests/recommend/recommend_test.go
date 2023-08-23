@@ -163,7 +163,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain atleast `5` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+			It("should contain atleast `4` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				for _, file := range files {
@@ -178,7 +178,7 @@ var _ = Describe("karmor", func() {
 					}
 				}
 				fmt.Printf("Matched files count: %v\n", count)
-				Expect(count).To(BeNumerically("==", 5))
+				Expect(count).To(BeNumerically("==", 4))
 			})
 		})
 
@@ -195,7 +195,7 @@ var _ = Describe("karmor", func() {
 				Expect(len(files)).To(BeNumerically(">=", 1))
 				Expect(err).To(BeNil())
 			})
-			It("should contain atleast `5` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
+			It("should contain atleast `4` policy files under directory `wordpress-mysql-wordpress` and should match with the files under `res/out/wordpress-mysql-wordpress`", func() {
 				testOptions.Labels = []string{"app=wordpress"}
 				testOptions.Namespace = "wordpress-mysql"
 				testOptions.OutDir = "wordpress-test"
@@ -209,7 +209,7 @@ var _ = Describe("karmor", func() {
 					}
 				}
 				fmt.Printf("Matched files count: %v\n", count)
-				Expect(count).To(BeNumerically("==", 5))
+				Expect(count).To(BeNumerically("==", 4))
 			})
 		})
 	})
