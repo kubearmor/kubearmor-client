@@ -23,7 +23,7 @@ require (
 	github.com/docker/docker v23.0.6+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/json-iterator/go v1.1.12
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20230918061249-1d5b51c449bd
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587
 	github.com/olekukonko/tablewriter v0.0.5
@@ -51,11 +51,11 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230918061249-1d5b51c449bd
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230918135729-00395f443fa0
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230626060245-4f5b8ac4f298
-	github.com/onsi/ginkgo/v2 v2.9.5
-	github.com/onsi/gomega v1.27.7
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231019102803-e4e0e68a457b
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20231019102803-e4e0e68a457b
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231019102803-e4e0e68a457b
+	github.com/onsi/ginkgo/v2 v2.9.7
+	github.com/onsi/gomega v1.27.8
 	k8s.io/api v0.27.3
 	k8s.io/apiextensions-apiserver v0.27.3
 	k8s.io/apimachinery v0.27.3

@@ -25,6 +25,8 @@ import (
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	"github.com/kubearmor/kubearmor-client/deployment"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"golang.org/x/exp/slices"
 	"golang.org/x/mod/semver"
@@ -35,6 +37,7 @@ import (
 
 	"errors"
 
+	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"golang.org/x/sys/unix"
 )
 
@@ -75,10 +78,44 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 		}
 	}
 	if isSystemdMode() {
-		err := probeSystemdMode()
+		kd, err := probeSystemdMode()
 		if err != nil {
 			return err
 		}
+		policyData, err := getPolicyData(o)
+		if err != nil {
+			return err
+		}
+		armoredContainers, containerMap := getArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
+		hostPolicyData := getHostPolicyData(policyData)
+		if o.Output == "json" {
+			probeData := map[string]interface{}{"Probe Data": map[string]interface{}{
+				"Host":              kd,
+				"HostPolicies":      policyData.HostMap,
+				"ArmoredContainers": containerMap,
+			},
+			}
+			out, err := json.Marshal(probeData)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(out))
+		} else {
+
+			color.Green("\nFound KubeArmor running in Systemd mode \n\n")
+
+			_, err := boldWhite.Printf("Host : \n")
+			if err != nil {
+				color.Red(" Error")
+			}
+			printKubeArmorProbeOutput(kd)
+			if len(policyData.HostMap) > 0 {
+				printHostPolicy(hostPolicyData)
+			}
+			printContainersSystemd(armoredContainers)
+
+		}
+
 		return nil
 	}
 	isRunning, daemonsetStatus := isKubeArmorRunning(c, o)
@@ -544,34 +581,104 @@ func isSystemdMode() bool {
 	if err != nil {
 		return false
 	}
-	color.Green("\nFound KubeArmor running in Systemd mode \n\n")
 	return true
 }
 
-func probeSystemdMode() error {
+func probeSystemdMode() (KubeArmorProbeData, error) {
 	jsonFile, err := os.Open("/tmp/karmorProbeData.cfg")
 	if err != nil {
 		log.Println(err)
-		return err
+		return KubeArmorProbeData{}, err
 	}
 
 	buf, err := io.ReadAll(jsonFile)
 	if err != nil {
 		log.Println("an error occured when reading file", err)
-		return err
+		return KubeArmorProbeData{}, err
 	}
-	_, err = boldWhite.Printf("Host : \n")
-	if err != nil {
-		color.Red(" Error")
-	}
+
 	var kd KubeArmorProbeData
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err = json.Unmarshal(buf, &kd)
 	if err != nil {
-		return err
+		return KubeArmorProbeData{}, err
 	}
-	printKubeArmorProbeOutput(kd)
-	return nil
+	return kd, nil
+}
+
+func getPolicyData(o Options) (*pb.ProbeResponse, error) {
+	gRPC := ""
+
+	if o.GRPC != "" {
+		gRPC = o.GRPC
+	} else {
+		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
+			gRPC = val
+		} else {
+			gRPC = "localhost:32767"
+		}
+	}
+	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	client := pb.NewProbeServiceClient(conn)
+
+	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return resp, nil
+
+}
+func getArmoredContainerData(containerList []string, containerMap map[string]*pb.ContainerData) ([][]string, map[string][]string) {
+
+	var data [][]string
+	for _, containerName := range containerList {
+
+		if _, ok := containerMap[containerName]; ok {
+			if containerMap[containerName].PolicyEnabled == 1 {
+				for _, policyName := range containerMap[containerName].PolicyList {
+					data = append(data, []string{containerName, policyName})
+				}
+			}
+		} else {
+			data = append(data, []string{containerName, ""})
+		}
+
+	}
+	mp := make(map[string][]string)
+
+	for _, v := range data {
+
+		if val, exists := mp[v[0]]; exists {
+
+			val = append(val, v[1])
+			mp[v[0]] = val
+
+		} else {
+			mp[v[0]] = []string{v[1]}
+		}
+
+	}
+
+	return data, mp
+
+}
+func getHostPolicyData(policyData *pb.ProbeResponse) [][]string {
+
+	var data [][]string
+	for k, v := range policyData.HostMap {
+
+		for _, policy := range v.PolicyList {
+			data = append(data, []string{k, policy})
+		}
+
+	}
+	return data
+
 }
 
 func getAnnotatedPodLabels(m map[string]string) mapset.Set[string] {
