@@ -46,7 +46,7 @@ var itwhite = color.New(color.Italic).Add(color.Italic).SprintFunc()
 // K8sInstaller for karmor install
 func probeDaemonInstaller(c *k8s.Client, o Options, krnhdr bool) error {
 	daemonset := deployment.GenerateDaemonSet(o.Namespace, krnhdr)
-	if _, err := c.K8sClientset.AppsV1().DaemonSets("").Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
+	if _, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Create(context.Background(), daemonset, metav1.CreateOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			return err
 		}
@@ -56,7 +56,7 @@ func probeDaemonInstaller(c *k8s.Client, o Options, krnhdr bool) error {
 }
 
 func probeDaemonUninstaller(c *k8s.Client, o Options) error {
-	if err := c.K8sClientset.AppsV1().DaemonSets("").Delete(context.Background(), deployment.Karmorprobe, metav1.DeleteOptions{}); err != nil {
+	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), deployment.Karmorprobe, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
 			return err
 		}
@@ -486,7 +486,7 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 	cmdArr := []string{"cat", srcPath}
 	req := c.K8sClientset.CoreV1().RESTClient().
 		Get().
-		Namespace("").
+		Namespace(pods.Items[0].Namespace).
 		Resource("pods").
 		Name(pods.Items[0].Name).
 		SubResource("exec").
@@ -512,6 +512,10 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 	buf, err := io.ReadAll(reader)
 	if err != nil {
 		return KubeArmorProbeData{}, fmt.Errorf("error occured while reading data from kubeArmor pod %s", err.Error())
+	}
+
+	if len(buf) == 0 {
+		return KubeArmorProbeData{}, fmt.Errorf("read empty data from kubearmor pod")
 	}
 	var kd KubeArmorProbeData
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
