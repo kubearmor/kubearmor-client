@@ -6,6 +6,7 @@ package profileclient
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
@@ -66,6 +67,7 @@ type Options struct {
 	Pod       string
 	GRPC      string
 	Container string
+	Save      bool
 }
 
 // Model for main Bubble Tea
@@ -87,7 +89,8 @@ type Model struct {
 
 // SomeData stores incoming row data
 type SomeData struct {
-	rows []table.Row
+	jsondata map[Profile]*Frequency
+	rows     []table.Row
 }
 
 func waitForActivity() tea.Cmd {
@@ -300,18 +303,25 @@ func (m Model) View() string {
 
 // Profile Row Data to display
 type Profile struct {
-	Namespace     string
-	ContainerName string
-	Process       string
-	Resource      string
-	Result        string
-	Data          string
+	Namespace     string `json:"namespace"`
+	ContainerName string `json:"container-name"`
+	Process       string `json:"process"`
+	Resource      string `json:"resource"`
+	Result        string `json:"result"`
+	Data          string `json:"data"`
+	Count         int    `json:"count"`
+	Time          string `json:"time"`
 }
 
 // Frequency and Timestamp data for another map
 type Frequency struct {
-	freq int
-	time string
+	Freq int    `json:"count"`
+	Time string `json:"time"`
+}
+
+func (p Profile) MarshalText() (text []byte, err error) {
+	type x Profile
+	return json.Marshal(x(p))
 }
 
 func isLaterTimestamp(timestamp1, timestamp2 string) bool {
@@ -358,10 +368,10 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 		}
 		if existingFreq, ok := outputMap[summary]; ok {
 			// If the prof already exists, update the frequency and timestamp if needed
-			existingFreq.freq += countTime.freq
+			existingFreq.Freq += countTime.Freq
 
-			if isLaterTimestamp(countTime.time, existingFreq.time) {
-				existingFreq.time = countTime.time
+			if isLaterTimestamp(countTime.Time, existingFreq.Time) {
+				existingFreq.Time = countTime.Time
 			}
 			outputMap[summary] = existingFreq
 		} else {
@@ -372,8 +382,25 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 	return outputMap
 }
 
+func convertToJson(Operation string, data []Profile) {
+	var jsonArray []string
+	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
+	//unmarshalling here because it is marshalled two times for some reason
+	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
+		fmt.Println("Error parsing JSON array:", err)
+	}
+	if len(jsonArray) > 0 {
+		filepath := "Profile_Summary/"
+		err := os.MkdirAll(filepath, os.ModePerm)
+		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	var s SomeData
+	var jsondata []Profile
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
@@ -404,17 +431,18 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 				}
 
 				f := &Frequency{
-					time: entry.UpdatedTime,
+					Time: entry.UpdatedTime,
 				}
 				w[p] = f
 				m[p]++
-				w[p].freq = m[p]
+				w[p].Freq = m[p]
 
 			}
 		}
 	}
 
 	finalmap := AggregateSummary(w, Operation)
+
 	for r, frequency := range finalmap {
 		row := table.NewRow(table.RowData{
 			ColumnNamespace:     r.Namespace,
@@ -422,10 +450,31 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 			ColumnProcessName:   r.Process,
 			ColumnResource:      r.Resource,
 			ColumnResult:        r.Result,
-			ColumnCount:         frequency.freq,
-			ColumnTimestamp:     frequency.time,
+			ColumnCount:         frequency.Freq,
+			ColumnTimestamp:     frequency.Time,
+		})
+		jsondata = append(jsondata, Profile{
+			Namespace:     r.Namespace,
+			ContainerName: r.ContainerName,
+			Process:       r.Process,
+			Resource:      r.Resource,
+			Result:        r.Result,
+			Count:         frequency.Freq,
+			Time:          frequency.Time,
 		})
 		s.rows = append(s.rows, row)
+
+	}
+	if o1.Save {
+		if Operation == "File" {
+			convertToJson("File", jsondata)
+		} else if Operation == "Process" {
+			convertToJson("Process", jsondata)
+		} else if Operation == "Network" {
+			convertToJson("Network", jsondata)
+		} else if Operation == "Syscall" {
+			convertToJson("Syscall", jsondata)
+		}
 	}
 	return s.rows
 }
@@ -437,6 +486,7 @@ func Start(o Options) {
 		Pod:       o.Pod,
 		GRPC:      o.GRPC,
 		Container: o.Container,
+		Save:      o.Save,
 	}
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	go func() {
