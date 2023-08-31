@@ -2,6 +2,9 @@
 package common
 
 import (
+	"os"
+	"runtime"
+
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 )
 
@@ -40,4 +43,16 @@ type Options struct {
 	OutDir     string
 	ReportFile string
 	Config     string
+}
+
+// UserHome function returns users home directory
+func UserHome() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
 }

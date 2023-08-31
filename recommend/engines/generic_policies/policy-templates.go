@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/cavaliergopher/grab/v3"
@@ -60,21 +59,9 @@ func CurrentRelease() string {
 }
 
 func getCachePath() string {
-	cache := fmt.Sprintf("%s/%s", UserHome(), cache)
+	cache := fmt.Sprintf("%s/%s", common.UserHome(), cache)
 	return cache
 
-}
-
-// UserHome function returns users home directory
-func UserHome() string {
-	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-		if home == "" {
-			home = os.Getenv("USERPROFILE")
-		}
-		return home
-	}
-	return os.Getenv("HOME")
 }
 
 //go:embed yaml/rules.yaml
