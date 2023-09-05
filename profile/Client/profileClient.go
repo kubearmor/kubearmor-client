@@ -8,6 +8,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -18,9 +22,6 @@ import (
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strings"
-	"time"
 )
 
 // Column keys
@@ -376,7 +377,7 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 	return outputMap
 }
 
-func convertToJson(Operation string, data []Profile) {
+func convertToJSON(Operation string, data []Profile) {
 	var jsonArray []string
 	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
 	//unmarshalling here because it is marshalled two times for some reason
@@ -466,13 +467,13 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 
 	if o1.Save {
 		if Operation == "File" {
-			convertToJson("File", jsondata)
+			convertToJSON("File", jsondata)
 		} else if Operation == "Process" {
-			convertToJson("Process", jsondata)
+			convertToJSON("Process", jsondata)
 		} else if Operation == "Network" {
-			convertToJson("Network", jsondata)
+			convertToJSON("Network", jsondata)
 		} else if Operation == "Syscall" {
-			convertToJson("Syscall", jsondata)
+			convertToJSON("Syscall", jsondata)
 		}
 	}
 
