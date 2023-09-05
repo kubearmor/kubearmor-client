@@ -6,7 +6,12 @@ package profileclient
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -17,9 +22,6 @@ import (
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strings"
-	"time"
 )
 
 // Column keys
@@ -66,6 +68,7 @@ type Options struct {
 	Pod       string
 	GRPC      string
 	Container string
+	Save      bool
 }
 
 // Model for main Bubble Tea
@@ -300,12 +303,14 @@ func (m Model) View() string {
 
 // Profile Row Data to display
 type Profile struct {
-	Namespace     string
-	ContainerName string
-	Process       string
-	Resource      string
-	Result        string
-	Data          string
+	Namespace     string `json:"namespace"`
+	ContainerName string `json:"container-name"`
+	Process       string `json:"process"`
+	Resource      string `json:"resource"`
+	Result        string `json:"result"`
+	Data          string `json:"data"`
+	Count         int    `json:"count"`
+	Time          string `json:"time"`
 }
 
 // Frequency and Timestamp data for another map
@@ -372,8 +377,31 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 	return outputMap
 }
 
+func convertToJSON(Operation string, data []Profile) {
+	var jsonArray []string
+	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
+	//unmarshalling here because it is marshalled two times for some reason
+	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
+		fmt.Println("Error parsing JSON array:", err)
+	}
+	if len(jsonArray) > 0 {
+		filepath := "Profile_Summary/"
+		err := os.MkdirAll(filepath, os.ModePerm)
+		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (p Profile) MarshalText() (text []byte, err error) {
+	type x Profile
+	return json.Marshal(x(p))
+}
+
 func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	var s SomeData
+	var jsondata []Profile
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
@@ -425,8 +453,30 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 			ColumnCount:         frequency.freq,
 			ColumnTimestamp:     frequency.time,
 		})
+		jsondata = append(jsondata, Profile{
+			Namespace:     r.Namespace,
+			ContainerName: r.ContainerName,
+			Process:       r.Process,
+			Resource:      r.Resource,
+			Result:        r.Result,
+			Count:         frequency.freq,
+			Time:          frequency.time,
+		})
 		s.rows = append(s.rows, row)
 	}
+
+	if o1.Save {
+		if Operation == "File" {
+			convertToJSON("File", jsondata)
+		} else if Operation == "Process" {
+			convertToJSON("Process", jsondata)
+		} else if Operation == "Network" {
+			convertToJSON("Network", jsondata)
+		} else if Operation == "Syscall" {
+			convertToJSON("Syscall", jsondata)
+		}
+	}
+
 	return s.rows
 }
 
@@ -437,6 +487,7 @@ func Start(o Options) {
 		Pod:       o.Pod,
 		GRPC:      o.GRPC,
 		Container: o.Container,
+		Save:      o.Save,
 	}
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	go func() {
