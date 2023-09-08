@@ -149,19 +149,26 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 		}
 		for _, dp := range dps.Items {
 
-			if matchLabels(labelMap, dp.Spec.Template.Labels) {
-				images := []string{}
-				for _, container := range dp.Spec.Template.Spec.Containers {
-					images = append(images, container.Image)
-				}
-
-				deployments = append(deployments, Deployment{
-					Name:      dp.Name,
-					Namespace: dp.Namespace,
-					Labels:    dp.Spec.Template.Labels,
-					Images:    images,
-				})
+			if !matchLabels(labelMap, dp.Spec.Template.Labels) {
+				continue
 			}
+			images := []string{}
+			for _, container := range dp.Spec.Template.Spec.Containers {
+				images = append(images, container.Image)
+			}
+
+			deployments = append(deployments, Deployment{
+				Name:      dp.Name,
+				Namespace: dp.Namespace,
+				Labels:    dp.Spec.Template.Labels,
+				Images:    images,
+			})
+		}
+		if len(deployments) == 0 {
+			log.WithFields(log.Fields{
+				"namespace": o.Namespace,
+			}).Error("no k8s deployments found, hence nothing to recommend!")
+			return nil
 		}
 	} else {
 		deployments = append(deployments, Deployment{

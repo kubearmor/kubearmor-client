@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/cavaliergopher/grab/v3"
 	"github.com/fatih/color"
 	"github.com/google/go-github/github"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
@@ -25,8 +26,11 @@ import (
 // CurrentVersion stores the current version of policy-template
 var CurrentVersion string
 
+// LatestVersion stores the latest version of policy-template
+var LatestVersion string
+
 func isLatest() bool {
-	LatestVersion := latestRelease()
+	LatestVersion = latestRelease()
 	CurrentVersion = CurrentRelease()
 	if LatestVersion == "" {
 		// error while fetching latest release tag
@@ -99,6 +103,37 @@ func removeData(file string) error {
 	return err
 }
 
+func downloadZip(url string, destination string) error {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath.Clean(destination))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := out.Close(); err != nil {
+			kg.Warnf("Error closing os file %s\n", err)
+		}
+	}()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DownloadAndUnzipRelease downloads the latest version of policy-templates
 func DownloadAndUnzipRelease() (string, error) {
 	latestVersion := latestRelease()
@@ -121,8 +156,11 @@ func DownloadAndUnzipRelease() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	downloadURL := fmt.Sprintf("%s%s.zip", url, latestVersion)
-	resp, err := grab.Get(getCachePath(), downloadURL)
+	zipPath := getCachePath() + ".zip"
+	err = downloadZip(downloadURL, zipPath)
+
 	if err != nil {
 		err = removeData(getCachePath())
 		if err != nil {
@@ -130,21 +168,19 @@ func DownloadAndUnzipRelease() (string, error) {
 		}
 		return "", err
 	}
-	err = unZip(resp.Filename, getCachePath())
+
+	err = unZip(zipPath, getCachePath())
 	if err != nil {
 		return "", err
 	}
-	err = removeData(resp.Filename)
+	err = removeData(zipPath)
 	if err != nil {
 		log.WithError(err).Error("failed to remove cache files")
 	}
-	err = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"))
+	err = updatePolicyRules(strings.TrimSuffix(zipPath, ".zip"))
 	if err != nil {
 		log.WithError(err).Error("failed to update policy rules")
 	}
-	log.WithFields(log.Fields{
-		"Updated Version": latestVersion,
-	}).Info("policy-templates updated")
 	return latestVersion, nil
 }
 

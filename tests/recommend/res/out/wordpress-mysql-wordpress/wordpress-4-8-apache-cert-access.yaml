@@ -24,3 +24,5 @@ spec:
   tags:
   - MITRE
   - MITRE_T1552_unsecured_credentials
+  - FGT1555
+  - FIGHT

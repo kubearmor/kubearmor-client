@@ -290,7 +290,7 @@ func findFileInDir(c *k8s.Client, podname, namespace, cmd string) bool {
 
 // Check for BTF Information or Kernel Headers Availability
 func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string) bool {
-	pods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=" + deployment.Karmorprobe,
 		FieldSelector: "spec.nodeName=" + nodeName,
 	})
@@ -328,7 +328,7 @@ func checkHostAuditSupport() {
 
 func getNodeLsmSupport(c *k8s.Client, o Options, nodeName string) (string, error) {
 	srcPath := "/sys/kernel/security/lsm"
-	pods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=karmor-probe",
 		FieldSelector: "spec.nodeName=" + nodeName,
 	})
@@ -373,29 +373,31 @@ func isKubeArmorRunning(c *k8s.Client, o Options) (bool, *Status) {
 }
 
 func getKubeArmorDaemonset(c *k8s.Client, o Options) (bool, *Status) {
-
 	// KubeArmor DaemonSet
-	w, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Get(context.Background(), "kubearmor", metav1.GetOptions{})
+	w, err := c.K8sClientset.AppsV1().DaemonSets("").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor",
+	})
 	if err != nil {
 		log.Println("error when getting kubearmor daemonset", err)
 		return false, nil
 	}
-	desired, ready, available := w.Status.DesiredNumberScheduled, w.Status.NumberReady, w.Status.NumberAvailable
+	if len(w.Items) == 0 {
+		return false, nil
+	}
+	desired, ready, available := w.Items[0].Status.DesiredNumberScheduled, w.Items[0].Status.NumberReady, w.Items[0].Status.NumberAvailable
 	if desired != ready && desired != available {
 		return false, nil
 	}
-
 	DaemonSetStatus := Status{
 		Desired:   strconv.Itoa(int(desired)),
 		Ready:     strconv.Itoa(int(ready)),
 		Available: strconv.Itoa(int(available)),
 	}
 	return true, &DaemonSetStatus
-
 }
-func getKubeArmorDeployments(c *k8s.Client, o Options) map[string]*Status {
 
-	kubearmorDeployments, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), metav1.ListOptions{
+func getKubeArmorDeployments(c *k8s.Client, o Options) map[string]*Status {
+	kubearmorDeployments, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app",
 	})
 	if err != nil {
@@ -422,7 +424,7 @@ func getKubeArmorDeployments(c *k8s.Client, o Options) map[string]*Status {
 
 func getKubeArmorContainers(c *k8s.Client, o Options) map[string]*KubeArmorPodSpec {
 
-	kubearmorPods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
+	kubearmorPods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app",
 	})
 
@@ -473,7 +475,7 @@ func ProbeRunningKubeArmorNodes(c *k8s.Client, o Options) ([]KubeArmorProbeData,
 
 func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmorProbeData, error) {
 	srcPath := "/tmp/karmorProbeData.cfg"
-	pods, err := c.K8sClientset.CoreV1().Pods(o.Namespace).List(context.Background(), metav1.ListOptions{
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=kubearmor",
 		FieldSelector: "spec.nodeName=" + nodeName,
 	})
@@ -484,7 +486,7 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 	cmdArr := []string{"cat", srcPath}
 	req := c.K8sClientset.CoreV1().RESTClient().
 		Get().
-		Namespace(o.Namespace).
+		Namespace(pods.Items[0].Namespace).
 		Resource("pods").
 		Name(pods.Items[0].Name).
 		SubResource("exec").
@@ -510,6 +512,10 @@ func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmor
 	buf, err := io.ReadAll(reader)
 	if err != nil {
 		return KubeArmorProbeData{}, fmt.Errorf("error occured while reading data from kubeArmor pod %s", err.Error())
+	}
+
+	if len(buf) == 0 {
+		return KubeArmorProbeData{}, fmt.Errorf("read empty data from kubearmor pod")
 	}
 	var kd KubeArmorProbeData
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary

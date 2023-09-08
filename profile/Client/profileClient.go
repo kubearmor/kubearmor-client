@@ -6,7 +6,12 @@ package profileclient
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -17,20 +22,17 @@ import (
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strings"
-	"time"
 )
 
 // Column keys
 const (
-	ColumnNamespace   = "Namespace"
-	ColumnPodname     = "Podname"
-	ColumnProcessName = "Procname"
-	ColumnResource    = "Resource"
-	ColumnResult      = "Result"
-	ColumnCount       = "Count"
-	ColumnTimestamp   = "Timestamp"
+	ColumnNamespace     = "Namespace"
+	ColumnContainerName = "ContainerName"
+	ColumnProcessName   = "ProcName"
+	ColumnResource      = "Resource"
+	ColumnResult        = "Result"
+	ColumnCount         = "Count"
+	ColumnTimestamp     = "Timestamp"
 )
 
 var errbuf bytes.Buffer
@@ -66,6 +68,7 @@ type Options struct {
 	Pod       string
 	GRPC      string
 	Container string
+	Save      bool
 }
 
 // Model for main Bubble Tea
@@ -104,7 +107,7 @@ func generateColumns(Operation string) []table.Column {
 
 	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
 
-	PodName := table.NewFlexColumn(ColumnPodname, "Podname", 4).WithStyle(ColumnStyle).WithFiltered(true)
+	ContainerName := table.NewFlexColumn(ColumnContainerName, "ContainerName", 4).WithStyle(ColumnStyle).WithFiltered(true)
 
 	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle).WithFiltered(true)
 
@@ -119,7 +122,7 @@ func generateColumns(Operation string) []table.Column {
 
 	return []table.Column{
 		Namespace,
-		PodName,
+		ContainerName,
 		ProcName,
 		Resource,
 		Result,
@@ -228,13 +231,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case klog.EventInfo:
 		profile.TelMutex.RLock()
 		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns("File"))
-		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns("Process"))
-		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns("Network"))
-		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		m.Syscall = m.Syscall.WithRows(generateRowsFromData(profile.Telemetry, "Syscall")).WithColumns(generateColumns("Syscall"))
-		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnPodname).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		profile.TelMutex.RUnlock()
 
 		return m, waitForActivity()
@@ -300,12 +303,14 @@ func (m Model) View() string {
 
 // Profile Row Data to display
 type Profile struct {
-	Namespace     string
-	ContainerName string
-	Process       string
-	Resource      string
-	Result        string
-	Data          string
+	Namespace     string `json:"namespace"`
+	ContainerName string `json:"container-name"`
+	Process       string `json:"process"`
+	Resource      string `json:"resource"`
+	Result        string `json:"result"`
+	Data          string `json:"data"`
+	Count         int    `json:"count"`
+	Time          string `json:"time"`
 }
 
 // Frequency and Timestamp data for another map
@@ -372,8 +377,31 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 	return outputMap
 }
 
+func convertToJSON(Operation string, data []Profile) {
+	var jsonArray []string
+	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
+	//unmarshalling here because it is marshalled two times for some reason
+	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
+		fmt.Println("Error parsing JSON array:", err)
+	}
+	if len(jsonArray) > 0 {
+		filepath := "Profile_Summary/"
+		err := os.MkdirAll(filepath, os.ModePerm)
+		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (p Profile) MarshalText() (text []byte, err error) {
+	type x Profile
+	return json.Marshal(x(p))
+}
+
 func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	var s SomeData
+	var jsondata []Profile
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
@@ -417,16 +445,38 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	finalmap := AggregateSummary(w, Operation)
 	for r, frequency := range finalmap {
 		row := table.NewRow(table.RowData{
-			ColumnNamespace:   r.Namespace,
-			ColumnPodname:     r.ContainerName,
-			ColumnProcessName: r.Process,
-			ColumnResource:    r.Resource,
-			ColumnResult:      r.Result,
-			ColumnCount:       frequency.freq,
-			ColumnTimestamp:   frequency.time,
+			ColumnNamespace:     r.Namespace,
+			ColumnContainerName: r.ContainerName,
+			ColumnProcessName:   r.Process,
+			ColumnResource:      r.Resource,
+			ColumnResult:        r.Result,
+			ColumnCount:         frequency.freq,
+			ColumnTimestamp:     frequency.time,
+		})
+		jsondata = append(jsondata, Profile{
+			Namespace:     r.Namespace,
+			ContainerName: r.ContainerName,
+			Process:       r.Process,
+			Resource:      r.Resource,
+			Result:        r.Result,
+			Count:         frequency.freq,
+			Time:          frequency.time,
 		})
 		s.rows = append(s.rows, row)
 	}
+
+	if o1.Save {
+		if Operation == "File" {
+			convertToJSON("File", jsondata)
+		} else if Operation == "Process" {
+			convertToJSON("Process", jsondata)
+		} else if Operation == "Network" {
+			convertToJSON("Network", jsondata)
+		} else if Operation == "Syscall" {
+			convertToJSON("Syscall", jsondata)
+		}
+	}
+
 	return s.rows
 }
 
@@ -437,6 +487,7 @@ func Start(o Options) {
 		Pod:       o.Pod,
 		GRPC:      o.GRPC,
 		Container: o.Container,
+		Save:      o.Save,
 	}
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	go func() {

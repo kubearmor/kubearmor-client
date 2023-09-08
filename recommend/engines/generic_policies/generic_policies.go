@@ -31,7 +31,11 @@ type GenericPolicy struct {
 // Init initializing Policy Generator
 func (P GenericPolicy) Init() error {
 	if _, err := DownloadAndUnzipRelease(); err != nil {
-		return err
+		log.WithError(err).Error("could not download latest policy-templates version")
+	} else {
+		log.WithFields(log.Fields{
+			"Updated Version": LatestVersion,
+		}).Info("policy-templates updated")
 	}
 	return nil
 }
