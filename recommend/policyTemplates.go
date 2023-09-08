@@ -7,13 +7,14 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/cavaliergopher/grab/v3"
 	"github.com/google/go-github/github"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
@@ -95,6 +96,37 @@ func init() {
 	CurrentVersion = CurrentRelease()
 }
 
+func downloadZip(url string, destination string) error {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath.Clean(destination))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := out.Close(); err != nil {
+			kg.Warnf("Error closing os file %s\n", err)
+		}
+	}()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DownloadAndUnzipRelease downloads the latest version of policy-templates
 func DownloadAndUnzipRelease() (string, error) {
 
@@ -106,20 +138,22 @@ func DownloadAndUnzipRelease() (string, error) {
 		return "", err
 	}
 	downloadURL := fmt.Sprintf("%s%s.zip", url, LatestVersion)
-	resp, err := grab.Get(getCachePath(), downloadURL)
+	zipPath := getCachePath() + ".zip"
+	err = downloadZip(downloadURL, zipPath)
 	if err != nil {
 		_ = removeData(getCachePath())
 		return "", err
 	}
-	err = unZip(resp.Filename, getCachePath())
+
+	err = unZip(zipPath, getCachePath())
 	if err != nil {
 		return "", err
 	}
-	err = removeData(resp.Filename)
+	err = removeData(zipPath)
 	if err != nil {
 		return "", err
 	}
-	_ = updatePolicyRules(strings.TrimSuffix(resp.Filename, ".zip"))
+	_ = updatePolicyRules(strings.TrimSuffix(zipPath, ".zip"))
 	CurrentVersion = CurrentRelease()
 	return LatestVersion, nil
 }
