@@ -106,11 +106,12 @@ func Recommend(c *k8s.Client, o Options) error {
 		}).Info("Found outdated version of policy-templates")
 		log.Info("Downloading latest version [", LatestVersion, "]")
 		if _, err := DownloadAndUnzipRelease(); err != nil {
-			return err
+			log.WithError(err).Error("could not download latest policy-templates version")
+		} else {
+			log.WithFields(log.Fields{
+				"Updated Version": LatestVersion,
+			}).Info("policy-templates updated")
 		}
-		log.WithFields(log.Fields{
-			"Updated Version": LatestVersion,
-		}).Info("policy-templates updated")
 	}
 
 	if err = createOutDir(o.OutDir); err != nil {

@@ -97,17 +97,27 @@ func init() {
 }
 
 func downloadZip(url string, destination string) error {
-	resp, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
 	defer resp.Body.Close()
 
-	out, err := os.Create(destination)
+	out, err := os.Create(filepath.Clean(destination))
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if err := out.Close(); err != nil {
+			kg.Warnf("Error closing os file %s\n", err)
+		}
+	}()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
