@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2023 Authors of KubeArmor
+
 // Package image scan and provide image info
 package image
 
 import (
 	_ "embed" // need for embedding
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/clarketm/json"
 
 	"github.com/fatih/color"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"

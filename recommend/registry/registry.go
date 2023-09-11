@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 Authors of KubeArmor
+// Copyright 2023 Authors of KubeArmor
 
 // Package registry contains scanner for image info
 package registry

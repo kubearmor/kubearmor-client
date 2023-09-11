@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2023 Authors of KubeArmor
+
 // Package engines provides interfaces and implementations for policy generation
 package engines
 

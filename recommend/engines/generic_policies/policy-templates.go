@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2023 Authors of KubeArmor
+
 package genericpolicies
 
 import (
 	"archive/zip"
 	"context"
 	_ "embed" // need for embedding
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,7 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/clarketm/json"
+
 	"github.com/google/go-github/github"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
@@ -81,18 +84,15 @@ func updateRulesYAML(yamlFile []byte) string {
 	}
 	policyRulesJSON, err := yaml.YAMLToJSON(yamlFile)
 	if err != nil {
-		color.Red("failed to convert policy rules yaml to json")
 		log.WithError(err).Fatal("failed to convert policy rules yaml to json")
 	}
 	var jsonRaw map[string]json.RawMessage
 	err = json.Unmarshal(policyRulesJSON, &jsonRaw)
 	if err != nil {
-		color.Red("failed to unmarshal policy rules json")
 		log.WithError(err).Fatal("failed to unmarshal policy rules json")
 	}
 	err = json.Unmarshal(jsonRaw["policyRules"], &policyRules)
 	if err != nil {
-		color.Red("failed to unmarshal policy rules")
 		log.WithError(err).Fatal("failed to unmarshal policy rules")
 	}
 	return string(jsonRaw["version"])

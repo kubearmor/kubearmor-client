@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2023 Authors of KubeArmor
+
 // Package common contains object types used by multiple packages
 package common
 

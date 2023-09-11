@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2023 Authors of KubeArmor
+
 // Package genericpolicies is responsible for creating and managing policies based on policy generator
 package genericpolicies
 
@@ -9,7 +12,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
 	"github.com/kubearmor/kubearmor-client/recommend/image"
 	"github.com/kubearmor/kubearmor-client/recommend/report"
@@ -96,7 +98,7 @@ func getPolicyFromImageInfo(img *image.Info, options common.Options) (map[string
 	msMap := make(map[string]interface{})
 
 	if img.OS != "linux" {
-		color.Red("non-linux platforms are not supported, yet.")
+		log.Errorf("non-linux platforms are not supported, yet.")
 		return nil, nil, nil
 	}
 
