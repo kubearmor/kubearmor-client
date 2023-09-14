@@ -1,4 +1,5 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/kubearmor/kubearmor-client/badge)](https://securityscorecards.dev/viewer/?uri=github.com/kubearmor/kubearmor-client)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkubearmor%2Fkubearmor-client.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkubearmor%2Fkubearmor-client?ref=badge_shield)
 
 # karmor
 
@@ -56,3 +57,7 @@ Flags:
 
 Use "karmor [command] --help" for more information about a command.
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkubearmor%2Fkubearmor-client.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkubearmor%2Fkubearmor-client?ref=badge_large)
