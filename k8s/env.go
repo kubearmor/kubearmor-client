@@ -30,6 +30,7 @@ func AutoDetectEnvironment(c *Client) (name string) {
 	}
 	containerRuntime := nodes.Items[0].Status.NodeInfo.ContainerRuntimeVersion
 	nodeImage := nodes.Items[0].Status.NodeInfo.OSImage
+	serverInfo, _ := c.K8sClientset.Discovery().ServerVersion()
 
 	// Detecting Environment based on cluster name and context or OSImage
 	if clusterName == "minikube" || contextName == "minikube" {
@@ -57,7 +58,11 @@ func AutoDetectEnvironment(c *Client) (name string) {
 		return env
 	}
 
-	// Environment is Self Managed K8s, checking container runtime and it's version
+	// Environment is Self Managed K8s, checking container runtime, it's version and k8s server version
+	if strings.HasSuffix(serverInfo.String(), "k0s") {
+		env = "k0s"
+		return env
+	}
 
 	if strings.Contains(containerRuntime, "k3s") {
 		env = "k3s"

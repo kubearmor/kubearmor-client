@@ -53,7 +53,7 @@ type envOption struct {
 var verify bool
 var progress int
 var cursorcount int
-var validEnvironments = []string{"k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
+var validEnvironments = []string{"k0s", "k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
 
 // Checks if passed string is a valid environment
 func (env *envOption) CheckAndSetValidEnvironmentOption(envOption string) error {
