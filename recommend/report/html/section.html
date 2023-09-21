@@ -1,0 +1,23 @@
+<div class="div-main">
+    <br>
+    <div class="v38_6837"></div>
+    <div class="wrapper">
+	    <table align=center border=0 cellpadding=2>
+	        {{range .ImgInfo}}
+	            <tr align=left>
+		            <td>{{.Key}}</td>
+		            <td>: {{.Val}}</td>
+	            </tr>
+	        {{end}}
+	    </table>
+    </div>
+    <div class="div-main">
+        <br>
+    </div>
+    <table border=0 id="table_detail" align=center cellpadding=30 >
+        <tr>
+            {{range .HdrCols}}
+                <th>{{.Name}}</th>
+            {{end}}
+        </tr>
+
