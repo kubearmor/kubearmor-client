@@ -36,7 +36,7 @@ func PrintVersion(c *k8s.Client) error {
 }
 
 func getKubeArmorVersion(c *k8s.Client) (string, error) {
-	pods, err := c.K8sClientset.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor"})
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor"})
 	if err != nil {
 		return "", err
 	}

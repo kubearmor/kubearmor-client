@@ -24,7 +24,7 @@ var uninstallCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 
-	uninstallCmd.Flags().StringVarP(&uninstallOptions.Namespace, "namespace", "n", "kube-system", "Namespace for resources")
+	uninstallCmd.Flags().StringVarP(&uninstallOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove KubeArmor annotations from deployments. (Deployments might be restarted)")
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.Verify, "verify", true, "Verify whether all KubeArmor resources are cleaned up or not")
 }

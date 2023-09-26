@@ -24,6 +24,8 @@ import (
 	"github.com/kubearmor/kubearmor-client/probe"
 
 	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -222,6 +224,21 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	} else {
 		env = o.Env.Environment
 		printMessage("😄\tEnvironment : "+env, true)
+	}
+
+	// Check if the namespace already exists
+	ns := o.Namespace
+	if _, err := c.K8sClientset.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{}); err != nil {
+		// Create namespace when doesn't exist
+		printMessage("🚀\tCreating namespace "+ns+"  ", true)
+		newns := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ns,
+			},
+		}
+		if _, err := c.K8sClientset.CoreV1().Namespaces().Create(context.Background(), &newns, metav1.CreateOptions{}); err != nil {
+			return fmt.Errorf("failed to create namespace %s: %+v", ns, err)
+		}
 	}
 
 	var printYAML []interface{}

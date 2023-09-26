@@ -21,5 +21,5 @@ var rotateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(rotateCmd)
 
-	rotateCmd.Flags().StringVarP(&namespace, "namespace", "n", "kube-system", "Namespace for resources")
+	rotateCmd.Flags().StringVarP(&namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 }
