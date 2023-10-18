@@ -43,7 +43,6 @@ require (
 
 require (
 	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277
-	github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277
 	github.com/charmbracelet/bubbles v0.15.0
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.7.1
@@ -55,7 +54,6 @@ require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20230918061249-1d5b51c449bd
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20230918135729-00395f443fa0
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20230626060245-4f5b8ac4f298
-	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
 	k8s.io/api v0.27.3
@@ -87,6 +85,7 @@ require (
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230426101702-58e86b294756 // indirect
 	github.com/ThalesIgnite/crypto11 v1.2.5 // indirect
+	github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.4 // indirect
 	github.com/alibabacloud-go/cr-20160607 v1.0.1 // indirect

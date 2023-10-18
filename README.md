@@ -35,7 +35,6 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
-  discover    Discover applicable policies
   help        Help about any command
   install     Install KubeArmor in a Kubernetes Cluster
   logs        Observe Logs from KubeArmor
@@ -44,7 +43,6 @@ Available Commands:
   recommend   Recommend Policies
   rotate-tls  Rotate webhook controller tls certificates
   selfupdate  selfupdate this cli tool
-  summary     Observability from discovery engine
   sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
