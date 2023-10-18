@@ -55,7 +55,7 @@ type envOption struct {
 var verify bool
 var progress int
 var cursorcount int
-var validEnvironments = []string{"k0s", "k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
+var validEnvironments = []string{"k0s", "k3s", "microK8s", "microshift", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
 
 // Checks if passed string is a valid environment
 func (env *envOption) CheckAndSetValidEnvironmentOption(envOption string) error {
@@ -226,18 +226,20 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		printMessage("😄\tEnvironment : "+env, true)
 	}
 
-	// Check if the namespace already exists
-	ns := o.Namespace
-	if _, err := c.K8sClientset.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{}); err != nil {
-		// Create namespace when doesn't exist
-		printMessage("🚀\tCreating namespace "+ns+"  ", true)
-		newns := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ns,
-			},
-		}
-		if _, err := c.K8sClientset.CoreV1().Namespaces().Create(context.Background(), &newns, metav1.CreateOptions{}); err != nil {
-			return fmt.Errorf("failed to create namespace %s: %+v", ns, err)
+	if !o.Save {
+		// Check if the namespace already exists
+		ns := o.Namespace
+		if _, err := c.K8sClientset.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{}); err != nil {
+			// Create namespace when doesn't exist
+			printMessage("🚀\tCreating namespace "+ns+"  ", true)
+			newns := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: ns,
+				},
+			}
+			if _, err := c.K8sClientset.CoreV1().Namespaces().Create(context.Background(), &newns, metav1.CreateOptions{}); err != nil {
+				return fmt.Errorf("failed to create namespace %s: %+v", ns, err)
+			}
 		}
 	}
 

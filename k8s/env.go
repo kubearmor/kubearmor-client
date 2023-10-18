@@ -38,6 +38,11 @@ func AutoDetectEnvironment(c *Client) (name string) {
 		return env
 	}
 
+	if clusterName == "microshift" || contextName == "microshift" {
+		env = "microshift"
+		return env
+	}
+
 	if strings.HasPrefix(clusterName, "microk8s-") || contextName == "microk8s" {
 		env = "microk8s"
 		return env
