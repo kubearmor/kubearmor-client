@@ -70,6 +70,8 @@ endif
 
 .PHONY: scan
 scan: 
-	go install golang.org/x/vuln/cmd/govulncheck@latest ;\
+	if ! command -v govulncheck > /dev/null; then \
+		go install golang.org/x/vuln/cmd/govulncheck@latest ;\
+	fi
 	cd $(CURDIR);\
 	govulncheck -test ./... ;
