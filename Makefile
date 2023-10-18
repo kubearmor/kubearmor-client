@@ -67,3 +67,11 @@ ifeq (, $(shell which gosec))
 	}
 endif
 	cd $(CURDIR); gosec ./...
+
+.PHONY: scan
+scan: 
+	if ! command -v govulncheck > /dev/null; then \
+		go install golang.org/x/vuln/cmd/govulncheck@latest ;\
+	fi
+	cd $(CURDIR);\
+	govulncheck -test ./... ;
