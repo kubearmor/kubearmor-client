@@ -35,4 +35,5 @@ func init() {
 	probeCmd.Flags().BoolVar(&probeInstallOptions.Full, "full", false, `If KubeArmor is not running, it deploys a daemonset to have access to more
 information on KubeArmor support in the environment and deletes daemonset after probing`)
 	probeCmd.Flags().StringVarP(&probeInstallOptions.Output, "format", "f", "text", " Format: json or text ")
+	probeCmd.Flags().StringVar(&probeInstallOptions.GRPC, "gRPC", "", "GRPC port ")
 }

@@ -9,6 +9,7 @@ type Options struct {
 	Namespace string
 	Full      bool
 	Output    string
+	GRPC      string
 }
 
 // KubeArmorProbeData structure definition

@@ -114,3 +114,34 @@ func printAnnotatedPods(podData [][]string) {
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1, 2})
 	table.Render()
 }
+func printContainersSystemd(podData [][]string) {
+	_, err := boldWhite.Printf("Armored Up Containers : \n")
+	if err != nil {
+		color.Red(" Error printing bold text")
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
+	for _, v := range podData {
+		table.Append(v)
+	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Render()
+
+}
+func printHostPolicy(hostPolicy [][]string) {
+	_, err := boldWhite.Printf("Host Policies : \n")
+	if err != nil {
+		color.Red(" Error printing bold text")
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"HOST NAME ", "POLICY"})
+	for _, v := range hostPolicy {
+		table.Append(v)
+	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Render()
+}
