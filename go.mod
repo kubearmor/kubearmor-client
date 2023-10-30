@@ -20,7 +20,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cilium/cilium v1.13.2
 	github.com/clarketm/json v1.17.1
-	github.com/docker/docker v23.0.6+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b
