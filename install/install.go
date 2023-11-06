@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -120,14 +121,13 @@ func printMessage(msg string, flag bool) int {
 
 func checkPods(c *k8s.Client, o Options) {
 	cursor := [4]string{"|", "/", "—", "\\"}
-	fmt.Printf("😋\tChecking if KubeArmor pods are running ...\n")
+	fmt.Printf("😋\tChecking if KubeArmor pods are running...\n")
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	for {
 		time.Sleep(200 * time.Millisecond)
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app", FieldSelector: "status.phase!=Running"})
 		podno := len(pods.Items)
-		// clearLine(90)
 		fmt.Printf("\r\tKubeArmor pods left to run : %d ... %s", podno, cursor[cursorcount])
 		cursorcount++
 		if cursorcount == len(cursor) {
@@ -143,7 +143,7 @@ func checkPods(c *k8s.Client, o Options) {
 			break
 		}
 	}
-	fmt.Print("\n🔧\tVerifying KubeArmor functionality (this may take upto a minute) ...")
+	fmt.Print("\n🔧\tVerifying KubeArmor functionality (this may take upto a minute)...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
 	defer cancel()
@@ -152,16 +152,16 @@ func checkPods(c *k8s.Client, o Options) {
 		select {
 		case <-time.After(10 * time.Second):
 		case <-ctx.Done():
-			fmt.Print("⚠️\tFailed verifying KubeArmor functionality ...")
+			fmt.Print("⚠️\tFailed verifying KubeArmor functionality")
 			return
 		}
 		probeData, _, err := probe.ProbeRunningKubeArmorNodes(c, probe.Options{
 			Namespace: o.Namespace,
 		})
 		if err != nil || len(probeData) == 0 {
-			fmt.Printf("\r🔧\tVerifying KubeArmor functionality (this may take upto a minute) ... %s", cursor[cursorcount])
+			fmt.Printf("\r🔧\tVerifying KubeArmor functionality (this may take upto a minute) %s", cursor[cursorcount])
 			cursorcount++
-			if cursorcount == 4 {
+			if cursorcount == len(cursor) {
 				cursorcount = 0
 			}
 			continue
@@ -183,28 +183,27 @@ func checkPods(c *k8s.Client, o Options) {
 
 }
 
-func checkTerminatingPods(c *k8s.Client) int {
+func checkTerminatingPods(c *k8s.Client, ns string) int {
 	cursor := [4]string{"|", "/", "—", "\\"}
-	fmt.Printf("🔴   Checking if KubeArmor pods are stopped ...\n")
+	fmt.Printf("🔄  Checking if KubeArmor pods are stopped...\n")
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	for {
 		time.Sleep(200 * time.Millisecond)
-		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app", FieldSelector: "status.phase=Running"})
+		pods, _ := c.K8sClientset.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app", FieldSelector: "status.phase=Running"})
 		podno := len(pods.Items)
-		// clearLine(90)
 		fmt.Printf("\rKubeArmor pods left to stop : %d ... %s", podno, cursor[cursorcount])
 		cursorcount++
-		if cursorcount == 4 {
+		if cursorcount == len(cursor) {
 			cursorcount = 0
 		}
 		if !otime.After(time.Now()) {
-			fmt.Printf("\r⌚️  Check Incomplete due to Time-Out!                     \n")
+			fmt.Printf("\r⌚️  Check incomplete due to Time-Out!                     \n")
 			break
 		}
 		if podno == 0 {
-			fmt.Printf("\r🔴   Done Checking , ALL Services are stopped!             \n")
-			fmt.Printf("⌚️   Termination Time : %s \n", time.Since(stime))
+			fmt.Printf("\r🔴  Done Checking; all services are stopped!             \n")
+			fmt.Printf("⌚️  Termination Time: %s \n", time.Since(stime))
 			break
 		}
 	}
@@ -620,8 +619,8 @@ func removeDeployAnnotations(c *k8s.Client, dep *v1.Deployment) {
 	}
 }
 
-func removeAnnotations(c *k8s.Client) {
-	deps, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{})
+func removeAnnotations(c *k8s.Client, ns string) {
+	deps, err := c.K8sClientset.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Println("could not get deployments")
 		return
@@ -637,177 +636,335 @@ func removeAnnotations(c *k8s.Client) {
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	verify = o.Verify
 
-	fmt.Print("❌   KubeArmor Deployments ...\n")
-	kaDeployments, _ := c.K8sClientset.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
-	for _, d := range kaDeployments.Items {
-		if err := c.K8sClientset.AppsV1().Deployments(d.Namespace).Delete(context.Background(), d.Name, metav1.DeleteOptions{}); err != nil {
-			fmt.Printf("ℹ️   Error while uninstalling KubeArmor Deployment %s : %s\n", d.Name, err.Error())
-		}
-	}
-
-	fmt.Print("❌   Mutation Admission Registration ...\n")
+	fmt.Print("🗑️  Mutation Admission Registration\n")
 	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerMutatingWebhookConfiguration, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {
-			return err
+			fmt.Print(err)
 		}
-		fmt.Print("ℹ️   Mutation Admission Registration not found ...\n")
+		fmt.Print("    ℹ️  Mutation Admission Registration not found\n")
 	}
 
-	fmt.Print("❌   KubeArmor Controller Webhook Service ...\n")
-	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerWebhookServiceName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   KubeArmor Controller Webhook Service not found ...\n")
+	fmt.Print("🗑️  KubeArmor Services\n")
+	servicesList, err := c.K8sClientset.CoreV1().Services(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
 	}
-
-	fmt.Print("❌   KubeArmor Controller Metrics Service ...\n")
-	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerMetricsServiceName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   KubeArmor Controller Metrics Service not found ...\n")
-	}
-
-	fmt.Print("❌   KubeArmor Controller Service Account ...\n")
-	if err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerServiceAccountName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   KubeArmor Controller Service Account not found ...\n")
-	}
-
-	fmt.Print("❌   KubeArmor Controller Roles ...\n")
-	if err := c.K8sClientset.RbacV1().ClusterRoles().Delete(context.Background(), deployments.KubeArmorControllerClusterRoleName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Cluster Role\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), deployments.KubeArmorControllerClusterRoleBindingName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Cluster Role Bindings\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().Roles(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerLeaderElectionRoleName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Role\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().RoleBindings(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerLeaderElectionRoleBindingName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Role Bindings\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().ClusterRoles().Delete(context.Background(), deployments.KubeArmorControllerProxyRoleName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Proxy Role\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), deployments.KubeArmorControllerProxyRoleBindingName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Proxy Role Bindings\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().ClusterRoles().Delete(context.Background(), deployments.KubeArmorControllerMetricsReaderRoleName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Metrics Reader Role\n")
-		}
-	}
-
-	if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), deployments.KubeArmorControllerMetricsReaderRoleBindingName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print("Error while uninstalling KubeArmor Controller Metrics Reader Role Bindings\n")
-		}
-	}
-
-	fmt.Print("❌   KubeArmor Controller TLS certificates ...\n")
-	if err := c.K8sClientset.CoreV1().Secrets(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerSecretName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   KubeArmor Controller TLS certificates not found ...\n")
-	}
-	fmt.Print("❌   Service Account ...\n")
-	if err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Delete(context.Background(), serviceAccountName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		fmt.Print("ℹ️   Service Account not found ...\n")
-	}
-
-	fmt.Print("❌   Cluster Role Bindings ...\n")
-	if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), clusterRoleBindingName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
-		}
-		// Older CLuster Role Binding Name, keeping it to clean up older kubearmor installations
-		if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), kubearmor, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
+	if len(servicesList.Items) == 0 {
+		fmt.Printf("    ℹ️  KubeArmor Services not found\n")
+	} else {
+		for _, ms := range servicesList.Items {
+			fmt.Printf("    ❌  Service: %s removed\n", ms.Name)
+			if err := c.K8sClientset.CoreV1().Services(ms.Namespace).Delete(context.Background(), ms.Name, metav1.DeleteOptions{}); err != nil {
+				if !strings.Contains(err.Error(), "not found") {
+					fmt.Print(err)
+					continue
+				}
+				fmt.Printf("ℹ️  %s service not found\n", ms.Name)
 			}
-			fmt.Print("ℹ️   Cluster Role Bindings not found ...\n")
 		}
 	}
 
-	fmt.Print("❌   Cluster Role ...\n")
-	if err := c.K8sClientset.RbacV1().ClusterRoles().Delete(context.Background(), deployments.KubeArmorClusterRoleName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
+	fmt.Print("💨  Service Accounts\n")
+	serviceAccountList, err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	serviceAccountNames := []string{serviceAccountName, deployments.KubeArmorControllerServiceAccountName, operatorServiceAccountName}
+
+	// for backward-compatibility - where ServiceAccounts are not KubeArmor labelled
+	if len(serviceAccountList.Items) == 0 {
+		serviceAccountList, err = c.K8sClientset.CoreV1().ServiceAccounts("").List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			fmt.Print(err)
 		}
-		fmt.Print("ℹ️   Cluster Role not found ...\n")
+		if len(serviceAccountList.Items) == 0 {
+			fmt.Print("    ℹ️  ServiceAccount not found\n")
+		} else {
+			for _, sa := range serviceAccountList.Items {
+				// check for the services by serviceaccount names
+				// once we have labels in all the objects this can be removed
+				if slices.Contains(serviceAccountNames, sa.Name) {
+					if err := c.K8sClientset.CoreV1().ServiceAccounts(sa.Namespace).Delete(context.Background(), sa.Name, metav1.DeleteOptions{}); err != nil {
+						if !strings.Contains(err.Error(), "not found") {
+							fmt.Print(err)
+							continue
+						}
+						fmt.Printf("ℹ️  ServiceAccount %s can't be removed\n", sa.Name)
+						continue
+					}
+					fmt.Printf("    ❌  ServiceAccount %s removed\n", sa.Name)
+
+				}
+			}
+		}
+	} else {
+		for _, sa := range serviceAccountList.Items {
+			if err := c.K8sClientset.CoreV1().ServiceAccounts(sa.Namespace).Delete(context.Background(), sa.Name, metav1.DeleteOptions{}); err != nil {
+				if !strings.Contains(err.Error(), "not found") {
+					fmt.Print(err)
+					continue
+				}
+				fmt.Printf("ℹ️  ServiceAccount %s not found\n", sa.Name)
+			}
+		}
 	}
 
-	fmt.Print("❌   KubeArmor Relay Service ...\n")
-	if err := c.K8sClientset.CoreV1().Services(o.Namespace).Delete(context.Background(), relayServiceName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
+	fmt.Print("💨  Cluster Roles\n")
+	clusterRoleList, err := c.K8sClientset.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	clusterRoleNames := []string{
+		KubeArmorClusterRoleName,
+		KubeArmorOperatorManageControllerClusterRoleName,
+		KubeArmorOperatorManageClusterRoleName,
+		KubeArmorSnitchClusterRoleName,
+		KubeArmorOperatorClusterRoleName,
+		KubeArmorControllerClusterRoleName,
+		KubeArmorControllerProxyClusterRoleName,
+	}
+	// for backward-compatibility - where ClusterRoles are not KubeArmor labelled
+	if len(clusterRoleList.Items) == 0 {
+		clusterRoleList, err = c.K8sClientset.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			fmt.Print(err)
 		}
-		fmt.Print("ℹ️   KubeArmor Relay Service not found ...\n")
+		for _, cr := range clusterRoleList.Items {
+			// check for clusterroles by names
+			// once we have labels in all the objects this can be removed
+			if slices.Contains(clusterRoleNames, cr.Name) {
+				if err := c.K8sClientset.RbacV1().ClusterRoles().Delete(context.Background(), cr.Name, metav1.DeleteOptions{}); err != nil {
+					if !strings.Contains(err.Error(), "not found") {
+						fmt.Print(err)
+						continue
+					}
+					fmt.Printf("ℹ️  ClusterRole %s cant' be removed\n", cr.Name)
+					continue
+				}
+				fmt.Printf("    ❌  ClusterRole %s removed\n", cr.Name)
+
+			}
+		}
+	} else {
+		for _, cr := range clusterRoleList.Items {
+			if err := c.K8sClientset.RbacV1().ClusterRoles().Delete(context.Background(), cr.Name, metav1.DeleteOptions{}); err != nil {
+				if !strings.Contains(err.Error(), "not found") {
+					fmt.Print(err)
+					continue
+				}
+				fmt.Printf("ℹ️  ClusterRole %s not found\n", cr.Name)
+			}
+		}
 	}
 
-	fmt.Print("❌   KubeArmor DaemonSet ...\n")
-	if err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).Delete(context.Background(), kubearmor, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
+	fmt.Print("💨  Cluster Role Bindings\n")
+	clusterRoleBindingsList, err := c.K8sClientset.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	clusterRoleBindingNames := []string{
+		KubeArmorSnitchClusterroleBindingName,
+		KubeArmorControllerProxyClusterRoleBindingName,
+		KubeArmorControllerClusterRoleBindingName,
+		KubeArmorClusterRoleBindingName,
+		KubeArmorOperatorManageControllerClusterRoleBindingName,
+		KubeArmorOperatorManageClusterRoleBindingName,
+		KubeArmorOperatorClusterRoleBindingName,
+	}
+	// for backward-compatibility - where ClusterRoles are not KubeArmor labelled
+	if len(clusterRoleBindingsList.Items) == 0 {
+		clusterRoleBindingsList, err := c.K8sClientset.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			fmt.Print(err)
 		}
-		fmt.Print("ℹ️   KubeArmor DaemonSet not found ...\n")
+		for _, crb := range clusterRoleBindingsList.Items {
+			// check for clusterroles by names
+			// once we have labels in all the objects this can be removed
+			if slices.Contains(clusterRoleBindingNames, crb.Name) {
+				if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), crb.Name, metav1.DeleteOptions{}); err != nil {
+					if !strings.Contains(err.Error(), "not found") {
+						fmt.Print(err)
+						continue
+					}
+					fmt.Printf("ℹ️  ClusterRoleBinding %s cant' be removed\n", crb.Name)
+					continue
+				}
+				fmt.Printf("    ❌  ClusterRoleBinding %s removed\n", crb.Name)
+			}
+		}
+
+	} else {
+		for _, crb := range clusterRoleBindingsList.Items {
+			// Older CLuster Role Binding Name, keeping it to clean up older kubearmor installations
+			if err := c.K8sClientset.RbacV1().ClusterRoleBindings().Delete(context.Background(), crb.Name, metav1.DeleteOptions{}); err != nil {
+				if !strings.Contains(err.Error(), "not found") {
+					fmt.Print(err)
+					continue
+				}
+				fmt.Print("ℹ️  ClusterRoleBindings not found\n")
+				continue
+			}
+			fmt.Printf("    ❌  ClusterRoleBinding %s removed\n", crb.Name)
+		}
 	}
 
-	fmt.Print("❌   KubeArmor ConfigMap ...\n")
-	if err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).Delete(context.Background(), deployments.KubeArmorConfigMapName, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return err
+	fmt.Print("🧹  Roles\n")
+	rolesList, err := c.K8sClientset.RbacV1().Roles(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(rolesList.Items) == 0 {
+		rolesList, err := c.K8sClientset.RbacV1().Roles(o.Namespace).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			fmt.Print(err)
 		}
-		fmt.Print("ℹ️   KubeArmor ConfigMap not found ...\n")
+		for _, r := range rolesList.Items {
+			if r.Name == deployments.KubeArmorControllerLeaderElectionRoleName {
+				if err := c.K8sClientset.RbacV1().Roles(r.Namespace).Delete(context.Background(), r.Name, metav1.DeleteOptions{}); err != nil {
+					if !strings.Contains(err.Error(), "not found") {
+						fmt.Print(err)
+						continue
+					}
+					fmt.Printf("ℹ️  Error while uninstalling %s Role\n", r.Name)
+					continue
+				}
+				fmt.Printf("    ❌  Role %s removed\n", r.Name)
+			}
+		}
+	} else {
+		if err := c.K8sClientset.RbacV1().Roles(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerLeaderElectionRoleName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				fmt.Print("Error while uninstalling KubeArmor Controller Role\n")
+			}
+		} else {
+			fmt.Printf("    ❌  Role %s removed\n", deployments.KubeArmorControllerLeaderElectionRoleName)
+		}
+	}
+
+	fmt.Print("🧹  RoleBindings\n")
+	roleBindingsList, err := c.K8sClientset.RbacV1().RoleBindings(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(roleBindingsList.Items) == 0 {
+		rolesBindingsList, err := c.K8sClientset.RbacV1().RoleBindings(o.Namespace).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			fmt.Print(err)
+		}
+		for _, rb := range rolesBindingsList.Items {
+			if rb.Name == deployments.KubeArmorControllerLeaderElectionRoleBindingName {
+				if err := c.K8sClientset.RbacV1().RoleBindings(rb.Namespace).Delete(context.Background(), rb.Name, metav1.DeleteOptions{}); err != nil {
+					if !strings.Contains(err.Error(), "not found") {
+						fmt.Printf("ℹ️  Error while uninstalling %s RoleBinding\n", rb.Name)
+						continue
+					}
+				}
+				fmt.Printf("    ❌  RoleBinding %s removed\n", rb.Name)
+			}
+		}
+	} else {
+		if err := c.K8sClientset.RbacV1().RoleBindings(o.Namespace).Delete(context.Background(), deployments.KubeArmorControllerLeaderElectionRoleBindingName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				fmt.Print("Error while uninstalling KubeArmor Controller Role Bindings\n")
+			}
+		} else {
+			fmt.Printf("    ❌  RoleBinding %s removed\n", deployments.KubeArmorControllerLeaderElectionRoleBindingName)
+		}
+	}
+
+	fmt.Print("👻  KubeArmor Controller TLS certificates\n")
+	tlsCertificatesList, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	for _, tlsCert := range tlsCertificatesList.Items {
+		if err := c.K8sClientset.CoreV1().Secrets(tlsCert.Namespace).Delete(context.Background(), tlsCert.Name, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				fmt.Print(err)
+				continue
+			}
+			fmt.Print("ℹ️  KubeArmor Controller TLS certificates not found\n")
+			continue
+		}
+		fmt.Printf("    ❌  KubeArmor Controller TLS certificate %s removed\n", tlsCert.Name)
+	}
+
+	fmt.Print("👻  KubeArmor ConfigMap\n")
+	configmapList, err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	for _, cm := range configmapList.Items {
+		if err := c.K8sClientset.CoreV1().ConfigMaps(cm.Namespace).Delete(context.Background(), cm.Name, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				fmt.Print(err)
+				continue
+			}
+			fmt.Print("ℹ️  KubeArmor ConfigMap not found\n")
+			continue
+		}
+		fmt.Printf("    ❌  ConfigMap %s removed\n", cm.Name)
+	}
+
+	fmt.Print("👻  KubeArmor DaemonSet\n")
+	daemonsetList, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(daemonsetList.Items) == 0 {
+		fmt.Print("    ℹ️  KubeArmor Daemonset not found\n")
+	} else {
+		for _, ds := range daemonsetList.Items {
+			if err := c.K8sClientset.AppsV1().DaemonSets(ds.Namespace).Delete(context.Background(), ds.Name, metav1.DeleteOptions{}); err != nil {
+				if !strings.Contains(err.Error(), "not found") {
+					fmt.Print(err)
+					continue
+				}
+				fmt.Print("ℹ️  KubeArmor DaemonSet not found\n")
+				continue
+			}
+			fmt.Printf("    ❌  KubeArmor DaemonSet %s removed\n", ds.Name)
+		}
+	}
+
+	fmt.Print("👻  KubeArmor Deployments\n")
+	kaDeploymentsList, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(kaDeploymentsList.Items) == 0 {
+		fmt.Print("    ℹ️  KubeArmor Deployments not found\n")
+	} else {
+		for _, d := range kaDeploymentsList.Items {
+			if err := c.K8sClientset.AppsV1().Deployments(d.Namespace).Delete(context.Background(), d.Name, metav1.DeleteOptions{}); err != nil {
+				fmt.Printf("    ℹ️  Error while uninstalling KubeArmor Deployment %s : %s\n", d.Name, err.Error())
+				continue
+			}
+			fmt.Printf("    ❌  KubeArmor Deployment %s removed\n", d.Name)
+		}
 	}
 
 	if o.Force {
-		fmt.Printf("CRD %s ...\n", kspName)
+		fmt.Printf("CRD %s\n", kspName)
 		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return err
 			}
-			fmt.Printf("CRD %s not found ...\n", kspName)
+			fmt.Printf("CRD %s not found\n", kspName)
 		}
 
-		fmt.Printf("CRD %s ...\n", hspName)
+		fmt.Printf("CRD %s\n", hspName)
 		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return err
 			}
-			fmt.Printf("CRD %s not found ...\n", hspName)
+			fmt.Printf("CRD %s not found\n", hspName)
 		}
 
-		removeAnnotations(c)
+		removeAnnotations(c, o.Namespace)
 	}
 	if verify {
-		checkTerminatingPods(c)
+		checkTerminatingPods(c, o.Namespace)
 	}
 	return nil
 }
