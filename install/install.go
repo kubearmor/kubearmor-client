@@ -120,17 +120,17 @@ func printMessage(msg string, flag bool) int {
 
 func checkPods(c *k8s.Client, o Options) {
 	cursor := [4]string{"|", "/", "—", "\\"}
-	fmt.Printf("😋\tChecking if KubeArmor pods are running ...")
+	fmt.Printf("😋\tChecking if KubeArmor pods are running ...\n")
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	for {
 		time.Sleep(200 * time.Millisecond)
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app", FieldSelector: "status.phase!=Running"})
 		podno := len(pods.Items)
-		clearLine(90)
-		fmt.Printf("\r\tKUBEARMOR pods left to run : %d ... %s", podno, cursor[cursorcount])
+		// clearLine(90)
+		fmt.Printf("\r\tKubeArmor pods left to run : %d ... %s", podno, cursor[cursorcount])
 		cursorcount++
-		if cursorcount == 4 {
+		if cursorcount == len(cursor) {
 			cursorcount = 0
 		}
 		if !otime.After(time.Now()) {
@@ -185,15 +185,15 @@ func checkPods(c *k8s.Client, o Options) {
 
 func checkTerminatingPods(c *k8s.Client) int {
 	cursor := [4]string{"|", "/", "—", "\\"}
-	fmt.Printf("🔴   Checking if KubeArmor pods are stopped ...")
+	fmt.Printf("🔴   Checking if KubeArmor pods are stopped ...\n")
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	for {
 		time.Sleep(200 * time.Millisecond)
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app", FieldSelector: "status.phase=Running"})
 		podno := len(pods.Items)
-		clearLine(90)
-		fmt.Printf("\rKUBEARMOR pods left to stop : %d ... %s", podno, cursor[cursorcount])
+		// clearLine(90)
+		fmt.Printf("\rKubeArmor pods left to stop : %d ... %s", podno, cursor[cursorcount])
 		cursorcount++
 		if cursorcount == 4 {
 			cursorcount = 0
