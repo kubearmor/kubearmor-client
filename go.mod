@@ -42,7 +42,7 @@ require (
 )
 
 require (
-	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230912162532-0b5b73425c5a
 	github.com/charmbracelet/bubbles v0.15.0
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.7.1

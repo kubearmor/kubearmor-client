@@ -132,6 +132,8 @@ github.com/ThalesIgnite/crypto11 v1.2.5/go.mod h1:ILDKtnCKiQ7zRoNxcp36Y1ZR8LBPmR
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277 h1:a23qbtQo5K7SG54Suy+J8BDFKQM1E6NazvVVsLoHMAs=
 github.com/accuknox/auto-policy-discovery/src v0.0.0-20230707054448-845969c25277/go.mod h1:Y06giCyLHz+sBHmytse7Rj1d4gSX2JnetkQ9tikmFwo=
+github.com/accuknox/auto-policy-discovery/src v0.0.0-20230912162532-0b5b73425c5a h1:ZgJ0k7G25jMMQvM9lhgW9KA2GqMr6qucSIuZpvAKPYw=
+github.com/accuknox/auto-policy-discovery/src v0.0.0-20230912162532-0b5b73425c5a/go.mod h1:1RgwWea/oyj4SAyRtkEnbu9CRFBStIIT1Ec6F1DxK+0=
 github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277 h1:s+u6ka+QjkxBfsbPlPQsy0+9b5ntl/JjLC5gNNrdksk=
 github.com/accuknox/auto-policy-discovery/src/protobuf v0.0.0-20230707054448-845969c25277/go.mod h1:FSQvW8Rqxd9Xic0fbd1R0w+dzS2hOj5+L9NOu4aa+jc=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
