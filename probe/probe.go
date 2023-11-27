@@ -764,7 +764,12 @@ func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (
 			if err != nil {
 				return nil, [][]string{}, err
 			}
-			data = append(data, []string{armoredPod.Namespace, mp[armoredPod.Namespace].NsPostureString, mp[armoredPod.Namespace].NsVisibilityString, armoredPod.Name, ""})
+			nsPostureString, nsVisibilityString := "", ""
+			if nsData, exists := mp[armoredPod.Namespace]; exists {
+				nsPostureString = nsData.NsPostureString
+				nsVisibilityString = nsData.NsVisibilityString
+			}
+			data = append(data, []string{armoredPod.Namespace, nsPostureString, nsVisibilityString, armoredPod.Name, ""})
 			labels := getAnnotatedPodLabels(armoredPod.Labels)
 
 			for policyKey, policyValue := range policyMap {
