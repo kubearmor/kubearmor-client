@@ -217,7 +217,12 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	if o.Env.Auto {
 		env = k8s.AutoDetectEnvironment(c)
 		if env == "none" {
-			return errors.New("unsupported environment or cluster not configured correctly")
+			if o.Save {
+				printMessage("⚠️\tNo env provided with \"--save\", setting env to  \"generic\"", true)
+				env = "generic"
+			} else {
+				return errors.New("unsupported environment or cluster not configured correctly")
+			}
 		}
 		printMessage("😄\tAuto Detected Environment : "+env, true)
 	} else {
@@ -227,16 +232,18 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	// Check if the namespace already exists
 	ns := o.Namespace
-	if _, err := c.K8sClientset.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{}); err != nil {
-		// Create namespace when doesn't exist
-		printMessage("🚀\tCreating namespace "+ns+"  ", true)
-		newns := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ns,
-			},
-		}
-		if _, err := c.K8sClientset.CoreV1().Namespaces().Create(context.Background(), &newns, metav1.CreateOptions{}); err != nil {
-			return fmt.Errorf("failed to create namespace %s: %+v", ns, err)
+	if !o.Save {
+		if _, err := c.K8sClientset.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{}); err != nil {
+			// Create namespace when doesn't exist
+			printMessage("🚀\tCreating namespace "+ns+"  ", true)
+			newns := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: ns,
+				},
+			}
+			if _, err := c.K8sClientset.CoreV1().Namespaces().Create(context.Background(), &newns, metav1.CreateOptions{}); err != nil {
+				return fmt.Errorf("failed to create namespace %s: %+v", ns, err)
+			}
 		}
 	}
 
