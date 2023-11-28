@@ -53,7 +53,7 @@ require (
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231019102803-e4e0e68a457b
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20231024025323-15ad34e8f01e
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231019102803-e4e0e68a457b
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231128180713-7c210669ac99
 	github.com/onsi/ginkgo/v2 v2.9.7
 	github.com/onsi/gomega v1.27.8
 	k8s.io/api v0.27.3
