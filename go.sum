@@ -1856,6 +1856,8 @@ github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b h1:jJ
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b/go.mod h1:u2IBmj/3GtZodhGIPlO0gwNZ+C/dDlxER1BPQfCOEsk=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231128180713-7c210669ac99 h1:O8b+HZaZe94oK8aNUlrizyq/2LcNaEdRy7tARD0T2PY=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231128180713-7c210669ac99/go.mod h1:8kx7EoCU6YHOcR4K3o6ywRwBnTv9AJZb4dyxjJkoIiQ=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231129072440-719ae8563da7 h1:BpnTEzPV8XvuWqvWFGqQ8EOBDvuItqHl3jhCrmsl5Ac=
+github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231129072440-719ae8563da7/go.mod h1:8kx7EoCU6YHOcR4K3o6ywRwBnTv9AJZb4dyxjJkoIiQ=
 github.com/kulti/thelper v0.4.0/go.mod h1:vMu2Cizjy/grP+jmsvOFDx1kYP6+PD1lqg4Yu5exl2U=
 github.com/kunwardeep/paralleltest v1.0.2/go.mod h1:ZPqNm1fVHPllh5LPVujzbVz1JN2GhLxSfY+oqUsvG30=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
