@@ -16,8 +16,7 @@ var installOptions install.Options
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install KubeArmor in a Kubernetes Cluster",
-	Long: `Safeguard your Kubernetes cluster effortlessly with KubeArmor CLI installation. This streamlined process equips your 
-	cluster with advanced container-level security, allowing you to enforce policies and enhance defenses seamlessly.`,
+	Long:  `Install command installs kubearmor in the cluster. Install command checks the string passed with the env whether it is a valid environment or not. and save flag can be used to save the manifest  `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
 			return fmt.Errorf("error in checking environment option: %v", err)
