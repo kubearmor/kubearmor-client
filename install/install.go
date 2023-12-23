@@ -55,6 +55,7 @@ type envOption struct {
 
 var verify bool
 var progress int
+var total int =17
 var cursorcount int
 var validEnvironments = []string{"k0s", "k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
 
@@ -109,7 +110,7 @@ func printAnimation(msg string, flag bool) int {
 		if flag {
 			progress++
 		}
-		printBar("\tKubeArmor Installing ", 17)
+		printBar("\tKubeArmor Installing ", total)
 	}
 	return 0
 }
@@ -223,8 +224,9 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			} else {
 				return errors.New("unsupported environment or cluster not configured correctly")
 			}
+		} else {
+			printMessage("😄\tAuto Detected Environment : "+env, true)
 		}
-		printMessage("😄\tAuto Detected Environment : "+env, true)
 	} else {
 		env = o.Env.Environment
 		printMessage("😄\tEnvironment : "+env, true)
@@ -235,6 +237,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	if !o.Save {
 		if _, err := c.K8sClientset.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{}); err != nil {
 			// Create namespace when doesn't exist
+			total++;
 			printMessage("🚀\tCreating namespace "+ns+"  ", true)
 			newns := corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
