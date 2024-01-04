@@ -18,11 +18,14 @@ var installCmd = &cobra.Command{
 	Short: "Install KubeArmor in a Kubernetes Cluster",
 	Long:  `Install KubeArmor in a Kubernetes Clusters`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
-			return fmt.Errorf("error in checking environment option: %v", err)
-		}
-		if err := install.K8sInstaller(client, installOptions); err != nil {
-			return err
+		if installOptions.Legacy {
+			if err := install.K8sLegacyInstaller(client, installOptions); err != nil {
+				return fmt.Errorf("error installing kubearmor in legacy mode: %v", err)
+			}
+		} else {
+			if err := install.K8sInstaller(client, installOptions); err != nil {
+				return fmt.Errorf("error installing kubearmor: %v", err)
+			}
 		}
 		return nil
 	},
@@ -43,7 +46,6 @@ func init() {
 	installCmd.Flags().BoolVar(&installOptions.Save, "save", false, "Save KubeArmor Manifest ")
 	installCmd.Flags().BoolVar(&installOptions.Verify, "verify", true, "Verify whether all KubeArmor resources are created, running and also probes whether KubeArmor has armored the cluster or not")
 	installCmd.Flags().BoolVar(&installOptions.Local, "local", false, "Use Local KubeArmor Images (sets ImagePullPolicy to 'IfNotPresent') ")
-	installCmd.Flags().StringVarP(&installOptions.Env.Environment, "env", "e", "", "Supported KubeArmor Environment [k0s,k3s,microK8s,minikube,gke,bottlerocket,eks,docker,oke,generic]")
 	installCmd.Flags().StringVarP(&installOptions.ImageRegistry, "registry", "r", "", "Image registry to use to pull the images")
-
+	installCmd.Flags().BoolVar(&installOptions.Legacy, "legacy", false, "Installs kubearmor in legacy mode if set to true")
 }
