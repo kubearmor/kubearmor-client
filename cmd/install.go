@@ -21,7 +21,7 @@ var installCmd = &cobra.Command{
 		if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
 			return fmt.Errorf("error in checking environment option: %v", err)
 		}
-		if err := install.K8sInstaller(client, installOptions); err != nil {
+		if err := install.K8sInstaller(client); err != nil {
 			return err
 		}
 		return nil
