@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	deployments "github.com/kubearmor/KubeArmor/deployments/get"
+	"github.com/kubearmor/kubearmor-client/hacks"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/probe"
 
@@ -34,18 +35,21 @@ import (
 
 // Options for karmor install
 type Options struct {
-	Namespace      string
-	InitImage      string
-	KubearmorImage string
-	Tag            string
-	Audit          string
-	Block          string
-	Visibility     string
-	Force          bool
-	Local          bool
-	Save           bool
-	Verify         bool
-	Env            envOption
+	Namespace       string
+	InitImage       string
+	KubearmorImage  string
+	ControllerImage string
+	RelayImage      string
+	ImageRegistry   string
+	Tag             string
+	Audit           string
+	Block           string
+	Visibility      string
+	Force           bool
+	Local           bool
+	Save            bool
+	Verify          bool
+	Env             envOption
 }
 
 type envOption struct {
@@ -210,8 +214,43 @@ func checkTerminatingPods(c *k8s.Client, ns string) int {
 	return 0
 }
 
+// UpdateImageRegistry will update the registry address of the image
+func UpdateImageRegistry(registry, image string) string {
+	_, name, tag, hash := hacks.GetImageDetails(image)
+	if hash != "" {
+		return registry + "/" + name + ":" + hash
+	}
+	return registry + "/" + name + ":" + tag
+}
+
+// updateImageTag will update the tag of the image
+func updateImageTag(image, tag string) string {
+	// check if the image constains a tag
+	// if not, set it to latest
+	if !strings.Contains(image, ":") {
+		image = image + ":latest"
+	}
+	i := strings.Split(image, ":")
+	i[len(i)-1] = tag
+	return strings.Join(i, ":")
+}
+
 // K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
+	if o.Tag != "" {
+		o.KubearmorImage = updateImageTag(o.KubearmorImage, o.Tag)
+		o.InitImage = updateImageTag(o.InitImage, o.Tag)
+		o.ControllerImage = updateImageTag(o.ControllerImage, o.Tag)
+		o.RelayImage = updateImageTag(o.RelayImage, o.Tag)
+	}
+
+	if o.ImageRegistry != "" {
+		o.KubearmorImage = UpdateImageRegistry(o.ImageRegistry, o.KubearmorImage)
+		o.InitImage = UpdateImageRegistry(o.ImageRegistry, o.InitImage)
+		o.ControllerImage = UpdateImageRegistry(o.ImageRegistry, o.ControllerImage)
+		o.RelayImage = UpdateImageRegistry(o.ImageRegistry, o.RelayImage)
+	}
+
 	verify = o.Verify
 	var env string
 	if o.Env.Auto {
@@ -328,6 +367,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	relayDeployment := deployments.GetRelayDeployment(o.Namespace)
+	relayDeployment.Spec.Template.Spec.Containers[0].Image = o.RelayImage
 	if o.Local {
 		relayDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
 	}
@@ -344,15 +384,6 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	daemonset := deployments.GenerateDaemonSet(env, o.Namespace)
-	if o.Tag != "" {
-		kimg := strings.Split(o.KubearmorImage, ":")
-		kimg[1] = o.Tag
-		o.KubearmorImage = strings.Join(kimg, ":")
-
-		iimg := strings.Split(o.InitImage, ":")
-		iimg[1] = o.Tag
-		o.InitImage = strings.Join(iimg, ":")
-	}
 	daemonset.Spec.Template.Spec.Containers[0].Image = o.KubearmorImage
 	daemonset.Spec.Template.Spec.InitContainers[0].Image = o.InitImage
 	if o.Local {
@@ -485,8 +516,21 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	}
 
 	kubearmorControllerDeployment := deployments.GetKubeArmorControllerDeployment(o.Namespace)
+	// This deployment contains two containers, we should probably get rid of the kube-proxy pod
+	for i := range kubearmorControllerDeployment.Spec.Template.Spec.Containers {
+		if kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Name == "manager" {
+			kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image = o.ControllerImage
+		} else {
+			if o.ImageRegistry != "" {
+				kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image = UpdateImageRegistry(o.ImageRegistry, kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image)
+			}
+		}
+		kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].ImagePullPolicy = "IfNotPresent"
+	}
 	if o.Local {
-		kubearmorControllerDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = "IfNotPresent"
+		for i := range kubearmorControllerDeployment.Spec.Template.Spec.Containers {
+			kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].ImagePullPolicy = "IfNotPresent"
+		}
 	}
 	if !o.Save {
 		printMessage("🚀\tKubeArmor Controller Deployment  ", true)
