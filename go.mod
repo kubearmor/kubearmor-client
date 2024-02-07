@@ -1,8 +1,6 @@
 module github.com/kubearmor/kubearmor-client
 
-go 1.21.4
-
-toolchain go1.21.5
+go 1.20
 
 replace (
 	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
@@ -48,6 +46,7 @@ require (
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20231216173200-e64ccb7fede8
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20231216173200-e64ccb7fede8
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231216173200-e64ccb7fede8
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240112163539-933047a4c5dd
 	github.com/onsi/ginkgo/v2 v2.13.0
 	github.com/onsi/gomega v1.30.0
 	helm.sh/helm/v3 v3.13.3
@@ -141,7 +140,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/coreos/go-oidc/v3 v3.9.0 // indirect
-	github.com/cyberphone/json-canonicalization v0.0.0-20231217050601-ba74d44ecf5f // indirect
+	github.com/cyberphone/json-canonicalization v0.0.0-20231011164504-785e29786b46 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect

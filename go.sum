@@ -440,8 +440,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/creack/pty v1.1.21 h1:1/QdRyBaHHJP61QkWMXlOIBfsgdDeeKfK8SYVUWJKf0=
 github.com/creack/pty v1.1.21/go.mod h1:MOBLtS5ELjhRRrroQr9kyvTxUAFNvYEK993ew/Vr4O4=
-github.com/cyberphone/json-canonicalization v0.0.0-20231217050601-ba74d44ecf5f h1:eHnXnuK47UlSTOQexbzxAZfekVz6i+LKRdj1CU5DPaM=
-github.com/cyberphone/json-canonicalization v0.0.0-20231217050601-ba74d44ecf5f/go.mod h1:uzvlm1mxhHkdfqitSA92i7Se+S9ksOn3a3qmv/kyOCw=
+github.com/cyberphone/json-canonicalization v0.0.0-20231011164504-785e29786b46 h1:2Dx4IHfC1yHWI12AxQDJM1QbRCDfk6M+blLzlZCXdrc=
+github.com/cyberphone/json-canonicalization v0.0.0-20231011164504-785e29786b46/go.mod h1:uzvlm1mxhHkdfqitSA92i7Se+S9ksOn3a3qmv/kyOCw=
 github.com/cyphar/filepath-securejoin v0.2.4 h1:Ugdm7cg7i6ZK6x3xDF1oEu1nfkyfH53EtKeQYTC3kyg=
 github.com/cyphar/filepath-securejoin v0.2.4/go.mod h1:aPGpWjXOXUn2NCNjFvBE6aRxGGx79pTxQpKOJNYHHl4=
 github.com/daixiang0/gci v0.2.8/go.mod h1:+4dZ7TISfSmqfAGv59ePaHfNzgGtIkHAhhdKggP1JAc=
@@ -1062,6 +1062,8 @@ github.com/kubearmor/KubeArmor/deployments v0.0.0-20231216173200-e64ccb7fede8 h1
 github.com/kubearmor/KubeArmor/deployments v0.0.0-20231216173200-e64ccb7fede8/go.mod h1:8d7TqHmAaHtuekBFKWvs1nqr6qnEqwVM80IQn0GBWj0=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231216173200-e64ccb7fede8 h1:STjis8+9mSVmoxCDi0BPG5AsbJvmVm2089GzY6raChs=
 github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20231216173200-e64ccb7fede8/go.mod h1:LtrnsoV9isTrXx0ClJgKxSJ/gbYmDj9m3pXIjG1yxBg=
+github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240112163539-933047a4c5dd h1:Y/6gdMkKAXou/D7Gz9ELzyxyU982/HhmOoH9RdnrgW4=
+github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240112163539-933047a4c5dd/go.mod h1:dLmhugQiXZp8D8vyEQbjJV9whYCQPOQ3KHNEHUMgNLU=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231216173200-e64ccb7fede8 h1:RmJ16bj5GvcwkA+R/JQhTLijcbt2bnDfVbYfDhnhuQg=
 github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231216173200-e64ccb7fede8/go.mod h1:8kx7EoCU6YHOcR4K3o6ywRwBnTv9AJZb4dyxjJkoIiQ=
 github.com/kulti/thelper v0.4.0/go.mod h1:vMu2Cizjy/grP+jmsvOFDx1kYP6+PD1lqg4Yu5exl2U=
