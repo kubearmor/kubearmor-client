@@ -23,7 +23,7 @@ require (
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/json-iterator/go v1.1.12
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20231019102803-e4e0e68a457b
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20240208173719-1705dfd1ba65
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587
 	github.com/olekukonko/tablewriter v0.0.5
@@ -35,8 +35,8 @@ require (
 	golang.org/x/mod v0.14.0
 	golang.org/x/sync v0.5.0
 	golang.org/x/sys v0.16.0
-	google.golang.org/grpc v1.59.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/grpc v1.61.0
+	google.golang.org/protobuf v1.32.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -318,7 +318,7 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.16.0 // indirect
 	google.golang.org/api v0.153.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
