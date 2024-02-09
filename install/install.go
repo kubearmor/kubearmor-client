@@ -327,6 +327,19 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		printYAML = append(printYAML, serviceAccount)
 	}
 
+	relayServiceAccount := deployments.GetRelayServiceAccount(o.Namespace)
+	if !o.Save {
+		printMessage("💫\tService Account  ", true)
+		if _, err := c.K8sClientset.CoreV1().ServiceAccounts(o.Namespace).Create(context.Background(), relayServiceAccount, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				return err
+			}
+			printMessage("ℹ️\tRelay Service Account already exists  ", false)
+		}
+	} else {
+		printYAML = append(printYAML, relayServiceAccount)
+	}
+
 	clusterRole := deployments.GetClusterRole()
 	if !o.Save {
 		printMessage("⚙️\tCluster Role  ", true)
@@ -351,6 +364,22 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		}
 	} else {
 		printYAML = append(printYAML, clusterRoleBinding)
+	}
+
+	relayClusterRole := deployments.GetRelayClusterRole()
+	RelayClusterRoleBinding := deployments.GetRelayClusterRoleBinding(o.Namespace)
+	if !o.Save {
+		printMessage("⚙️\tKubeArmor Relay Roles  ", true)
+		if _, err := c.K8sClientset.RbacV1().ClusterRoles().Create(context.Background(), relayClusterRole, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				fmt.Print("Error while installing KubeArmor Relay ClusterRole")
+			}
+		}
+		if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), RelayClusterRoleBinding, metav1.CreateOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "already exists") {
+				fmt.Print("Error while installing KubeArmor Relay ClusterRoleBinding")
+			}
+		}
 	}
 
 	relayService := deployments.GetRelayService(o.Namespace)
@@ -720,7 +749,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	if err != nil {
 		fmt.Print(err)
 	}
-	serviceAccountNames := []string{serviceAccountName, deployments.KubeArmorControllerServiceAccountName, operatorServiceAccountName}
+	serviceAccountNames := []string{serviceAccountName, deployments.RelayServiceAccountName, deployments.KubeArmorControllerServiceAccountName, operatorServiceAccountName}
 
 	// for backward-compatibility - where ServiceAccounts are not KubeArmor labelled
 	if len(serviceAccountList.Items) == 0 {
@@ -767,6 +796,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	}
 	clusterRoleNames := []string{
 		KubeArmorClusterRoleName,
+		RelayClusterRoleName,
 		KubeArmorOperatorManageControllerClusterRoleName,
 		KubeArmorOperatorManageClusterRoleName,
 		KubeArmorSnitchClusterRoleName,
@@ -818,6 +848,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		KubeArmorControllerProxyClusterRoleBindingName,
 		KubeArmorControllerClusterRoleBindingName,
 		KubeArmorClusterRoleBindingName,
+		RelayClusterRoleBindingName,
 		KubeArmorOperatorManageControllerClusterRoleBindingName,
 		KubeArmorOperatorManageClusterRoleBindingName,
 		KubeArmorOperatorClusterRoleBindingName,
