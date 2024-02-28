@@ -35,21 +35,24 @@ import (
 
 // Options for karmor install
 type Options struct {
-	Namespace       string
-	InitImage       string
-	KubearmorImage  string
-	ControllerImage string
-	RelayImage      string
-	ImageRegistry   string
-	Tag             string
-	Audit           string
-	Block           string
-	Visibility      string
-	Force           bool
-	Local           bool
-	Save            bool
-	Verify          bool
-	Env             envOption
+	Namespace              string
+	InitImage              string
+	KubearmorImage         string
+	ControllerImage        string
+	RelayImage             string
+	ImageRegistry          string
+	Audit                  string
+	Block                  string
+	Visibility             string
+	KubeArmorTag           string
+	KubeArmorRelayTag      string
+	KubeArmorControllerTag string
+	Force                  bool
+	Local                  bool
+	Save                   bool
+	Verify                 bool
+	Env                    envOption
+	PreserveUpstream       bool
 }
 
 type envOption struct {
@@ -215,7 +218,14 @@ func checkTerminatingPods(c *k8s.Client, ns string) int {
 }
 
 // UpdateImageRegistry will update the registry address of the image
-func UpdateImageRegistry(registry, image string) string {
+func UpdateImageRegistry(registry, image string, preserveUpstream bool) string {
+	registry = strings.Trim(registry, "/")
+	if preserveUpstream {
+		return strings.Join([]string{
+			registry,
+			image,
+		}, "/")
+	}
 	_, name, tag, hash := hacks.GetImageDetails(image)
 	if hash != "" {
 		return registry + "/" + name + ":" + hash
@@ -225,6 +235,9 @@ func UpdateImageRegistry(registry, image string) string {
 
 // updateImageTag will update the tag of the image
 func updateImageTag(image, tag string) string {
+	if tag == "" {
+		return image
+	}
 	// check if the image constains a tag
 	// if not, set it to latest
 	if !strings.Contains(image, ":") {
@@ -237,18 +250,17 @@ func updateImageTag(image, tag string) string {
 
 // K8sInstaller for karmor install
 func K8sInstaller(c *k8s.Client, o Options) error {
-	if o.Tag != "" {
-		o.KubearmorImage = updateImageTag(o.KubearmorImage, o.Tag)
-		o.InitImage = updateImageTag(o.InitImage, o.Tag)
-		o.ControllerImage = updateImageTag(o.ControllerImage, o.Tag)
-		o.RelayImage = updateImageTag(o.RelayImage, o.Tag)
-	}
+
+	o.KubearmorImage = updateImageTag(o.KubearmorImage, o.KubeArmorTag)
+	o.InitImage = updateImageTag(o.InitImage, o.KubeArmorTag)
+	o.ControllerImage = updateImageTag(o.ControllerImage, o.KubeArmorControllerTag)
+	o.RelayImage = updateImageTag(o.RelayImage, o.KubeArmorRelayTag)
 
 	if o.ImageRegistry != "" {
-		o.KubearmorImage = UpdateImageRegistry(o.ImageRegistry, o.KubearmorImage)
-		o.InitImage = UpdateImageRegistry(o.ImageRegistry, o.InitImage)
-		o.ControllerImage = UpdateImageRegistry(o.ImageRegistry, o.ControllerImage)
-		o.RelayImage = UpdateImageRegistry(o.ImageRegistry, o.RelayImage)
+		o.KubearmorImage = UpdateImageRegistry(o.ImageRegistry, o.KubearmorImage, o.PreserveUpstream)
+		o.InitImage = UpdateImageRegistry(o.ImageRegistry, o.InitImage, o.PreserveUpstream)
+		o.ControllerImage = UpdateImageRegistry(o.ImageRegistry, o.ControllerImage, o.PreserveUpstream)
+		o.RelayImage = UpdateImageRegistry(o.ImageRegistry, o.RelayImage, o.PreserveUpstream)
 	}
 
 	verify = o.Verify
@@ -551,7 +563,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 			kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image = o.ControllerImage
 		} else {
 			if o.ImageRegistry != "" {
-				kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image = UpdateImageRegistry(o.ImageRegistry, kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image)
+				kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image = UpdateImageRegistry(o.ImageRegistry, kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].Image, o.PreserveUpstream)
 			}
 		}
 		kubearmorControllerDeployment.Spec.Template.Spec.Containers[i].ImagePullPolicy = "IfNotPresent"
