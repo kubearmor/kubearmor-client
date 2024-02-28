@@ -3,7 +3,7 @@ module github.com/kubearmor/kubearmor-client
 go 1.21
 
 replace (
-	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
+	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.9
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	// only until https://github.com/kubernetes-sigs/controller-runtime/pull/2223 makes it into a release
 	k8s.io/api => k8s.io/api v0.26.4
