@@ -21,6 +21,11 @@ import (
 
 type regexType *regexp.Regexp
 
+const (
+	SelfCertProvider   string = "self"
+	ExternalCertLoader string = "external"
+)
+
 // Regex Compiled Structs
 var (
 	CNamespace     regexType
@@ -34,21 +39,25 @@ var (
 
 // Options Structure
 type Options struct {
-	GRPC          string
-	MsgPath       string
-	LogPath       string
-	LogFilter     string
-	JSON          bool
-	Namespace     string
-	LogType       string
-	Operation     string
-	ContainerName string
-	PodName       string
-	Source        string
-	Resource      string
-	Limit         uint32
-	Selector      []string
-	EventChan     chan EventInfo // channel to send events on
+	GRPC             string
+	Insecure         bool
+	TlsCertPath      string
+	TlsCertProvider  string
+	ReadCAFromSecret bool
+	MsgPath          string
+	LogPath          string
+	LogFilter        string
+	JSON             bool
+	Namespace        string
+	LogType          string
+	Operation        string
+	ContainerName    string
+	PodName          string
+	Source           string
+	Resource         string
+	Limit            uint32
+	Selector         []string
+	EventChan        chan EventInfo // channel to send events on
 }
 
 // StopChan Channel
@@ -144,9 +153,20 @@ func StartObserver(c *k8s.Client, o Options) error {
 	}
 
 	// create client
-	logClient := NewClient(gRPC, o.MsgPath, o.LogPath, o.LogFilter, o.Limit)
-	if logClient == nil {
-		return errors.New("unable to create log client")
+	logClient, err := NewClient(gRPC, o, c.K8sClientset)
+	if err != nil {
+		if o.Insecure && !isDialingError(err) {
+			// retry connecting to the server on secured channel
+			fmt.Fprintf(os.Stderr, "Failed to connect on insecure channel\n(%s)\n", err)
+			fmt.Fprint(os.Stderr, "Trying to reconnect using secured channel...\n")
+			o.Insecure = false
+			logClient, err = NewClient(gRPC, o, c.K8sClientset)
+			if err != nil {
+				return fmt.Errorf("unable to create log client, error=%s", err)
+			}
+		} else {
+			return fmt.Errorf("unable to create log client, error=%s", err)
+		}
 	}
 
 	fmt.Fprintf(os.Stderr, "Created a gRPC client (%s)\n", gRPC)
@@ -160,10 +180,10 @@ func StartObserver(c *k8s.Client, o Options) error {
 	if o.MsgPath != "none" {
 		// watch messages
 		go logClient.WatchMessages(o.MsgPath, o.JSON)
-		fmt.Fprintln(os.Stderr, "Started to watch messages")
+		fmt.Fprintln(os.Stdout, "Started to watch messages")
 	}
 
-	err := regexCompile(o)
+	err = regexCompile(o)
 	if err != nil {
 		fmt.Print(err)
 		return err
@@ -174,7 +194,7 @@ func StartObserver(c *k8s.Client, o Options) error {
 		if o.LogFilter == "all" || o.LogFilter == "policy" {
 			// watch alerts
 			go logClient.WatchAlerts(o)
-			fmt.Fprintln(os.Stderr, "Started to watch alerts")
+			fmt.Fprintln(os.Stdout, "Started to watch alerts")
 		}
 
 		if o.LogFilter == "all" || o.LogFilter == "system" {

@@ -25,6 +25,10 @@ func init() {
 	rootCmd.AddCommand(logCmd)
 
 	logCmd.Flags().StringVar(&logOptions.GRPC, "gRPC", "", "gRPC server information")
+	logCmd.Flags().BoolVar(&logOptions.Insecure, "insecure", true, "connect to kubearmor on an insecure connection")
+	logCmd.Flags().StringVar(&logOptions.TlsCertPath, "tlsCertPath", "/var/lib/kubearmor/tls", "path to the ca.crt, client.crt, and client.key if certs are provided locally")
+	logCmd.Flags().StringVar(&logOptions.TlsCertProvider, "tlsCertProvider", "self", "{self|external} self: dynamically crete client certificates, external: provide client certificate and key with --tlsCertPath")
+	logCmd.Flags().BoolVar(&logOptions.ReadCAFromSecret, "readCAFromSecret", true, "true if ca cert to be read from k8s secret on cluster running kubearmor")
 	logCmd.Flags().StringVar(&logOptions.MsgPath, "msgPath", "none", "Output location for messages, {path|stdout|none}")
 	logCmd.Flags().StringVar(&logOptions.LogPath, "logPath", "stdout", "Output location for alerts and logs, {path|stdout|none}")
 	logCmd.Flags().StringVar(&logOptions.LogFilter, "logFilter", "policy", "Filter for what kinds of alerts and logs to receive, {policy|system|all}")
