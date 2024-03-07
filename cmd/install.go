@@ -19,6 +19,9 @@ var installCmd = &cobra.Command{
 	Long:  `Install KubeArmor in a Kubernetes Clusters`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if installOptions.Legacy {
+			if err := installOptions.Env.CheckAndSetValidEnvironmentOption(cmd.Flag("env").Value.String()); err != nil {
+				return fmt.Errorf("error in checking environment option: %v", err)
+			}
 			if err := install.K8sLegacyInstaller(client, installOptions); err != nil {
 				return fmt.Errorf("error installing kubearmor in legacy mode: %v", err)
 			}
@@ -29,6 +32,12 @@ var installCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func markDeprecated(cmd *cobra.Command, flag, message string) {
+	if err := cmd.Flags().MarkDeprecated(flag, message); err != nil {
+		fmt.Printf("Error marking '%s' as deprecated: %v\n", flag, err)
+	}
 }
 
 func init() {
@@ -54,6 +63,8 @@ func init() {
 	installCmd.Flags().BoolVar(&installOptions.Legacy, "legacy", false, "Installs kubearmor in legacy mode if set to true")
 	installCmd.Flags().BoolVar(&installOptions.SkipDeploy, "skip-deploy", false, "Saves kubearmor operator CR manifest rather than deploying it")
 	installCmd.Flags().BoolVar(&installOptions.PreserveUpstream, "preserve-upstream", true, "Do not override the image registry when using -r flag, prefix only")
-
+	installCmd.Flags().StringVarP(&installOptions.Env.Environment, "env", "e", "", "Supported KubeArmor Environment [k0s,k3s,microK8s,minikube,gke,bottlerocket,eks,docker,oke,generic]")
 	installCmd.MarkFlagsMutuallyExclusive("verify", "save")
+	markDeprecated(installCmd, "env", "Only relevant when using legacy")
+	markDeprecated(installCmd, "legacy", "KubeArmor now utilizes operator-based installation. This command may not set up KubeArmor in the intended way.")
 }

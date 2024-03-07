@@ -16,9 +16,9 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
-          go-version: "v1.21"
+          go-version-file: './go.mod'
 
       - name: Build karmor
         run: make
@@ -29,9 +29,9 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
-          go-version: "v1.21"
+          go-version-file: './go.mod'
 
       - name: Check gofmt
         run: make gofmt
@@ -42,9 +42,9 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
-          go-version: "v1.21"
+          go-version-file: './go.mod'
 
       - name: Run Gosec Security Scanner
         run: make gosec
@@ -66,9 +66,9 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v2
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
-          go-version: "v1.21"
+          go-version-file: './go.mod'
 
       - name: Run unit tests
         run: make test

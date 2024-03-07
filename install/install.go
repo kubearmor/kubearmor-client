@@ -67,11 +67,34 @@ type Options struct {
 	KubeArmorControllerTag string
 	KubeArmorOperatorTag   string
 	PreserveUpstream       bool
+	Env                    envOption
+}
+
+type envOption struct {
+	Auto        bool
+	Environment string
 }
 
 var verify bool
 var progress int
 var cursorcount int
+var validEnvironments = []string{"k0s", "k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
+
+// Checks if passed string is a valid environment
+func (env *envOption) CheckAndSetValidEnvironmentOption(envOption string) error {
+	if envOption == "" {
+		env.Auto = true
+		return nil
+	}
+	for _, v := range validEnvironments {
+		if v == envOption {
+			env.Environment = envOption
+			env.Auto = false
+			return nil
+		}
+	}
+	return errors.New("invalid environment passed")
+}
 
 func setPosture(option string, value string, posture *Operatorv1.PostureType, optionName string) {
 	if option == "all" || strings.Contains(option, value) {
@@ -79,7 +102,7 @@ func setPosture(option string, value string, posture *Operatorv1.PostureType, op
 	}
 }
 
-func getOperatorCR(o Options) *Operatorv1.KubeArmorConfig {
+func getOperatorCR(o Options) (*Operatorv1.KubeArmorConfig, string) {
 	ns := o.Namespace
 	var defaultFilePosture Operatorv1.PostureType
 	var defaultCapabilitiesPosture Operatorv1.PostureType
@@ -108,6 +131,17 @@ func getOperatorCR(o Options) *Operatorv1.KubeArmorConfig {
 	setPosture(o.Block, "file", &defaultFilePosture, "block")
 	setPosture(o.Block, "network", &defaultNetworkPosture, "block")
 	setPosture(o.Block, "capabilities", &defaultCapabilitiesPosture, "block")
+
+	postureSettings := ""
+	if defaultCapabilitiesPosture != "" {
+		postureSettings += " -defaultCapabilitiesPosture: " + string(defaultCapabilitiesPosture)
+	}
+	if defaultFilePosture != "" {
+		postureSettings += " -defaultFilePosture: " + string(defaultFilePosture)
+	}
+	if defaultNetworkPosture != "" {
+		postureSettings += " -defaultNetworkPosture: " + string(defaultNetworkPosture)
+	}
 
 	return &Operatorv1.KubeArmorConfig{
 		TypeMeta: metav1.TypeMeta{
@@ -150,7 +184,7 @@ func getOperatorCR(o Options) *Operatorv1.KubeArmorConfig {
 			EnableStdOutAlerts: false,
 			EnableStdOutMsgs:   false,
 		},
-	}
+	}, postureSettings
 }
 
 func clearLine(size int) int {
@@ -202,14 +236,13 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
 	cursor := [4]string{"|", "/", "—", "\\"}
+	fmt.Printf("⌚️\tThis may take a couple of minutes                     \n")
 	// Check snitch completion only for install
 	if i {
 		for {
-			time.Sleep(900 * time.Millisecond)
 			pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor-snitch", FieldSelector: "status.phase==Succeeded"})
 			podno := len(pods.Items)
-			remaining := time.Until(otime).Round(time.Second)
-			fmt.Printf("\rℹ️\tWaiting for KubeArmor Snitch to run:  %s, estimated time remaining: %v", cursor[cursorcount], remaining)
+			fmt.Printf("\rℹ️\tWaiting for KubeArmor Snitch to run: %s", cursor[cursorcount])
 			cursorcount++
 			if cursorcount == len(cursor) {
 				cursorcount = 0
@@ -227,8 +260,7 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 	for {
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor", FieldSelector: "status.phase==Running"})
 		podno := len(pods.Items)
-		remaining := time.Until(otime).Round(time.Second)
-		fmt.Printf("\rℹ️\tWaiting for KubeArmor Daemonset to start:  %s, estimated time remaining: %v", cursor[cursorcount], remaining)
+		fmt.Printf("\rℹ️\tWaiting for Daemonset to start: %s", cursor[cursorcount])
 		cursorcount++
 		if cursorcount == len(cursor) {
 			cursorcount = 0
@@ -423,16 +455,19 @@ func K8sLegacyInstaller(c *k8s.Client, o Options) error {
 
 	verify = o.Verify
 	var env string
-	env = k8s.AutoDetectEnvironment(c)
-	if env == "none" {
-		if o.Save {
-			printMessage("⚠️\tNo env provided with \"--save\", setting env to  \"generic\"", true)
-			env = "generic"
-		} else {
-			return errors.New("unsupported environment or cluster not configured correctly")
+	if o.Env.Auto {
+		env = k8s.AutoDetectEnvironment(c)
+		if env == "none" {
+			if o.Save {
+				printMessage("⚠️\tNo env provided with \"--save\", setting env to  \"generic\"", true)
+				env = "generic"
+			} else {
+				return errors.New("unsupported environment or cluster not configured correctly")
+			}
 		}
 		printMessage("😄\tAuto Detected Environment : "+env, true)
 	} else {
+		env = o.Env.Environment
 		printMessage("😄\tEnvironment : "+env, true)
 	}
 
@@ -913,7 +948,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	var printYAML []interface{}
 	ns := o.Namespace
 	releaseName := "kubearmor-operator"
-	kubearmorConfig := getOperatorCR(o)
+	kubearmorConfig, postureSettings := getOperatorCR(o)
 	values := getOperatorConfig(o)
 	settings := cli.New()
 
@@ -1016,9 +1051,18 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 		fmt.Printf("--- kubearmorConfig dump:\n%s\n\n", string(yamlData))
 	} else {
 		if _, err := operatorClientSet.OperatorV1().KubeArmorConfigs(ns).Create(context.Background(), kubearmorConfig, metav1.CreateOptions{}); apierrors.IsAlreadyExists(err) {
-			fmt.Println("ℹ️\tKubeArmorConfig already exists")
+			existingConfig, err := operatorClientSet.OperatorV1().KubeArmorConfigs(ns).Get(context.Background(), kubearmorConfig.Name, metav1.GetOptions{})
+			if err != nil {
+				fmt.Println("Failed to get existing KubeArmorConfig: %w", err)
+			}
+			kubearmorConfig.ResourceVersion = existingConfig.ResourceVersion
+			if _, err := operatorClientSet.OperatorV1().KubeArmorConfigs(ns).Update(context.Background(), kubearmorConfig, metav1.UpdateOptions{}); err != nil {
+				fmt.Println("Failed to update KubeArmorConfig: %w", err)
+			} else {
+				fmt.Println("😄\tKubeArmorConfig updated" + postureSettings)
+			}
 		} else {
-			fmt.Println("😄\tKubeArmorConfig Created")
+			fmt.Println("😄\tKubeArmorConfig created" + postureSettings)
 		}
 	}
 
@@ -1424,7 +1468,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	statusClient := action.NewStatus(actionConfig)
 	res, err := statusClient.Run("kubearmor-operator")
 	if err != nil {
-		fmt.Println("ℹ️  Helm release not found. Switching to legacy uninstaller.")
+		fmt.Println("ℹ️   Helm release not found. Switching to legacy uninstaller.")
 		return err
 	}
 	ns = res.Namespace
@@ -1438,22 +1482,24 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 	_, err = client.Run("kubearmor-operator")
 	log.SetOutput(os.Stdout)
 	if err != nil {
-		fmt.Println("ℹ️  Error uninstalling through Helm. Switching to legacy uninstaller.")
+		fmt.Println("ℹ️   Error uninstalling through Helm. Switching to legacy uninstaller.")
 		return err
 	}
 
-	if o.Force {
+	if !o.Force {
+		fmt.Println("ℹ️   Resources not managed by helm/Global Resources are not cleaned up. Please use karmor uninstall --force if you want complete cleanup.")
+	} else {
 		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
 		if err != nil {
 			return fmt.Errorf("failed to create operator clientset: %w", err)
 		}
 
-		fmt.Printf("❌\tRemoving CR kubearmorconfig-default\n")
+		fmt.Printf("❌  Removing CR kubearmorconfig-default\n")
 		if err := operatorClientSet.OperatorV1().KubeArmorConfigs(ns).Delete(context.Background(), "kubearmorconfig-default", metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
 			fmt.Printf("CR %s not found\n", kocName)
 		}
 
-		fmt.Printf("❌\tRemoving CRD %s\n", kocName)
+		fmt.Printf("❌  Removing CRD %s\n", kocName)
 		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kocName, metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
 			fmt.Printf("CRD %s not found\n", kocName)
 		}
@@ -1461,7 +1507,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 		removeAnnotations(c, ns)
 	}
 
-	fmt.Println("❌\tKubeArmor resources removed")
+	fmt.Println("❌  KubeArmor resources removed")
 
 	if o.Verify {
 		checkTerminatingPods(c, ns)
