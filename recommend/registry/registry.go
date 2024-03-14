@@ -24,6 +24,7 @@ import (
 	"github.com/moby/term"
 
 	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/kubearmor/kubearmor-client/hacks"
 	log "github.com/sirupsen/logrus"
@@ -49,7 +50,7 @@ func getAuthStr(u, p string) string {
 		return ""
 	}
 
-	encodedJSON, err := json.Marshal(dockerTypes.AuthConfig{
+	encodedJSON, err := json.Marshal(registry.AuthConfig{
 		Username: u,
 		Password: p,
 	})
@@ -69,7 +70,7 @@ func (r *Scanner) loadDockerAuthConfigs() {
 		}
 
 		confsWrapper := struct {
-			Auths map[string]dockerTypes.AuthConfig `json:"auths"`
+			Auths map[string]registry.AuthConfig `json:"auths"`
 		}{}
 		err = json.Unmarshal(data, &confsWrapper)
 		if err != nil {
