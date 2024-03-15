@@ -2,6 +2,8 @@ module github.com/kubearmor/kubearmor-client
 
 go 1.22
 
+toolchain go1.22.1
+
 replace (
 	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b

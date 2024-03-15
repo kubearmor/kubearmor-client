@@ -4,7 +4,7 @@
     "config:base"
   ],
   "constraints": {
-    "go": "1.21"
+    "go": "1.22"
   },
   "ignorePresets": [":prHourlyLimit2"],
 	"reviewers": ["team:maintainers"]
