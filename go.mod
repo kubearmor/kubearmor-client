@@ -2,18 +2,9 @@ module github.com/kubearmor/kubearmor-client
 
 go 1.22
 
-toolchain go1.22.1
-
-replace (
-	github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.6
-	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.4
-	k8s.io/component-base => k8s.io/component-base v0.26.4
-)
-
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/cilium/cilium v1.15.2
+	github.com/cilium/cilium v1.14.5
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v25.0.4+incompatible
 	github.com/fatih/color v1.16.0
@@ -203,7 +194,6 @@ require (
 	github.com/google/go-github/v55 v55.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20231023181126-ff6d637d2a7b // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
@@ -358,7 +348,6 @@ require (
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
@@ -376,7 +365,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.29.0 // indirect
+	k8s.io/apiserver v0.29.2 // indirect
 	k8s.io/component-base v0.29.2 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect

@@ -5,8 +5,11 @@
 package k8s
 
 import (
+	"context"
+
 	"github.com/rs/zerolog/log"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,6 +35,10 @@ var (
 	KubeConfig string
 	// ContextName specifies the name of kubeconfig context
 	ContextName string
+	// kubearmor-ca secret label
+	KubeArmorCALabels = map[string]string{
+		"kubearmor-app": "kubearmor-ca",
+	}
 )
 
 // ConnectK8sClient Function
@@ -79,4 +86,19 @@ func ConnectK8sClient() (*Client, error) {
 		RawConfig:       rawConfig,
 		Config:          config,
 	}, nil
+}
+
+func GetKubeArmorCaSecret(client kubernetes.Interface) (string, string) {
+	secret, err := client.CoreV1().Secrets("").List(context.Background(), v1.ListOptions{
+		LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{MatchLabels: KubeArmorCALabels}),
+	})
+	if err != nil {
+		log.Error().Msgf("error getting kubearmor ca secret: %v", err)
+		return "", ""
+	}
+	if len(secret.Items) < 1 {
+		log.Error().Msgf("no kubearmor ca secret found in the cluster: %v", err)
+		return "", ""
+	}
+	return secret.Items[0].Name, secret.Items[0].Namespace
 }
