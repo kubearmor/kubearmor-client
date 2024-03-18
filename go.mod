@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/cilium/cilium v1.14.5
+	github.com/cilium/cilium v1.14.8
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v25.0.4+incompatible
 	github.com/fatih/color v1.16.0
