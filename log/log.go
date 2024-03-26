@@ -194,7 +194,7 @@ func StartObserver(c *k8s.Client, o Options) error {
 		if o.LogFilter == "all" || o.LogFilter == "policy" {
 			// watch alerts
 			go logClient.WatchAlerts(o)
-			fmt.Fprintln(os.Stdout, "Started to watch alerts")
+			fmt.Fprintln(os.Stderr, "Started to watch alerts")
 		}
 
 		if o.LogFilter == "all" || o.LogFilter == "system" {
