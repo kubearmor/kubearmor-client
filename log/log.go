@@ -40,7 +40,7 @@ var (
 // Options Structure
 type Options struct {
 	GRPC             string
-	Insecure         bool
+	Secure           bool
 	TlsCertPath      string
 	TlsCertProvider  string
 	ReadCAFromSecret bool
@@ -155,11 +155,11 @@ func StartObserver(c *k8s.Client, o Options) error {
 	// create client
 	logClient, err := NewClient(gRPC, o, c.K8sClientset)
 	if err != nil {
-		if o.Insecure && !isDialingError(err) {
+		if !o.Secure && !isDialingError(err) {
 			// retry connecting to the server on secured channel
 			fmt.Fprintf(os.Stderr, "Failed to connect on insecure channel\n(%s)\n", err)
 			fmt.Fprint(os.Stderr, "Trying to reconnect using secured channel...\n")
-			o.Insecure = false
+			o.Secure = true
 			logClient, err = NewClient(gRPC, o, c.K8sClientset)
 			if err != nil {
 				return fmt.Errorf("unable to create log client, error=%s", err)
@@ -180,7 +180,7 @@ func StartObserver(c *k8s.Client, o Options) error {
 	if o.MsgPath != "none" {
 		// watch messages
 		go logClient.WatchMessages(o.MsgPath, o.JSON)
-		fmt.Fprintln(os.Stdout, "Started to watch messages")
+		fmt.Fprintln(os.Stderr, "Started to watch messages")
 	}
 
 	err = regexCompile(o)

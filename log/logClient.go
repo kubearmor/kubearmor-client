@@ -113,7 +113,7 @@ func NewClient(server string, o Options, c kubernetes.Interface) (*Feeder, error
 	fd.limit = o.Limit
 
 	var creds credentials.TransportCredentials
-	if !o.Insecure {
+	if o.Secure {
 		tlsCreds, err := loadTLSCredentials(c, o)
 		if err != nil {
 			return nil, err
