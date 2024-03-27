@@ -60,6 +60,7 @@ execute() {
     fi
     install "${srcdir}/${binexe}" "${BINDIR}/"
     log_info "installed ${BINDIR}/${binexe}"
+    log_info "Add ${BINDIR} to PATH variable"
   done
   rm -rf "${tmpdir}"
 }
