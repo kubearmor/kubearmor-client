@@ -111,6 +111,8 @@ github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.5.1 h1:FK6RCIUSfmbnI/imIICmboyQBkOckutaa6R5YYlLZyo=
 github.com/DATA-DOG/go-sqlmock v1.5.1/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
+github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7OputlJIzU=
+github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
 github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24/go.mod h1:4UJr5HIiMZrwgkSPdsjy2uOQExX/WEILpIrO9UPGuXs=
 github.com/IGLOU-EU/go-wildcard v1.0.3 h1:r8T46+8/9V1STciXJomTWRpPEv4nGJATDbJkdU0Nou0=
 github.com/IGLOU-EU/go-wildcard v1.0.3/go.mod h1:/qeV4QLmydCbwH0UMQJmXDryrFKJknWi/jjO8IiuQfY=
@@ -2259,6 +2261,8 @@ gotest.tools/v3 v3.5.1 h1:EENdUnS3pdur5nybKYIh2Vfgc8IUNBjxDPSjtiJcOzU=
 gotest.tools/v3 v3.5.1/go.mod h1:isy3WKz7GK6uNw/sbHzfKBLvlvXwUyV06n6brMxxopU=
 helm.sh/helm/v3 v3.14.2 h1:V71fv+NGZv0icBlr+in1MJXuUIHCiPG1hW9gEBISTIA=
 helm.sh/helm/v3 v3.14.2/go.mod h1:2itvvDv2WSZXTllknfQo6j7u3VVgMAvm8POCDgYH424=
+helm.sh/helm/v3 v3.14.3 h1:HmvRJlwyyt9HjgmAuxHbHv3PhMz9ir/XNWHyXfmnOP4=
+helm.sh/helm/v3 v3.14.3/go.mod h1:v6myVbyseSBJTzhmeE39UcPLNv6cQK6qss3dvgAySaE=
 honnef.co/go/tools v0.0.0-20180728063816-88497007e858/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
