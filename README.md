@@ -8,7 +8,7 @@
 ## Installation
 
 ```shell
-curl -sfL http://get.kubearmor.io/ | sudo sh -s -- -b /usr/local/bin
+curl -sfL http://get.kubearmor.io/ | sh -s
 ```
 
 ### Installing From Source
