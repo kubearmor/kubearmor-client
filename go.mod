@@ -1,6 +1,8 @@
 module github.com/kubearmor/kubearmor-client
 
-go 1.22
+go 1.21.0
+
+toolchain go1.21.9
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
