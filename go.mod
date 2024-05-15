@@ -22,7 +22,7 @@ require (
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 	golang.org/x/mod v0.16.0
 	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.18.0
+	golang.org/x/sys v0.19.0
 	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.33.0
 	sigs.k8s.io/yaml v1.4.0
@@ -39,7 +39,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20240313131335-9ae900daa38d
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20240313131335-9ae900daa38d
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20240515134104-294ed3b20a45
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20240313131335-9ae900daa38d
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240313131335-9ae900daa38d
 	github.com/onsi/ginkgo/v2 v2.14.0
@@ -350,10 +350,10 @@ require (
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.19.0 // indirect
@@ -373,7 +373,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/kubectl v0.29.0 // indirect
 	k8s.io/pod-security-admission v0.29.0 // indirect
-	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
+	k8s.io/utils v0.0.0-20240310230437-4693a0247e57 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
