@@ -6,7 +6,7 @@ toolchain go1.21.9
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/cilium/cilium v1.14.5
+	github.com/cilium/cilium v1.14.9
 	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v25.0.5+incompatible
 	github.com/fatih/color v1.16.0
@@ -20,10 +20,10 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
-	golang.org/x/mod v0.16.0
-	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.18.0
-	google.golang.org/grpc v1.62.1
+	golang.org/x/mod v0.17.0
+	golang.org/x/sync v0.7.0
+	golang.org/x/sys v0.19.0
+	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -38,7 +38,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20240313131335-9ae900daa38d
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20240515134104-294ed3b20a45
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20240313131335-9ae900daa38d
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20240313131335-9ae900daa38d
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240313131335-9ae900daa38d
@@ -53,7 +53,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.23.3 // indirect
+	cloud.google.com/go/compute v1.24.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20231217163254-6feb86eb6e06 // indirect
 	cuelang.org/go v0.7.0 // indirect
@@ -340,26 +340,26 @@ require (
 	github.com/zeebo/errs v1.3.0 // indirect
 	go.mongodb.org/mongo-driver v1.13.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
-	go.opentelemetry.io/otel v1.24.0 // indirect
-	go.opentelemetry.io/otel/metric v1.24.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.50.0 // indirect
+	go.opentelemetry.io/otel v1.25.0 // indirect
+	go.opentelemetry.io/otel/metric v1.25.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.21.0 // indirect
-	go.opentelemetry.io/otel/trace v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.25.0 // indirect
 	go.starlark.net v0.0.0-20231121155337-90ade8b19d09 // indirect
 	go.step.sm/crypto v0.40.0 // indirect
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.19.0 // indirect
-	google.golang.org/api v0.153.0 // indirect
+	golang.org/x/tools v0.20.0 // indirect
+	google.golang.org/api v0.162.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
 	gopkg.in/evanphx/json-patch.v5 v5.6.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -373,7 +373,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/kubectl v0.29.0 // indirect
 	k8s.io/pod-security-admission v0.29.0 // indirect
-	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
+	k8s.io/utils v0.0.0-20240310230437-4693a0247e57 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
