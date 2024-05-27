@@ -422,7 +422,8 @@ func getKubeArmorDaemonset(c *k8s.Client, o Options) (bool, *Status) {
 		return false, nil
 	}
 	desired, ready, available := w.Items[0].Status.DesiredNumberScheduled, w.Items[0].Status.NumberReady, w.Items[0].Status.NumberAvailable
-	if desired != ready && desired != available {
+	if desired != ready && desired != available && ready == 0 {
+		// set kubearmor to not running only if there are 0 ready pods
 		return false, nil
 	}
 	DaemonSetStatus := Status{
@@ -487,21 +488,23 @@ func getKubeArmorContainers(c *k8s.Client, o Options) map[string]*KubeArmorPodSp
 // ProbeRunningKubeArmorNodes extracts data from running KubeArmor daemonset  by executing into the container and reading /tmp/kubearmor.cfg
 func ProbeRunningKubeArmorNodes(c *k8s.Client, o Options) ([]KubeArmorProbeData, map[string]KubeArmorProbeData, error) {
 	// KubeArmor Nodes
-	nodes, err := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return []KubeArmorProbeData{}, nil, fmt.Errorf("error occured when getting nodes %s", err.Error())
-	}
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
+		LabelSelector: "kubearmor-app=kubearmor",
+	})
 
-	if len(nodes.Items) == 0 {
+	if err != nil || len(pods.Items) == 0 {
 		return []KubeArmorProbeData{}, nil, fmt.Errorf("no nodes found")
 	}
 	nodeData := make(map[string]KubeArmorProbeData)
 
 	var dataList []KubeArmorProbeData
-	for i, item := range nodes.Items {
-		data, err := readDataFromKubeArmor(c, o, item.Name)
+	for i, item := range pods.Items {
+		if item.Status.Phase != corev1.PodRunning {
+			continue
+		}
+		data, err := readDataFromKubeArmor(c, item)
 		if err != nil {
-			return []KubeArmorProbeData{}, nil, err
+			continue
 		}
 		dataList = append(dataList, data)
 		nodeData["Node"+strconv.Itoa(i+1)] = data
@@ -510,25 +513,18 @@ func ProbeRunningKubeArmorNodes(c *k8s.Client, o Options) ([]KubeArmorProbeData,
 	return dataList, nodeData, nil
 }
 
-func readDataFromKubeArmor(c *k8s.Client, o Options, nodeName string) (KubeArmorProbeData, error) {
+func readDataFromKubeArmor(c *k8s.Client, pod corev1.Pod) (KubeArmorProbeData, error) {
 	srcPath := "/tmp/karmorProbeData.cfg"
-	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
-		LabelSelector: "kubearmor-app=kubearmor",
-		FieldSelector: "spec.nodeName=" + nodeName,
-	})
-	if err != nil || pods == nil || len(pods.Items) == 0 {
-		return KubeArmorProbeData{}, fmt.Errorf("error occured while getting KubeArmor pods %s", err.Error())
-	}
 	reader, outStream := io.Pipe()
 	cmdArr := []string{"cat", srcPath}
 	req := c.K8sClientset.CoreV1().RESTClient().
 		Get().
-		Namespace(pods.Items[0].Namespace).
+		Namespace(pod.Namespace).
 		Resource("pods").
-		Name(pods.Items[0].Name).
+		Name(pod.Name).
 		SubResource("exec").
 		VersionedParams(&corev1.PodExecOptions{
-			Container: pods.Items[0].Spec.Containers[0].Name,
+			Container: pod.Spec.Containers[0].Name,
 			Command:   cmdArr,
 			Stdin:     false,
 			Stdout:    true,

@@ -386,7 +386,7 @@ func convertToJSON(Operation string, data []Profile) {
 	}
 	if len(jsonArray) > 0 {
 		filepath := "Profile_Summary/"
-		err := os.MkdirAll(filepath, os.ModePerm)
+		err := os.MkdirAll(filepath, 0600)
 		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
 		if err != nil {
 			panic(err)
