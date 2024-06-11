@@ -29,6 +29,6 @@ func init() {
 	rootCmd.AddCommand(uninstallCmd)
 
 	uninstallCmd.Flags().StringVarP(&uninstallOptions.Namespace, "namespace", "n", "", "If no namespace is specified, it defaults to all namespaces and deletes all KubeArmor objects across them.")
-	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove KubeArmor annotations from deployments. (Deployments might be restarted)")
+	uninstallCmd.Flags().BoolVar(&uninstallOptions.PreservePolicies, "preserve-policies", false, "Store the applied security policies")
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.Verify, "verify", true, "Verify whether all KubeArmor resources are cleaned up or not")
 }
