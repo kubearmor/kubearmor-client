@@ -20,6 +20,7 @@ import (
 
 	"github.com/clarketm/json"
 	"github.com/fatih/color"
+	"github.com/olekukonko/tablewriter"
 	"sigs.k8s.io/yaml"
 
 	deployments "github.com/kubearmor/KubeArmor/deployments/get"
@@ -28,7 +29,8 @@ import (
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/probe"
 
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1079,15 +1081,50 @@ type patchStringValue struct {
 	Value string `json:"value"`
 }
 
-func removeDeployAnnotations(c *k8s.Client, dep *v1.Deployment) {
+func removeAnnotationsFromResource(c *k8s.Client, resource interface{}, resourceType, namespace, name string) error {
 	cnt := 0
 	patchPayload := []patchStringValue{}
-	for k, v := range dep.Spec.Template.ObjectMeta.Annotations {
+	var annotations map[string]string
+	var labels map[string]string
+
+	switch r := resource.(type) {
+	case *appsv1.Deployment:
+		annotations = r.Spec.Template.Annotations
+		labels = r.Labels
+	case *appsv1.ReplicaSet:
+		annotations = r.Spec.Template.Annotations
+		labels = r.Labels
+	case *appsv1.StatefulSet:
+		annotations = r.Spec.Template.Annotations
+		labels = r.Labels
+	case *appsv1.DaemonSet:
+		annotations = r.Spec.Template.Annotations
+		labels = r.Labels
+	case *batchv1.Job:
+		annotations = r.Spec.Template.Annotations
+		labels = r.Labels
+	case *batchv1.CronJob:
+		annotations = r.Spec.JobTemplate.Spec.Template.Annotations
+		labels = r.Labels
+	default:
+		return fmt.Errorf("unsupported resource type: %T", r)
+	}
+
+	// returns if it's kubearmor related resources like relay, controller
+	if _, exists := labels["kubearmor-app"]; exists {
+		return nil
+	}
+
+	for k, v := range annotations {
 		if strings.Contains(k, "kubearmor") || strings.Contains(v, "kubearmor") {
 			k = strings.Replace(k, "/", "~1", -1)
+			path := "/spec/template/metadata/annotations/" + k
+			if resourceType == "cronjob" {
+				path = "/spec/jobTemplate/spec/template/metadata/annotations/" + k
+			}
 			payload := patchStringValue{
 				Op:   "remove",
-				Path: "/spec/template/metadata/annotations/" + k,
+				Path: path,
 			}
 			patchPayload = append(patchPayload, payload)
 			cnt++
@@ -1095,28 +1132,196 @@ func removeDeployAnnotations(c *k8s.Client, dep *v1.Deployment) {
 	}
 
 	if cnt > 0 {
-		fmt.Printf("\tRemoving kubearmor annotations from deployment=%s namespace=%s\n",
-			dep.ObjectMeta.Name, dep.ObjectMeta.Namespace)
+		fmt.Printf("Removing kubearmor annotations from %s=%s namespace=%s\n", resourceType, name, namespace)
 		payloadBytes, _ := json.Marshal(patchPayload)
-		_, err := c.K8sClientset.AppsV1().Deployments(dep.ObjectMeta.Namespace).Patch(context.Background(), dep.ObjectMeta.Name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		var err error
+		switch resourceType {
+		case "deployment":
+			_, err = c.K8sClientset.AppsV1().Deployments(namespace).Patch(context.Background(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		case "replicaset":
+			rs := resource.(*appsv1.ReplicaSet)
+			replicas := *rs.Spec.Replicas
+
+			_, err = c.K8sClientset.AppsV1().ReplicaSets(namespace).Patch(context.Background(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+			if err != nil {
+				return fmt.Errorf("err : %v", err)
+			}
+
+			// To update the annotations we need to restart the replicaset,we scale it down and scale it back up
+			patchData := []byte(fmt.Sprintf(`{"spec": {"replicas": 0}}`))
+			_, err = c.K8sClientset.AppsV1().ReplicaSets(namespace).Patch(context.Background(), name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
+			if err != nil {
+				return err
+			}
+			time.Sleep(2 * time.Second)
+			patchData2 := []byte(fmt.Sprintf(`{"spec": {"replicas": %d}}`, replicas))
+			_, err = c.K8sClientset.AppsV1().ReplicaSets(namespace).Patch(context.Background(), name, types.StrategicMergePatchType, patchData2, metav1.PatchOptions{})
+			if err != nil {
+				return err
+			}
+		case "statefulset":
+			_, err = c.K8sClientset.AppsV1().StatefulSets(namespace).Patch(context.Background(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		case "daemonset":
+			_, err = c.K8sClientset.AppsV1().DaemonSets(namespace).Patch(context.Background(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		case "job":
+			_, err = c.K8sClientset.BatchV1().Jobs(namespace).Patch(context.Background(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		case "cronjob":
+			_, err = c.K8sClientset.BatchV1().CronJobs(namespace).Patch(context.Background(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+		default:
+			return fmt.Errorf("unsupported resource type: %s", resourceType)
+		}
 		if err != nil {
-			fmt.Printf("failed to remove annotation ns:%s, deployment:%s, err:%s\n",
-				dep.ObjectMeta.Namespace, dep.ObjectMeta.Name, err.Error())
-			return
+			fmt.Printf("failed to remove annotation ns:%s, %s:%s, err:%s\n", namespace, resourceType, name, err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
+func removeAnnotations(c *k8s.Client) {
+	fmt.Println("Force removing the annotations. Deployments might be restarted.")
+	deployments, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing deployments: %v\n", err)
+	}
+	for _, dep := range deployments.Items {
+		dep := dep // this is added to handle "Implicit Memory Aliasing..."
+		if err := removeAnnotationsFromResource(c, &dep, "deployment", dep.Namespace, dep.Name); err != nil {
+			fmt.Printf("Error removing annotations from deployment %s in namespace %s: %v\n", dep.Name, dep.Namespace, err)
+		}
+	}
+
+	replicaSets, err := c.K8sClientset.AppsV1().ReplicaSets("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing replica sets: %v\n", err)
+	}
+	for _, rs := range replicaSets.Items {
+		rs := rs
+		if err := removeAnnotationsFromResource(c, &rs, "replicaset", rs.Namespace, rs.Name); err != nil {
+			fmt.Printf("Error removing annotations from replicaset %s in namespace %s: %v\n", rs.Name, rs.Namespace, err)
+		}
+	}
+
+	statefulSets, err := c.K8sClientset.AppsV1().StatefulSets("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing stateful sets: %v\n", err)
+	}
+	for _, sts := range statefulSets.Items {
+		sts := sts
+		if err := removeAnnotationsFromResource(c, &sts, "statefulset", sts.Namespace, sts.Name); err != nil {
+			fmt.Printf("Error removing annotations from statefulset %s in namespace %s: %v\n", sts.Name, sts.Namespace, err)
+		}
+	}
+
+	daemonSets, err := c.K8sClientset.AppsV1().DaemonSets("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing daemon sets: %v\n", err)
+	}
+	for _, ds := range daemonSets.Items {
+		ds := ds
+		if err := removeAnnotationsFromResource(c, &ds, "daemonset", ds.Namespace, ds.Name); err != nil {
+			fmt.Printf("Error removing annotations from daemonset %s in namespace %s: %v\n", ds.Name, ds.Namespace, err)
+		}
+	}
+
+	jobs, err := c.K8sClientset.BatchV1().Jobs("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing jobs: %v\n", err)
+	}
+	for _, job := range jobs.Items {
+		job := job
+		if err := removeAnnotationsFromResource(c, &job, "job", job.Namespace, job.Name); err != nil {
+			fmt.Printf("Error removing annotations from job %s in namespace %s: %v\n", job.Name, job.Namespace, err)
+		}
+	}
+
+	cronJobs, err := c.K8sClientset.BatchV1().CronJobs("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing cron jobs: %v\n", err)
+	}
+	for _, cronJob := range cronJobs.Items {
+		cronJob := cronJob
+		if err := removeAnnotationsFromResource(c, &cronJob, "cronjob", cronJob.Namespace, cronJob.Name); err != nil {
+			fmt.Printf("Error removing annotations from cronjob %s in namespace %s: %v\n", cronJob.Name, cronJob.Namespace, err)
+		}
+	}
+
+	// removing annotations at pod level whose owner's are not being annotated
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing pods: %v\n", err)
+	}
+
+	for _, pod := range pods.Items {
+		pod := pod // this is added to handle "Implicit Memory Aliasing..."
+		restartingPod := false
+		if _, exists := pod.ObjectMeta.Labels["kubearmor-app"]; exists {
+			continue
+		}
+
+		for k := range pod.ObjectMeta.Annotations {
+			if strings.Contains(k, "container.apparmor.security.beta.kubernetes.io/") {
+				restartingPod = true
+			}
+		}
+
+		if !restartingPod {
+			continue
+		}
+
+		fmt.Printf("Removing kubearmor annotations from pod=%s namespace=%s\n", pod.Name, pod.Namespace)
+		if pod.OwnerReferences != nil && len(pod.OwnerReferences) != 0 {
+			err := c.K8sClientset.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+			if err != nil {
+				fmt.Printf("Error deleting pod: %v\n", err)
+			}
+		} else {
+			gracePeriodSeconds := int64(0)
+			if err := c.K8sClientset.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriodSeconds}); err != nil {
+				fmt.Printf("Error deleting pod: %v\n", err)
+			}
+
+			// clean the pre-polutated attributes
+			pod.ResourceVersion = ""
+
+			for k := range pod.ObjectMeta.Annotations {
+				if strings.Contains(k, "container.apparmor.security.beta.kubernetes.io/") {
+					delete(pod.ObjectMeta.Annotations, k)
+				}
+			}
+
+			// re-create the pod
+			if _, err := c.K8sClientset.CoreV1().Pods(pod.Namespace).Create(context.Background(), &pod, metav1.CreateOptions{}); err != nil {
+				fmt.Printf("Error creating pod: %v\n", err)
+			}
 		}
 	}
 }
 
-func removeAnnotations(c *k8s.Client, ns string) {
-	deps, err := c.K8sClientset.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
+func listPods(c *k8s.Client) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"No.", "Pod Name", "Namespace"})
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		fmt.Println("could not get deployments")
-		return
+		fmt.Printf("Error listing pods: %v\n", err)
 	}
-	fmt.Println("Force removing the annotations. Deployments might be restarted.")
-	for _, dep := range deps.Items {
-		dep := dep // this is added to handle "Implicit Memory Aliasing..."
-		removeDeployAnnotations(c, &dep)
+	cnt := 0
+	for _, pod := range pods.Items {
+		pod := pod // this is added to handle "Implicit Memory Aliasing..."
+		if _, exists := pod.ObjectMeta.Labels["kubearmor-app"]; exists {
+			continue
+		}
+		for k := range pod.ObjectMeta.Annotations {
+			if strings.Contains(k, "container.apparmor.security.beta.kubernetes.io/") {
+				cnt++
+				table.Append([]string{fmt.Sprintf("%d", cnt), pod.Name, pod.Namespace})
+				break
+			}
+		}
+	}
+	if cnt != 0 {
+		fmt.Println("ℹ️   Following pods will get restarted with karmor uninstall --force: \n")
+		table.Render()
 	}
 }
 
@@ -1433,13 +1638,39 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 		}
 	}
 
-	if o.Force {
+	if !o.Force {
+		fmt.Println("ℹ️   Please use karmor uninstall --force in order to clean up kubearmor completely including it's annotations and CRDs")
+		listPods(c)
+	} else {
+		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
+		if err != nil {
+			return fmt.Errorf("failed to create operator clientset: %w", err)
+		}
+
+		fmt.Printf("CR kubearmorconfig-default\n")
+		if err := operatorClientSet.OperatorV1().KubeArmorConfigs(o.Namespace).Delete(context.Background(), "kubearmorconfig-default", metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
+			fmt.Printf("CR %s not found\n", kocName)
+		}
+
+		fmt.Printf("CRD %s\n", kocName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kocName, metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
+			fmt.Printf("CRD %s not found\n", kocName)
+		}
+
 		fmt.Printf("CRD %s\n", kspName)
 		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
 			if !strings.Contains(err.Error(), "not found") {
 				return err
 			}
 			fmt.Printf("CRD %s not found\n", kspName)
+		}
+
+		fmt.Printf("CRD %s\n", cspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), cspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", cspName)
 		}
 
 		fmt.Printf("CRD %s\n", hspName)
@@ -1450,8 +1681,9 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 			fmt.Printf("CRD %s not found\n", hspName)
 		}
 
-		removeAnnotations(c, o.Namespace)
+		removeAnnotations(c)
 	}
+
 	if verify {
 		checkTerminatingPods(c, o.Namespace)
 	}
@@ -1461,7 +1693,6 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 // K8sUninstaller for karmor uninstall
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	var ns string
-	var kocName string = "kubearmorconfigs.operator.kubearmor.com"
 	settings := cli.New()
 
 	actionConfig := actionConfigInit("", settings)
@@ -1488,6 +1719,7 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 
 	if !o.Force {
 		fmt.Println("ℹ️   Resources not managed by helm/Global Resources are not cleaned up. Please use karmor uninstall --force if you want complete cleanup.")
+		listPods(c)
 	} else {
 		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
 		if err != nil {
@@ -1504,7 +1736,31 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 			fmt.Printf("CRD %s not found\n", kocName)
 		}
 
-		removeAnnotations(c, ns)
+		fmt.Printf("❌  Removing CRD %s\n", kspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", kspName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", cspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), cspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", cspName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", hspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", hspName)
+		}
+
+		removeAnnotations(c)
 	}
 
 	fmt.Println("❌  KubeArmor resources removed")
