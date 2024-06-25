@@ -33,6 +33,7 @@ func init() {
 	logCmd.Flags().StringVar(&logOptions.LogPath, "logPath", "stdout", "Output location for alerts and logs, {path|stdout|none}")
 	logCmd.Flags().StringVar(&logOptions.LogFilter, "logFilter", "policy", "Filter for what kinds of alerts and logs to receive, {policy|system|all}")
 	logCmd.Flags().BoolVar(&logOptions.JSON, "json", false, "Flag to print alerts and logs in the JSON format")
+	logCmd.Flags().StringVarP(&logOptions.Output, "output", "o", "text", "Output format: text, json, or pretty-json")
 	logCmd.Flags().StringVarP(&logOptions.Namespace, "namespace", "n", "", "k8s namespace filter")
 	logCmd.Flags().StringVar(&logOptions.Operation, "operation", "", "Give the type of the operation (Eg:Process/File/Network)")
 	logCmd.Flags().StringVar(&logOptions.LogType, "logType", "", "Log type you want (Eg:ContainerLog/HostLog) ")
