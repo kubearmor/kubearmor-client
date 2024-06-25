@@ -213,61 +213,84 @@ func extractTar(tarname string, tempDir string) ([]string, []string) {
 		}).Fatal("os create failed")
 	}
 	defer hacks.CloseCheckErr(f, tarname)
-
-	tr := tar.NewReader(bufio.NewReader(f))
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break // End of archive
-		}
-		if err != nil {
-			log.WithError(err).Fatal("tar next failed")
-		}
-
-		tgt, err := sanitizeArchivePath(tempDir, hdr.Name)
+	if isTarFile(f) {
+		_, err := f.Seek(0, 0)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
-				"file": hdr.Name,
-			}).Error("ignoring file since it could not be sanitized")
-			continue
+				"tar": tarname,
+			}).Fatal("Failed to seek to the beginning of the file")
 		}
-
-		switch hdr.Typeflag {
-		case tar.TypeDir:
-			if _, err := os.Stat(tgt); err != nil {
-				if err := os.MkdirAll(tgt, 0750); err != nil {
-					log.WithError(err).WithFields(log.Fields{
-						"target": tgt,
-					}).Fatal("tar mkdirall")
-				}
+		tr := tar.NewReader(bufio.NewReader(f))
+		for {
+			hdr, err := tr.Next()
+			if err == io.EOF {
+				break // End of archive
 			}
-			dl = append(dl, tgt)
-		case tar.TypeReg:
-			f, err := os.OpenFile(filepath.Clean(tgt), os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+			if err != nil {
+				log.WithError(err).Error("tar next failed")
+				return nil, nil
+			}
+
+			tgt, err := sanitizeArchivePath(tempDir, hdr.Name)
 			if err != nil {
 				log.WithError(err).WithFields(log.Fields{
-					"target": tgt,
-				}).Error("tar open file")
-			} else {
+					"file": hdr.Name,
+				}).Error("ignoring file since it could not be sanitized")
+				continue
+			}
 
-				// copy over contents
-				if _, err := io.CopyN(f, tr, 2e+9 /*2GB*/); err != io.EOF {
+			switch hdr.Typeflag {
+			case tar.TypeDir:
+				if _, err := os.Stat(tgt); err != nil {
+					if err := os.MkdirAll(tgt, 0750); err != nil {
+						log.WithError(err).WithFields(log.Fields{
+							"target": tgt,
+						}).Fatal("tar mkdirall")
+					}
+				}
+				dl = append(dl, tgt)
+			case tar.TypeReg:
+				f, err := os.OpenFile(filepath.Clean(tgt), os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+				if err != nil {
 					log.WithError(err).WithFields(log.Fields{
 						"target": tgt,
-					}).Fatal("tar io.Copy()")
+					}).Error("tar open file")
+				} else {
+
+					// copy over contents
+					if _, err := io.CopyN(f, tr, 2e+9 /*2GB*/); err != io.EOF {
+						log.WithError(err).WithFields(log.Fields{
+							"target": tgt,
+						}).Fatal("tar io.Copy()")
+					}
+				}
+				hacks.CloseCheckErr(f, tgt)
+				if strings.HasSuffix(tgt, "layer.tar") {
+					ifl, idl := extractTar(tgt, tempDir)
+					fl = append(fl, ifl...)
+					dl = append(dl, idl...)
+				} else if strings.HasPrefix(hdr.Name, "blobs/") {
+					ifl, idl := extractTar(tgt, tempDir)
+					fl = append(fl, ifl...)
+					dl = append(dl, idl...)
+
+				} else {
+					fl = append(fl, tgt)
 				}
 			}
-			hacks.CloseCheckErr(f, tgt)
-			if strings.HasSuffix(tgt, "layer.tar") { // deflate container image layer
-				ifl, idl := extractTar(tgt, tempDir)
-				fl = append(fl, ifl...)
-				dl = append(dl, idl...)
-			} else {
-				fl = append(fl, tgt)
-			}
 		}
+	} else {
+		log.WithFields(log.Fields{
+			"file": tarname,
+		}).Error("Not a valid tar file")
 	}
 	return fl, dl
+}
+
+func isTarFile(f *os.File) bool {
+	tr := tar.NewReader(bufio.NewReader(f))
+	_, err := tr.Next()
+	return err == nil
 }
 
 func saveImageToTar(imageName string, cli *client.Client, tempDir string) string {

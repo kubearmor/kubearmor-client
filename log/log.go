@@ -48,6 +48,7 @@ type Options struct {
 	LogPath          string
 	LogFilter        string
 	JSON             bool
+	Output           string
 	Namespace        string
 	LogType          string
 	Operation        string
@@ -152,7 +153,7 @@ func StartObserver(c *k8s.Client, o Options) error {
 		return nil
 	}
 
-	// create client
+	// create client
 	logClient, err := NewClient(gRPC, o, c.K8sClientset)
 	if err != nil {
 		if !o.Secure && !isDialingError(err) {

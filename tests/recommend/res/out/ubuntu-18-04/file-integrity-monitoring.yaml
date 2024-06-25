@@ -1,32 +1,38 @@
 apiVersion: security.kubearmor.com/v1
 kind: KubeArmorPolicy
 metadata:
-  name: wordpress-wordpress-4-8-apache-system-monitoring-deny-write-under-bin-directory
-  namespace: wordpress-mysql
+  name: ubuntu-18-04-file-integrity-monitoring
 spec:
   action: Block
   file:
     matchDirectories:
-    - dir: /bin/
-      readOnly: true
-      recursive: true
     - dir: /sbin/
-      readOnly: true
-      recursive: true
-    - dir: /usr/sbin/
       readOnly: true
       recursive: true
     - dir: /usr/bin/
       readOnly: true
       recursive: true
-  message: Alert! An attempt to write below system binary directories denied.
+    - dir: /usr/lib/
+      readOnly: true
+      recursive: true
+    - dir: /usr/sbin/
+      readOnly: true
+      recursive: true
+    - dir: /bin/
+      readOnly: true
+      recursive: true
+    - dir: /boot/
+      readOnly: true
+      recursive: true
+  message: Detected and prevented compromise to File integrity
   selector:
     matchLabels:
-      app: wordpress
-  severity: 5
+      kubearmor.io/container.name: ubuntu
+  severity: 1
   tags:
   - NIST
   - NIST_800-53_AU-2
   - NIST_800-53_SI-4
   - MITRE
   - MITRE_T1036_masquerading
+  - MITRE_T1565_data_manipulation
