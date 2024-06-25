@@ -190,7 +190,7 @@ func (fd *Feeder) DoHealthCheck() bool {
 }
 
 // WatchMessages Function
-func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
+func (fd *Feeder) WatchMessages(msgPath string, outputFormat string) error {
 	fd.WgClient.Add(1)
 	defer fd.WgClient.Done()
 
@@ -204,9 +204,14 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 
 		str := ""
 
-		if jsonFormat {
+		if outputFormat == "json" {
 			arr, _ := json.Marshal(res)
 			str = fmt.Sprintf("%s\n", string(arr))
+		}
+		if outputFormat == "pretty-json" {
+			arr, _ := json.MarshalIndent(res, "", "  ")
+			str = fmt.Sprintf("%s\n", string(arr))
+
 		} else {
 			updatedTime := strings.Replace(res.UpdatedTime, "T", " ", -1)
 			updatedTime = strings.Replace(updatedTime, "Z", "", -1)

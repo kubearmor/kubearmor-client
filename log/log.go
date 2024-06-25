@@ -48,6 +48,7 @@ type Options struct {
 	LogPath          string
 	LogFilter        string
 	JSON             bool
+	Output           string
 	Namespace        string
 	LogType          string
 	Operation        string
@@ -125,7 +126,9 @@ func closeStopChan() {
 	StopChan = nil
 }
 
-// StartObserver Function
+// StartObserver Functionhere
+// Use formatOutput(message, outputFormat) to format the output
+
 func StartObserver(c *k8s.Client, o Options) error {
 	gRPC := ""
 	targetSvc := "kubearmor-relay"
@@ -179,7 +182,7 @@ func StartObserver(c *k8s.Client, o Options) error {
 
 	if o.MsgPath != "none" {
 		// watch messages
-		go logClient.WatchMessages(o.MsgPath, o.JSON)
+		go logClient.WatchMessages(o.MsgPath, o.Output)
 		fmt.Fprintln(os.Stderr, "Started to watch messages")
 	}
 
