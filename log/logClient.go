@@ -313,172 +313,171 @@ func (fd *Feeder) WatchLogs(o Options) error {
 
 // WatchTelemetryHelper handles Alerts and Logs
 func WatchTelemetryHelper(arr []byte, t string, o Options) {
-    var res map[string]interface{}
-    err := json.Unmarshal(arr, &res)
-    if err != nil {
-        return
-    }
+	var res map[string]interface{}
+	err := json.Unmarshal(arr, &res)
+	if err != nil {
+		return
+	}
 
-    // Filter Telemetry based on provided options
-    if len(o.Selector) != 0 && res["Labels"] != nil {
-        labels := strings.Split(res["Labels"].(string), ",")
-        val := selectLabels(o, labels)
-        if val != nil {
-            return
-        }
-    }
+	// Filter Telemetry based on provided options
+	if len(o.Selector) != 0 && res["Labels"] != nil {
+		labels := strings.Split(res["Labels"].(string), ",")
+		val := selectLabels(o, labels)
+		if val != nil {
+			return
+		}
+	}
 
-    if o.Namespace != "" {
-        ns, ok := res["NamespaceName"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(CNamespace, ns)
-        if !match {
-            return
-        }
-    }
+	if o.Namespace != "" {
+		ns, ok := res["NamespaceName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CNamespace, ns)
+		if !match {
+			return
+		}
+	}
 
-    if o.LogType != "" {
-        t, ok := res["Type"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(CLogtype, t)
-        if !match {
-            return
-        }
-    }
+	if o.LogType != "" {
+		t, ok := res["Type"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CLogtype, t)
+		if !match {
+			return
+		}
+	}
 
-    if o.Operation != "" {
-        op, ok := res["Operation"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(COperation, op)
-        if !match {
-            return
-        }
-    }
+	if o.Operation != "" {
+		op, ok := res["Operation"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(COperation, op)
+		if !match {
+			return
+		}
+	}
 
-    if o.ContainerName != "" {
-        cn, ok := res["ContainerName"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(CContainerName, cn)
-        if !match {
-            return
-        }
-    }
+	if o.ContainerName != "" {
+		cn, ok := res["ContainerName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CContainerName, cn)
+		if !match {
+			return
+		}
+	}
 
-    if o.PodName != "" {
-        pn, ok := res["PodName"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(CPodName, pn)
-        if !match {
-            return
-        }
-    }
+	if o.PodName != "" {
+		pn, ok := res["PodName"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CPodName, pn)
+		if !match {
+			return
+		}
+	}
 
-    if o.Source != "" {
-        src, ok := res["Source"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(CSource, src)
-        if !match {
-            return
-        }
-    }
+	if o.Source != "" {
+		src, ok := res["Source"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CSource, src)
+		if !match {
+			return
+		}
+	}
 
-    if o.Resource != "" {
-        rs, ok := res["Resource"].(string)
-        if !ok {
-            return
-        }
-        match := regexMatcher(CResource, rs)
-        if !match {
-            return
-        }
-    }
+	if o.Resource != "" {
+		rs, ok := res["Resource"].(string)
+		if !ok {
+			return
+		}
+		match := regexMatcher(CResource, rs)
+		if !match {
+			return
+		}
+	}
 
-    // Send events to channel if provided
-    if o.EventChan != nil {
-        o.EventChan <- EventInfo{Data: arr, Type: t}
-    }
+	// Send events to channel if provided
+	if o.EventChan != nil {
+		o.EventChan <- EventInfo{Data: arr, Type: t}
+	}
 
-    var str string
+	var str string
 
-	if o.Output=="pretty-json" {
+	if o.Output == "pretty-json" {
 		indentedJSON, err := json.MarshalIndent(res, "", "  ")
-        if err != nil {
-            return
-        }
+		if err != nil {
+			return
+		}
 		str = fmt.Sprintf("%s\n", string(indentedJSON))
 
-	}else if o.JSON || o.Output=="json" {
-        str = fmt.Sprintf("%s\n", string(arr))
-    } else  {
-        if time, ok := res["UpdatedTime"]; ok {
-            updatedTime := strings.Replace(time.(string), "T", " ", -1)
-            updatedTime = strings.Replace(updatedTime, "Z", "", -1)
-            str = fmt.Sprintf("== %s / %s ==\n", t, updatedTime)
-        } else {
-            str = fmt.Sprintf("== %s ==\n", t)
-        }
+	} else if o.JSON || o.Output == "json" {
+		str = fmt.Sprintf("%s\n", string(arr))
+	} else {
+		if time, ok := res["UpdatedTime"]; ok {
+			updatedTime := strings.Replace(time.(string), "T", " ", -1)
+			updatedTime = strings.Replace(updatedTime, "Z", "", -1)
+			str = fmt.Sprintf("== %s / %s ==\n", t, updatedTime)
+		} else {
+			str = fmt.Sprintf("== %s ==\n", t)
+		}
 
-        // Array of Keys to preserve order in Output
-        telKeys := []string{
-            "UpdatedTime",
-            "Timestamp",
-            "ClusterName",
-            "HostName",
-            "NamespaceName",
-            "PodName",
-            "Labels",
-            "ContainerName",
-            "ContainerID",
-            "ContainerImage",
-            "Type",
-            "PolicyName",
-            "Severity",
-            "Message",
-            "Source",
-            "Resource",
-            "Operation",
-            "Action",
-            "Data",
-            "Enforcer",
-            "Result",
-        }
+		// Array of Keys to preserve order in Output
+		telKeys := []string{
+			"UpdatedTime",
+			"Timestamp",
+			"ClusterName",
+			"HostName",
+			"NamespaceName",
+			"PodName",
+			"Labels",
+			"ContainerName",
+			"ContainerID",
+			"ContainerImage",
+			"Type",
+			"PolicyName",
+			"Severity",
+			"Message",
+			"Source",
+			"Resource",
+			"Operation",
+			"Action",
+			"Data",
+			"Enforcer",
+			"Result",
+		}
 
-        var additionalKeys []string
-        for k := range res {
-            if !slices.Contains(telKeys, k) {
-                additionalKeys = append(additionalKeys, k)
-            }
-        }
-        sort.Strings(additionalKeys)
-        telKeys = append(telKeys, additionalKeys...)
+		var additionalKeys []string
+		for k := range res {
+			if !slices.Contains(telKeys, k) {
+				additionalKeys = append(additionalKeys, k)
+			}
+		}
+		sort.Strings(additionalKeys)
+		telKeys = append(telKeys, additionalKeys...)
 
-        for i := 2; i < len(telKeys); i++ {
-            k := telKeys[i]
-            if v, ok := res[k]; ok && v != "" {
-                str = str + fmt.Sprintf("%s: %v\n", k, res[k])
-            }
-        }
-    }
+		for i := 2; i < len(telKeys); i++ {
+			k := telKeys[i]
+			if v, ok := res[k]; ok && v != "" {
+				str = str + fmt.Sprintf("%s: %v\n", k, res[k])
+			}
+		}
+	}
 
-    if o.LogPath == "stdout" {
-        fmt.Printf("%s", str)
-    } else if o.LogPath != "" {
-        StrToFile(str, o.LogPath)
-    }
+	if o.LogPath == "stdout" {
+		fmt.Printf("%s", str)
+	} else if o.LogPath != "" {
+		StrToFile(str, o.LogPath)
+	}
 }
-
 
 // DestroyClient Function
 func (fd *Feeder) DestroyClient() error {
