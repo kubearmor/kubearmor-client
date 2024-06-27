@@ -456,6 +456,7 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 		}
 
 		var additionalKeys []string
+		// Looping through the Map to find additional keys not present in our array
 		for k := range res {
 			if !slices.Contains(telKeys, k) {
 				additionalKeys = append(additionalKeys, k)
@@ -464,8 +465,10 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 		sort.Strings(additionalKeys)
 		telKeys = append(telKeys, additionalKeys...)
 
-		for i := 2; i < len(telKeys); i++ {
+		for i := 2; i < len(telKeys); i++ {// Starting the loop from index 2 to skip printing timestamp again
 			k := telKeys[i]
+			// Check if fields are present in the structure and if present verifying that they are not empty
+			// Certain fields like Container* are not present in HostLogs, this check handles that and other edge cases
 			if v, ok := res[k]; ok && v != "" {
 				str = str + fmt.Sprintf("%s: %v\n", k, res[k])
 			}
