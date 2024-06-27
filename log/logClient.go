@@ -419,9 +419,9 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
         }
 		str = fmt.Sprintf("%s\n", string(indentedJSON))
 
-	}else if o.JSON {
+	}else if o.JSON || o.Output=="json" {
         str = fmt.Sprintf("%s\n", string(arr))
-    } else {
+    } else  {
         if time, ok := res["UpdatedTime"]; ok {
             updatedTime := strings.Replace(time.(string), "T", " ", -1)
             updatedTime = strings.Replace(updatedTime, "Z", "", -1)
