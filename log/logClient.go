@@ -4,6 +4,7 @@
 package log
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -406,8 +407,18 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 		o.EventChan <- EventInfo{Data: arr, Type: t}
 	}
 
-	if o.JSON {
+	if o.JSON || o.Output == "json" {
 		str = fmt.Sprintf("%s\n", string(arr))
+	} else if o.Output == "pretty-json" {
+
+		var prettyJSON bytes.Buffer
+		err = json.Indent(&prettyJSON, arr, "", "  ")
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to prettify JSON (%s)\n", err.Error())
+		}
+		str = fmt.Sprintf("%s\n", prettyJSON.String())
+
 	} else {
 
 		if time, ok := res["UpdatedTime"]; ok {
