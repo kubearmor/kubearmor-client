@@ -7,10 +7,10 @@ spec:
   message: System owner discovery command execution denied
   process:
     matchPaths:
-    - path: /usr/bin/who
-    - path: /usr/bin/w
-    - path: /usr/bin/id
-    - path: /usr/bin/whoami
+    - execname: who
+    - execname: w
+    - execname: id
+    - execname: whoami
   selector:
     matchLabels:
       kubearmor.io/container.name: ubuntu
