@@ -18,6 +18,7 @@ import (
 
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/probe"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -176,6 +177,33 @@ func Collect(c *k8s.Client, o Options) error {
 	// AppArmor Gzip
 	errs.Go(func() error {
 		if err := copyFromPod("/etc/apparmor.d", d, c); err != nil {
+			return err
+		}
+		return nil
+	})
+	// Saves the probe data in the zip file
+	errs.Go(func() error {
+		reader, writer, err := os.Pipe()
+		if err != nil {
+			return err
+		}
+		err = probe.PrintProbeResult(c, probe.Options{
+			Namespace: "",
+			Full:      false,
+			Output:    "no-color",
+			GRPC:      "",
+			Writer:    writer,
+		})
+		if err != nil {
+			return err
+		}
+		err = writer.Close()
+		if err != nil {
+			return err
+		}
+		out, _ := io.ReadAll(reader)
+		err = writeToFile(path.Join(d, "karmor-probe.txt"), string(out))
+		if err != nil {
 			return err
 		}
 		return nil
