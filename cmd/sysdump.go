@@ -26,4 +26,9 @@ var sysdumpCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(sysdumpCmd)
 	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "file", "f", "", "output file to use")
+	sysdumpCmd.Flags().StringVarP(&dumpOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
+	sysdumpCmd.Flags().BoolVar(&dumpOptions.Full, "full", false, `If KubeArmor is not running, it deploys a daemonset to have access to more
+information on KubeArmor support in the environment and deletes daemonset after probing`)
+	sysdumpCmd.Flags().StringVarP(&dumpOptions.Output, "type", "t", "text", " Output type: json or text ")
+	sysdumpCmd.Flags().StringVar(&dumpOptions.GRPC, "gRPC", "", "GRPC port ")
 }

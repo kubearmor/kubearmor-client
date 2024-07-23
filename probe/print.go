@@ -1,6 +1,7 @@
 package probe
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -28,9 +29,8 @@ func renderOutputInTableWithNoBorders(data [][]string) {
 // printDaemonsetData function
 func printDaemonsetData(daemonsetStatus *Status) {
 	var data [][]string
-
-	color.Green("\nFound KubeArmor running in Kubernetes\n\n")
-	_, err := boldWhite.Printf("Daemonset :\n")
+	fmt.Fprintf(os.Stdout, "\033[32m\nFound KubeArmor running in Kubernetes\033[0m\n\n")
+	_, err := printWhiteBoldText("Daemonset :\n")
 	if err != nil {
 		color.Red(" Error while printing")
 	}
@@ -41,7 +41,7 @@ func printDaemonsetData(daemonsetStatus *Status) {
 // printKubeArmorDeployments function
 func printKubearmorDeployments(deploymentData map[string]*Status) {
 
-	_, err := boldWhite.Printf("Deployments : \n")
+	_, err := printWhiteBoldText("Deployments : \n")
 	if err != nil {
 		color.Red(" Error while printing")
 	}
@@ -57,7 +57,7 @@ func printKubearmorDeployments(deploymentData map[string]*Status) {
 func printKubeArmorContainers(containerData map[string]*KubeArmorPodSpec) {
 	var data [][]string
 
-	_, err := boldWhite.Printf("Containers : \n")
+	_, err := printWhiteBoldText("Containers : \n")
 	if err != nil {
 		color.Red(" Error while printing")
 	}
@@ -72,7 +72,7 @@ func printKubeArmorContainers(containerData map[string]*KubeArmorPodSpec) {
 func printKubeArmorprobe(probeData []KubeArmorProbeData) {
 
 	for i, pd := range probeData {
-		_, err := boldWhite.Printf("Node %d : \n", i+1)
+		_, err := printWhiteBoldText("Node " + fmt.Sprint(i+1) + " : \n")
 		if err != nil {
 			color.Red(" Error")
 		}
@@ -97,10 +97,14 @@ func printKubeArmorProbeOutput(kd KubeArmorProbeData) {
 	renderOutputInTableWithNoBorders(data)
 }
 
+func printWhiteBoldText(s string) (int, error) {
+	return fmt.Fprintf(os.Stdout, "\033[1;37m"+s+"\033[0m")
+}
+
 // printAnnotatedPods function
 func printAnnotatedPods(podData [][]string) {
 
-	_, err := boldWhite.Printf("Armored Up pods : \n")
+	_, err := printWhiteBoldText("Armored Up pods : \n")
 	if err != nil {
 		color.Red(" Error printing bold text")
 	}

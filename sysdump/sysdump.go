@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/kubearmor/kubearmor-client/k8s"
+	"github.com/kubearmor/kubearmor-client/probe"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +32,11 @@ import (
 
 // Options options for sysdump
 type Options struct {
-	Filename string
+	Filename  string
+	Namespace string
+	Full      bool
+	Output    string
+	GRPC      string
 }
 
 // Collect Function
@@ -178,6 +184,34 @@ func Collect(c *k8s.Client, o Options) error {
 		if err := copyFromPod("/etc/apparmor.d", d, c); err != nil {
 			return err
 		}
+		return nil
+	})
+	// Saves the probe data in the zip file
+	errs.Go(func() error {
+		oldStdOut := os.Stdout
+		reader, writer, err := os.Pipe()
+		if err != nil {
+			return err
+		}
+		os.Stdout = writer
+		err = probe.PrintProbeResult(c, probe.Options{
+			Namespace: o.Namespace,
+			Full:      o.Full,
+			Output:    o.Output,
+			GRPC:      o.GRPC,
+		})
+		if err != nil {
+			return err
+		}
+		writer.Close()
+		os.Stdout = oldStdOut
+		out, _ := io.ReadAll(reader)
+		// This is necessary to beautify the terminal output
+		ansiEscapePattern := `\x1b\[[0-9;]*m`
+		re := regexp.MustCompile(ansiEscapePattern)
+		cleanedOutput := re.ReplaceAllString(string(out), "")
+		writeToFile(path.Join(d, "karmor.probe"), cleanedOutput)
+		os.Stdout = oldStdOut
 		return nil
 	})
 
