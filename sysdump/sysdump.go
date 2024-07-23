@@ -33,7 +33,6 @@ import (
 // Options options for sysdump
 type Options struct {
 	Filename  string
-	Namespace string
 	Full      bool
 	Output    string
 	GRPC      string
@@ -195,7 +194,7 @@ func Collect(c *k8s.Client, o Options) error {
 		}
 		os.Stdout = writer
 		err = probe.PrintProbeResult(c, probe.Options{
-			Namespace: o.Namespace,
+			Namespace: "",
 			Full:      o.Full,
 			Output:    o.Output,
 			GRPC:      o.GRPC,
@@ -203,14 +202,20 @@ func Collect(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		writer.Close()
+		err = writer.Close()
+		if err!=nil{
+			return err
+		}
 		os.Stdout = oldStdOut
 		out, _ := io.ReadAll(reader)
 		// This is necessary to beautify the terminal output
 		ansiEscapePattern := `\x1b\[[0-9;]*m`
 		re := regexp.MustCompile(ansiEscapePattern)
 		cleanedOutput := re.ReplaceAllString(string(out), "")
-		writeToFile(path.Join(d, "karmor.probe"), cleanedOutput)
+		err = writeToFile(path.Join(d, "karmor.probe"), cleanedOutput)
+		if err!=nil{
+			return err
+		}
 		os.Stdout = oldStdOut
 		return nil
 	})
