@@ -333,6 +333,30 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 	}
 }
 
+// This accumulates the overall status of pod. A pod may be running but it's containers might not
+// It will return the reason and a boolean which will be true only if all the containers of pod are running
+// The reason is wholesome status of the pod. It may be Running/CrashLoopBackOff or any other state
+func GetRealPodStatus(pod corev1.Pod) (string, bool) {
+	status := pod.Status.Phase
+	reason := string(status)
+	var podReady = false
+	if status == corev1.PodRunning {
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if !containerStatus.Ready {
+				if containerStatus.State.Waiting != nil {
+					reason = containerStatus.State.Waiting.Reason
+				} else if containerStatus.State.Terminated != nil {
+					reason = containerStatus.State.Terminated.Reason
+				}
+				return reason, false
+			} else {
+				podReady = true
+			}
+		}
+	}
+	return reason, podReady
+}
+
 func checkPodsLegacy(c *k8s.Client, o Options) {
 	cursor := [4]string{"|", "/", "—", "\\"}
 	fmt.Printf("😋\tChecking if KubeArmor pods are running...\n")
