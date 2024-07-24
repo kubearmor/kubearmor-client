@@ -32,10 +32,10 @@ import (
 
 // Options options for sysdump
 type Options struct {
-	Filename  string
-	Full      bool
-	Output    string
-	GRPC      string
+	Filename string
+	Full     bool
+	Output   string
+	GRPC     string
 }
 
 // Collect Function
@@ -203,7 +203,7 @@ func Collect(c *k8s.Client, o Options) error {
 			return err
 		}
 		err = writer.Close()
-		if err!=nil{
+		if err != nil {
 			return err
 		}
 		os.Stdout = oldStdOut
@@ -213,7 +213,7 @@ func Collect(c *k8s.Client, o Options) error {
 		re := regexp.MustCompile(ansiEscapePattern)
 		cleanedOutput := re.ReplaceAllString(string(out), "")
 		err = writeToFile(path.Join(d, "karmor.probe"), cleanedOutput)
-		if err!=nil{
+		if err != nil {
 			return err
 		}
 		os.Stdout = oldStdOut
