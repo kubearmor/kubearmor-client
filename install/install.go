@@ -265,11 +265,29 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 		if cursorcount == len(cursor) {
 			cursorcount = 0
 		}
-		if podno > 0 {
-			fmt.Printf("\r🥳\tKubeArmor Daemonset Deployed!             \n")
-			fmt.Printf("\r🥳\tDone Checking , ALL Services are running!             \n")
-			fmt.Printf("⌚️\tExecution Time : %s \n", time.Since(stime))
+		if podno == 0 {
+			fmt.Printf("\r\tNo pods found!             \n")
 			break
+		}
+		if podno > 0 {
+			allPodsReady := true
+			// This loop will break even if only one of the pod is not ready
+			for _, p := range pods.Items {
+				status, ready := GetRealPodStatus(p)
+				fmt.Printf("\r\tThe pod %s is in %s state             ", p.Name, status)
+				if !ready {
+					allPodsReady = false
+					break
+				}
+			}
+			if !allPodsReady {
+				break
+			} else {
+				fmt.Printf("\r🥳\tKubeArmor Daemonset Deployed!             \n")
+				fmt.Printf("\r🥳\tDone Checking , ALL Services are running!             \n")
+				fmt.Printf("⌚️\tExecution Time : %s \n", time.Since(stime))
+				break
+			}
 		}
 		if !otime.After(time.Now()) {
 			fmt.Printf("\r⌚️\tCheck Incomplete due to Time-Out!                     \n")
