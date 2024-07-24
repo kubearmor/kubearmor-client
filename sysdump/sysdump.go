@@ -97,34 +97,39 @@ func Collect(c *k8s.Client, o Options) error {
 	// KubeArmor Pod
 	errs.Go(func() error {
 		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
-			LabelSelector: "kubearmor-app=kubearmor",
+			LabelSelector: "kubearmor-app",
 		})
+
 		if err != nil {
 			fmt.Printf("kubearmor pod not found. (possible if kubearmor is running in process mode)\n")
 			return nil
 		}
+		fmt.Print("Checking all pods labeled with kubearmor-app\n")
 
 		for _, p := range pods.Items {
-			// KubeArmor Logs
-			fmt.Printf("getting logs from %s\n", p.Name)
+			// Iterate over containers in the pod
+			for _, container := range p.Spec.Containers {
 
-			v := c.K8sClientset.CoreV1().Pods(p.Namespace).GetLogs(p.Name, &corev1.PodLogOptions{})
-			s, err := v.Stream(context.Background())
-			if err != nil {
-				fmt.Printf("failed getting logs from pod=%s err=%s\n", p.Name, err)
-				continue
-			}
-			defer func() {
-				if err := s.Close(); err != nil {
-					kg.Warnf("Error closing io stream %s\n", err)
+				// KubeArmor Logs
+				fmt.Printf("getting logs from pod=%s container=%s\n", p.Name, container.Name)
+				v := c.K8sClientset.CoreV1().Pods(p.Namespace).GetLogs(p.Name, &corev1.PodLogOptions{Container: container.Name})
+				s, err := v.Stream(context.Background())
+				if err != nil {
+					fmt.Printf("failed getting logs from pod=%s err=%s\n", p.Name, err)
+					continue
 				}
-			}()
-			var logs bytes.Buffer
-			if _, err = io.Copy(&logs, s); err != nil {
-				return err
-			}
-			if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), logs.String()); err != nil {
-				return err
+				defer func() {
+					if err := s.Close(); err != nil {
+						kg.Warnf("Error closing io stream %s\n", err)
+					}
+				}()
+				var logs bytes.Buffer
+				if _, err = io.Copy(&logs, s); err != nil {
+					return err
+				}
+				if err := writeToFile(path.Join(d, "ka-pod-"+p.Name+"-log.txt"), logs.String()); err != nil {
+					return err
+				}
 			}
 
 			// KubeArmor Describe
@@ -173,7 +178,7 @@ func Collect(c *k8s.Client, o Options) error {
 		return nil
 	})
 
-	// AppArmor Gzip
+	// AppArmor GzipS
 	errs.Go(func() error {
 		if err := copyFromPod("/etc/apparmor.d", d, c); err != nil {
 			return err
