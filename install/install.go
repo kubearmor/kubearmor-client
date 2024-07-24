@@ -271,18 +271,26 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 		}
 		if podno > 0 {
 			allPodsReady := true
+			podsWaiting := false
 			// This loop will break even if only one of the pod is not ready
 			for _, p := range pods.Items {
-				status, ready := GetRealPodStatus(p)
+				status, ready, waiting := GetRealPodStatus(p)
 				fmt.Printf("\r\tThe pod %s is in %s state             ", p.Name, status)
-				if !ready {
+				if !ready && !waiting {
 					allPodsReady = false
+					podsWaiting = false
+					break
+				} else if !ready && waiting {
+					allPodsReady = false
+					podsWaiting = true
 					break
 				}
 			}
-			if !allPodsReady {
+			if !allPodsReady && !podsWaiting {
 				break
-			} else {
+			} else if !allPodsReady && podsWaiting {
+				continue
+			} else if allPodsReady && !podsWaiting {
 				fmt.Printf("\r🥳\tKubeArmor Daemonset Deployed!             \n")
 				fmt.Printf("\r🥳\tDone Checking , ALL Services are running!             \n")
 				fmt.Printf("⌚️\tExecution Time : %s \n", time.Since(stime))
@@ -336,10 +344,14 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 // This accumulates the overall status of pod. A pod may be running but it's containers might not
 // It will return the reason and a boolean which will be true only if all the containers of pod are running
 // The reason is wholesome status of the pod. It may be Running/CrashLoopBackOff or any other state
-func GetRealPodStatus(pod corev1.Pod) (string, bool) {
+// Another returning variable is pending, It is true if phase of Pod is Pending but if container state is waiting it will
+// return pod's pending phase as false! This is because Pending pod can have many reasons and it can become Running
+// in future but waiting container means there is some problem in container
+func GetRealPodStatus(pod corev1.Pod) (string, bool, bool) {
 	status := pod.Status.Phase
 	reason := string(status)
 	var podReady = false
+	var podPending = false
 	if status == corev1.PodRunning {
 		for _, containerStatus := range pod.Status.ContainerStatuses {
 			if !containerStatus.Ready {
@@ -348,13 +360,15 @@ func GetRealPodStatus(pod corev1.Pod) (string, bool) {
 				} else if containerStatus.State.Terminated != nil {
 					reason = containerStatus.State.Terminated.Reason
 				}
-				return reason, false
+				return reason, false, false
 			} else {
 				podReady = true
 			}
 		}
+	} else if status == corev1.PodPending {
+		return reason, podReady, true
 	}
-	return reason, podReady
+	return reason, podReady, podPending
 }
 
 func checkPodsLegacy(c *k8s.Client, o Options) {
