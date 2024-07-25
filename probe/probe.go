@@ -573,8 +573,9 @@ func getPostureData(probeData []KubeArmorProbeData) map[string]string {
 // sudo systemctl status kubearmor
 func isSystemdMode() bool {
 	cmd := exec.Command("systemctl", "status", "kubearmor")
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Println("systemctl status kubearmor cannot be executed:", string(out))
 		return false
 	}
 	return true
