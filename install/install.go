@@ -257,6 +257,8 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			}
 		}
 	}
+	allPodsReady := true
+	podsWaiting := false
 	for {
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor", FieldSelector: "status.phase==Running"})
 		podno := len(pods.Items)
@@ -270,8 +272,6 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			break
 		}
 		if podno > 0 {
-			allPodsReady := true
-			podsWaiting := false
 			// This loop will break even if only one of the pod is not ready
 			for _, p := range pods.Items {
 				status, ready, waiting := GetRealPodStatus(p)
@@ -308,6 +308,10 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 	defer cancel()
 
 	for {
+		if !allPodsReady {
+			fmt.Print("⚠️\tFailed verifying KubeArmor functionality")
+			return
+		}
 		select {
 		case <-time.After(10 * time.Second):
 		case <-ctx.Done():
