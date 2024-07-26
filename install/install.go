@@ -259,6 +259,7 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 	}
 	allPodsReady := true
 	podsWaiting := false
+	var podStatus string
 	for {
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor", FieldSelector: "status.phase==Running"})
 		podno := len(pods.Items)
@@ -276,6 +277,7 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			for _, p := range pods.Items {
 				status, ready, waiting := GetRealPodStatus(p)
 				fmt.Printf("\r\tThe pod %s is in %s state             ", p.Name, status)
+				podStatus = status
 				if !ready && !waiting {
 					allPodsReady = false
 					podsWaiting = false
@@ -302,16 +304,16 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			break
 		}
 	}
+	if !allPodsReady {
+		fmt.Printf("⚠️\tFailed verifying KubeArmor functionality, kubearmor deamonset failed to start due to pod ran into %s", podStatus)
+		return
+	}
 	fmt.Print("\n🔧\tVerifying KubeArmor functionality (this may take upto a minute)...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
 	defer cancel()
 
 	for {
-		if !allPodsReady {
-			fmt.Print("⚠️\tFailed verifying KubeArmor functionality")
-			return
-		}
 		select {
 		case <-time.After(10 * time.Second):
 		case <-ctx.Done():
