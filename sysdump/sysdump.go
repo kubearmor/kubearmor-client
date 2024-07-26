@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -196,7 +195,7 @@ func Collect(c *k8s.Client, o Options) error {
 		err = probe.PrintProbeResult(c, probe.Options{
 			Namespace: "",
 			Full:      o.Full,
-			Output:    o.Output,
+			Output:    "nocolor-text",
 			GRPC:      o.GRPC,
 		})
 		if err != nil {
@@ -208,11 +207,7 @@ func Collect(c *k8s.Client, o Options) error {
 		}
 		os.Stdout = oldStdOut
 		out, _ := io.ReadAll(reader)
-		// This is necessary to beautify the terminal output
-		ansiEscapePattern := `\x1b\[[0-9;]*m`
-		re := regexp.MustCompile(ansiEscapePattern)
-		cleanedOutput := re.ReplaceAllString(string(out), "")
-		err = writeToFile(path.Join(d, "karmor.probe"), cleanedOutput)
+		err = writeToFile(path.Join(d, "karmor.probe"), string(out))
 		if err != nil {
 			return err
 		}
