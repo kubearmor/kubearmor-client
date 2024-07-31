@@ -38,7 +38,7 @@ func (o *Options) printToOutput(c *color.Color, s string) {
 	if o.Output == "nocolor-text" || c == nil {
 		_, err := fmt.Fprint(os.Stdout, s)
 		if err != nil {
-			_, printErr := red.Printf("Can't print to os.Stdout")
+			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
 			if printErr != nil {
 				fmt.Printf("Printing error")
 			}
