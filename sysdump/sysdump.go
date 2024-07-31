@@ -195,7 +195,7 @@ func Collect(c *k8s.Client, o Options) error {
 		err = probe.PrintProbeResult(c, probe.Options{
 			Namespace: "",
 			Full:      o.Full,
-			Output:    "nocolor-text",
+			Output:    "no-color",
 			GRPC:      o.GRPC,
 		})
 		if err != nil {
@@ -207,7 +207,14 @@ func Collect(c *k8s.Client, o Options) error {
 		}
 		os.Stdout = oldStdOut
 		out, _ := io.ReadAll(reader)
-		err = writeToFile(path.Join(d, "karmor.probe"), string(out))
+		outStr := string(out)
+		outArr := strings.Split(outStr, "\nFound KubeArmor running in Kubernetes\n\n")
+		outArr = []string{
+			"Found KubeArmor running in Kubernetes\n\n",
+			outArr[1],
+		}
+		outStr = strings.Join(outArr, "")
+		err = writeToFile(path.Join(d, "karmor-probe.txt"), outStr)
 		if err != nil {
 			return err
 		}

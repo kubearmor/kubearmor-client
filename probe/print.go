@@ -27,7 +27,7 @@ func renderOutputInTableWithNoBorders(data [][]string) {
 }
 
 func (o *Options) getPrintableString(c *color.Color, s string) string {
-	if o.Output == "nocolor-text" || c == nil {
+	if o.Output == "no-color" || c == nil {
 		return s
 	} else {
 		return c.SprintFunc()(s)
@@ -35,7 +35,7 @@ func (o *Options) getPrintableString(c *color.Color, s string) string {
 }
 
 func (o *Options) printToOutput(c *color.Color, s string) {
-	if o.Output == "nocolor-text" || c == nil {
+	if o.Output == "no-color" || c == nil {
 		_, err := fmt.Fprint(os.Stdout, s)
 		if err != nil {
 			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
@@ -58,14 +58,14 @@ func (o *Options) printToOutput(c *color.Color, s string) {
 func (o *Options) printDaemonsetData(daemonsetStatus *Status) {
 	var data [][]string
 	o.printToOutput(green, "\nFound KubeArmor running in Kubernetes\n\n")
-	o.printToOutput(itwhite, "Daemonset :\n")
+	o.printToOutput(boldWhite, "Daemonset :\n")
 	data = append(data, []string{" ", "kubearmor ", "Desired: " + daemonsetStatus.Desired, "Ready: " + daemonsetStatus.Ready, "Available: " + daemonsetStatus.Available})
 	renderOutputInTableWithNoBorders(data)
 }
 
 // printKubeArmorDeployments function
 func (o *Options) printKubearmorDeployments(deploymentData map[string]*Status) {
-	o.printToOutput(itwhite, "Deployments : \n")
+	o.printToOutput(boldWhite, "Deployments : \n")
 	var data [][]string
 	for depName, depStatus := range deploymentData {
 		data = append(data, []string{" ", depName, "Desired: " + depStatus.Desired, "Ready: " + depStatus.Ready, "Available: " + depStatus.Available})
@@ -78,7 +78,7 @@ func (o *Options) printKubearmorDeployments(deploymentData map[string]*Status) {
 func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPodSpec) {
 	var data [][]string
 
-	o.printToOutput(itwhite, "Containers : \n")
+	o.printToOutput(boldWhite, "Containers : \n")
 	for name, spec := range containerData {
 
 		data = append(data, []string{" ", name, "Running: " + spec.Running, "Image Version: " + spec.Image_Version})
@@ -90,7 +90,7 @@ func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPo
 func (o *Options) printKubeArmorprobe(probeData []KubeArmorProbeData) {
 
 	for i, pd := range probeData {
-		o.printToOutput(itwhite, "Node "+fmt.Sprint(i+1)+" : \n")
+		o.printToOutput(boldWhite, "Node "+fmt.Sprint(i+1)+" : \n")
 		o.printKubeArmorProbeOutput(pd)
 	}
 
@@ -115,7 +115,7 @@ func (o *Options) printKubeArmorProbeOutput(kd KubeArmorProbeData) {
 // printAnnotatedPods function
 func (o *Options) printAnnotatedPods(podData [][]string) {
 
-	o.printToOutput(itwhite, "Armored Up pods : \n")
+	o.printToOutput(boldWhite, "Armored Up pods : \n")
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAMESPACE", "DEFAULT POSTURE", "VISIBILITY", "NAME", "POLICY"})
 	for _, v := range podData {
