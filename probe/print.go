@@ -46,9 +46,9 @@ func (o *Options) printToOutput(c *color.Color, s string) {
 	} else {
 		_, err := c.Fprintf(os.Stdout, s)
 		if err != nil {
-			_, printErr := red.Printf("Can't print to os.Stdout")
+			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
 			if printErr != nil {
-				fmt.Printf("Printing error")
+				fmt.Printf("printing error %s", printErr.Error())
 			}
 		}
 	}

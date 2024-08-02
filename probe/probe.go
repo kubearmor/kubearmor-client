@@ -107,7 +107,7 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 
 			o.printToOutput(green, "\nFound KubeArmor running in Systemd mode \n\n")
 
-			o.printToOutput(itwhite, "Host : \n")
+			o.printToOutput(boldWhite, "Host : \n")
 
 			o.printKubeArmorProbeOutput(kd)
 			if len(policyData.HostMap) > 0 {
@@ -353,7 +353,7 @@ func checkHostAuditSupport(o Options) {
 		s := strings.Split(kerVersion, "-")
 		kernelVersion := s[0]
 
-		o.printToOutput(itwhite, "Host:")
+		o.printToOutput(boldWhite, "Host:")
 		fmt.Printf("\t Observability/Audit:")
 		checkAuditSupport(kernelVersion, checkBTFSupport() || checkKernelHeaderPresent(), o)
 	} else {
@@ -383,7 +383,7 @@ func probeNode(c *k8s.Client, o Options) {
 	if len(nodes.Items) > 0 {
 		for i, item := range nodes.Items {
 			str := fmt.Sprintf("Node %d : \n", i+1)
-			o.printToOutput(itwhite, str)
+			o.printToOutput(boldWhite, str)
 			fmt.Printf("\t Observability/Audit:")
 			kernelVersion := item.Status.NodeInfo.KernelVersion
 			check2 := checkNodeKernelHeaderPresent(c, o, item.Name)
