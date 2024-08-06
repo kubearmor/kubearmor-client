@@ -32,9 +32,6 @@ import (
 // Options options for sysdump
 type Options struct {
 	Filename string
-	Full     bool
-	Output   string
-	GRPC     string
 }
 
 // Collect Function
@@ -194,9 +191,9 @@ func Collect(c *k8s.Client, o Options) error {
 		os.Stdout = writer
 		err = probe.PrintProbeResult(c, probe.Options{
 			Namespace: "",
-			Full:      o.Full,
+			Full:      false,
 			Output:    "no-color",
-			GRPC:      o.GRPC,
+			GRPC:      "",
 		})
 		if err != nil {
 			return err
