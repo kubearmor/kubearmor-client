@@ -2,6 +2,8 @@ package probe
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strconv"
 
@@ -9,8 +11,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func renderOutputInTableWithNoBorders(data [][]string) {
-	table := tablewriter.NewWriter(os.Stdout)
+func (o *Options) renderOutputInTableWithNoBorders(data [][]string) {
+	table := tablewriter.NewWriter(o.getWriter())
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
@@ -34,9 +36,30 @@ func (o *Options) getPrintableString(c *color.Color, s string) string {
 	}
 }
 
+func (o *Options) getWriter() io.Writer {
+	if o.Writer == nil {
+		return os.Stdout
+	}
+	return o.Writer
+}
+
+func (o *Options) printLn(a ...any) {
+	_, err := fmt.Fprintln(o.getWriter(), a...)
+	if err != nil {
+		log.Println("Error in printing: ", err.Error())
+	}
+}
+
+func (o *Options) printF(format string, a ...interface{}) {
+	_, err := fmt.Fprintf(o.getWriter(), format, a...)
+	if err != nil {
+		log.Println("Error in printing: ", err.Error())
+	}
+}
+
 func (o *Options) printToOutput(c *color.Color, s string) {
 	if o.Output == "no-color" || c == nil {
-		_, err := fmt.Fprint(os.Stdout, s)
+		_, err := fmt.Fprint(o.getWriter(), s)
 		if err != nil {
 			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
 			if printErr != nil {
@@ -44,7 +67,7 @@ func (o *Options) printToOutput(c *color.Color, s string) {
 			}
 		}
 	} else {
-		_, err := c.Fprintf(os.Stdout, s)
+		_, err := c.Fprintf(o.getWriter(), s)
 		if err != nil {
 			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
 			if printErr != nil {
@@ -60,7 +83,7 @@ func (o *Options) printDaemonsetData(daemonsetStatus *Status) {
 	o.printToOutput(green, "\nFound KubeArmor running in Kubernetes\n\n")
 	o.printToOutput(boldWhite, "Daemonset :\n")
 	data = append(data, []string{" ", "kubearmor ", "Desired: " + daemonsetStatus.Desired, "Ready: " + daemonsetStatus.Ready, "Available: " + daemonsetStatus.Available})
-	renderOutputInTableWithNoBorders(data)
+	o.renderOutputInTableWithNoBorders(data)
 }
 
 // printKubeArmorDeployments function
@@ -71,7 +94,7 @@ func (o *Options) printKubearmorDeployments(deploymentData map[string]*Status) {
 		data = append(data, []string{" ", depName, "Desired: " + depStatus.Desired, "Ready: " + depStatus.Ready, "Available: " + depStatus.Available})
 	}
 
-	renderOutputInTableWithNoBorders(data)
+	o.renderOutputInTableWithNoBorders(data)
 }
 
 // printKubeArmorContainers function
@@ -83,7 +106,7 @@ func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPo
 
 		data = append(data, []string{" ", name, "Running: " + spec.Running, "Image Version: " + spec.Image_Version})
 	}
-	renderOutputInTableWithNoBorders(data)
+	o.renderOutputInTableWithNoBorders(data)
 }
 
 // printKubeArmorprobe function
@@ -109,14 +132,14 @@ func (o *Options) printKubeArmorProbeOutput(kd KubeArmorProbeData) {
 	data = append(data, []string{" ", "Container Default Posture:", o.getPrintableString(green, kd.ContainerDefaultPosture.FileAction) + o.getPrintableString(itwhite, "(File)"), o.getPrintableString(green, kd.ContainerDefaultPosture.CapabilitiesAction) + o.getPrintableString(itwhite, "(Capabilities)"), o.getPrintableString(green, kd.ContainerDefaultPosture.NetworkAction) + o.getPrintableString(itwhite, "(Network)")})
 	data = append(data, []string{" ", "Host Default Posture:", o.getPrintableString(green, kd.HostDefaultPosture.FileAction) + o.getPrintableString(itwhite, "(File)"), o.getPrintableString(green, kd.HostDefaultPosture.CapabilitiesAction) + o.getPrintableString(itwhite, "(Capabilities)"), o.getPrintableString(green, kd.HostDefaultPosture.NetworkAction) + o.getPrintableString(itwhite, "(Network)")})
 	data = append(data, []string{" ", "Host Visibility:", o.getPrintableString(green, kd.HostVisibility)})
-	renderOutputInTableWithNoBorders(data)
+	o.renderOutputInTableWithNoBorders(data)
 }
 
 // printAnnotatedPods function
 func (o *Options) printAnnotatedPods(podData [][]string) {
 
 	o.printToOutput(boldWhite, "Armored Up pods : \n")
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"NAMESPACE", "DEFAULT POSTURE", "VISIBILITY", "NAME", "POLICY"})
 	for _, v := range podData {
 		table.Append(v)
@@ -128,7 +151,7 @@ func (o *Options) printAnnotatedPods(podData [][]string) {
 func (o *Options) printContainersSystemd(podData [][]string) {
 	o.printToOutput(boldWhite, "Armored Up Containers : \n")
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
 	for _, v := range podData {
 		table.Append(v)
@@ -141,7 +164,7 @@ func (o *Options) printContainersSystemd(podData [][]string) {
 func (o *Options) printHostPolicy(hostPolicy [][]string) {
 	o.printToOutput(boldWhite, "Host Policies : \n")
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"HOST NAME ", "POLICY"})
 	for _, v := range hostPolicy {
 		table.Append(v)

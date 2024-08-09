@@ -183,17 +183,16 @@ func Collect(c *k8s.Client, o Options) error {
 	})
 	// Saves the probe data in the zip file
 	errs.Go(func() error {
-		oldStdOut := os.Stdout
 		reader, writer, err := os.Pipe()
 		if err != nil {
 			return err
 		}
-		os.Stdout = writer
 		err = probe.PrintProbeResult(c, probe.Options{
 			Namespace: "",
 			Full:      false,
 			Output:    "no-color",
 			GRPC:      "",
+			Writer:    writer,
 		})
 		if err != nil {
 			return err
@@ -202,20 +201,12 @@ func Collect(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		os.Stdout = oldStdOut
 		out, _ := io.ReadAll(reader)
 		outStr := string(out)
-		outArr := strings.Split(outStr, "\nFound KubeArmor running in Kubernetes\n\n")
-		outArr = []string{
-			"Found KubeArmor running in Kubernetes\n\n",
-			outArr[1],
-		}
-		outStr = strings.Join(outArr, "")
 		err = writeToFile(path.Join(d, "karmor-probe.txt"), outStr)
 		if err != nil {
 			return err
 		}
-		os.Stdout = oldStdOut
 		return nil
 	})
 

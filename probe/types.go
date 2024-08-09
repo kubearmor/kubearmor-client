@@ -1,6 +1,8 @@
 package probe
 
 import (
+	"io"
+
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 )
 
@@ -10,6 +12,7 @@ type Options struct {
 	Full      bool
 	Output    string
 	GRPC      string
+	Writer    io.Writer
 }
 
 // KubeArmorProbeData structure definition

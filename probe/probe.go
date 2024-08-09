@@ -102,7 +102,7 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(out))
+			o.printLn(string(out))
 		} else {
 
 			o.printToOutput(green, "\nFound KubeArmor running in Systemd mode \n\n")
@@ -145,7 +145,7 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(out))
+			o.printLn(string(out))
 		} else {
 			o.printDaemonsetData(daemonsetStatus)
 			o.printKubearmorDeployments(deploymentData)
@@ -216,7 +216,7 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 }
 
 func checkLsmSupport(supportedLSM string, o Options) {
-	fmt.Printf("\t Enforcement:")
+	o.printLn("\t Enforcement:")
 	if strings.Contains(supportedLSM, "bpf") {
 		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else if strings.Contains(supportedLSM, "selinux") {
@@ -354,7 +354,7 @@ func checkHostAuditSupport(o Options) {
 		kernelVersion := s[0]
 
 		o.printToOutput(boldWhite, "Host:")
-		fmt.Printf("\t Observability/Audit:")
+		o.printF("\t Observability/Audit:")
 		checkAuditSupport(kernelVersion, checkBTFSupport() || checkKernelHeaderPresent(), o)
 	} else {
 		o.printToOutput(red, " Error")
@@ -384,7 +384,7 @@ func probeNode(c *k8s.Client, o Options) {
 		for i, item := range nodes.Items {
 			str := fmt.Sprintf("Node %d : \n", i+1)
 			o.printToOutput(boldWhite, str)
-			fmt.Printf("\t Observability/Audit:")
+			o.printF("\t Observability/Audit:")
 			kernelVersion := item.Status.NodeInfo.KernelVersion
 			check2 := checkNodeKernelHeaderPresent(c, o, item.Name)
 			checkAuditSupport(kernelVersion, check2, o)
@@ -395,7 +395,7 @@ func probeNode(c *k8s.Client, o Options) {
 			checkLsmSupport(lsm, o)
 		}
 	} else {
-		fmt.Println("No kubernetes environment found")
+		o.printLn("No kubernetes environment found")
 	}
 }
 
@@ -615,7 +615,7 @@ func getPolicyData(o Options) (*pb.ProbeResponse, error) {
 
 	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		fmt.Println(err)
+		o.printLn(err)
 		return nil, err
 	}
 
