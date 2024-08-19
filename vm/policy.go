@@ -21,6 +21,7 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"sigs.k8s.io/yaml"
 )
 
@@ -53,7 +54,11 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) er
 		}
 	}
 
-	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	conn, err := grpc.Dial(gRPC, opts...)
 	if err != nil {
 		return err
 	}

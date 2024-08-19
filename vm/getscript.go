@@ -15,6 +15,7 @@ import (
 	pb "github.com/kubearmor/kubearmor-client/vm/protobuf"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,11 @@ var (
 )
 
 func initGRPCClient(ip string, port string) error {
-	grpcClientConn, err := grpc.DialContext(context.Background(), net.JoinHostPort(ip, port), grpc.WithInsecure())
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	grpcClientConn, err := grpc.DialContext(context.Background(), net.JoinHostPort(ip, port), opts...)
 	if err != nil {
 		return err
 	}
@@ -69,7 +74,7 @@ func writeScriptDataToFile(options ScriptOptions, scriptData string) error {
 	return nil
 }
 
-func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
+func getClusterIP(c *k8s.Client) (string, error) {
 	externalIP := ""
 
 	svcInfo, err := c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{})
@@ -112,7 +117,7 @@ func GetScript(c *k8s.Client, options ScriptOptions, httpIP string, isNonK8sEnv 
 			break
 		}
 
-		clusterIP, err := getClusterIP(c, options)
+		clusterIP, err := getClusterIP(c)
 		if err != nil || clusterIP == "" {
 			return err
 		}
