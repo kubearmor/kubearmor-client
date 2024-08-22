@@ -145,13 +145,12 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 
 	labelMap := labelArrayToLabelMap(o.Labels)
 	if len(o.Images) == 0 {
-		// recommendation based on k8s manifest
+		// Recommendation based on K8s manifest
 		dps, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{})
 		if err != nil {
 			return err
 		}
 		for _, dp := range dps.Items {
-
 			if !matchLabels(labelMap, dp.Spec.Template.Labels) {
 				continue
 			}
@@ -183,7 +182,6 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 
 	o.Tags = unique(o.Tags)
 	options = o
-	reg := registry.New(o.Config)
 
 	if err = createOutDir(o.OutDir); err != nil {
 		return err
@@ -205,10 +203,23 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 					Image:      i,
 					Deployment: deployment.Name,
 				}
-				reg.Analyze(&img)
+
+				// Update: Pull the image using the OCI registry and get file and directory lists
+				reg := registry.New(i, []string{}, "", "")  // Use the actual image name here
+				files, directories, err := reg.Pull(o.OutDir)
+				if err != nil {
+					log.WithError(err).Error("failed to pull the image from registry")
+					return err
+				}
+
+				log.Infof("Pulled files: %v", files)
+				log.Infof("Pulled directories: %v", directories)
+
 				if policyMap, msMap, err = gen.Scan(&img, o); err != nil {
 					log.WithError(err).Error("policy generator scan failed")
 				}
+
+				// Process and write the policies based on the file and directory information
 				writePolicyFile(policyMap, msMap)
 				if err := report.SectEnd(); err != nil {
 					log.WithError(err).Error("report section end failed")
@@ -221,3 +232,4 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 
 	return nil
 }
+
