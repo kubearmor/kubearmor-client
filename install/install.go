@@ -68,6 +68,9 @@ type Options struct {
 	KubeArmorOperatorTag   string
 	PreserveUpstream       bool
 	Env                    envOption
+	AlertThrottling        bool
+	MaxAlertPerSec         int32
+	ThrottleSec            int32
 }
 
 type envOption struct {
@@ -183,6 +186,9 @@ func getOperatorCR(o Options) (*Operatorv1.KubeArmorConfig, string) {
 			EnableStdOutLogs:   false,
 			EnableStdOutAlerts: false,
 			EnableStdOutMsgs:   false,
+			AlertThrottling:    o.AlertThrottling,
+			MaxAlertPerSec:     int(o.MaxAlertPerSec),
+			ThrottleSec:        int(o.ThrottleSec),
 		},
 	}, postureSettings
 }
