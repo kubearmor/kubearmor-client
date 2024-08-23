@@ -3,7 +3,7 @@ package registry
 import "errors"
 
 const (
-	DefaultTempDirPrefix = "karmor-store-"
+	DefaultTempDirPrefix = "tmp"
 	DefaultRegistry      = "docker.io"
 	DefaultTag           = "latest"
 

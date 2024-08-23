@@ -66,6 +66,7 @@ func New(img string, files []string, user string, passwd string) *OCIRegistry {
 func (o *OCIRegistry) Pull(output string) (files []string, directories []string, err error) {
 	ctx := context.Background()
 	tempDir, err, rmdir := MakeTemporaryDir("")
+	fmt.Printf("tmpdir: %v", tempDir)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,6 +80,8 @@ func (o *OCIRegistry) Pull(output string) (files []string, directories []string,
 	defer store.Close()
 
 	reg, repoPath, tag, err := getRegRepoTag(o.Image)
+	repoPath = "docker.io/library/ubuntu"
+	fmt.Printf("This is the repoPath %v \n",repoPath)
 	fmt.Println(reg)
 	if err != nil {
 		return nil, nil, err
@@ -129,7 +132,14 @@ func (o *OCIRegistry) Pull(output string) (files []string, directories []string,
 	// 2. Copy from the remote repository to the file store
 	fmt.Println("reached second")
 	fmt.Printf("the tag is %v and the another target is %v \n", tag ,tag  )
-	manifestDescriptor, err := oras.Copy(ctx, repo, tag, store, tag, oras.DefaultCopyOptions)
+	fmt.Printf("the repo is %v \n", *repo)
+	fmt.Printf("the store is %v \n", store)
+	fmt.Printf("the options is %v \n", oras.DefaultCopyOptions)
+	copyOptions := oras.DefaultCopyOptions
+	
+
+	fmt.Printf("max data bytes :%v", copyOptions.MaxMetadataBytes )
+	manifestDescriptor, err := oras.Copy(ctx, repo, tag, store, tag, copyOptions)
 	if err != nil {
 		fmt.Println("reached second error")
 		return nil, nil, err
@@ -215,158 +225,3 @@ func (o *OCIRegistry) Pull(output string) (files []string, directories []string,
 // 		return
 // 	}
 // 	tmpDir, err := os.MkdirTemp("", karmorTempDirPattern)
-// 	if err != nil {
-// 		log.WithError(err).Error("could not create temp dir")
-// 	}
-// 	defer func() {
-// 		err = os.RemoveAll(tmpDir)
-// 		if err != nil {
-// 			log.WithError(err).Error("failed to remove cache files")
-// 		}
-// 	}()
-// 	img.TempDir = tmpDir
-// 	err = r.pullImage(img.Name)
-// 	if err != nil {
-// 		log.Warn("Failed to pull image. Dumping generic policies.")
-// 		img.OS = "linux"
-// 		img.RepoTags = append(img.RepoTags, img.Name)
-// 	} else {
-// 		tarname := saveImageToTar(img.Name, r.cli, tmpDir)
-// 		img.FileList, img.DirList = extractTar(tarname, tmpDir)
-// 		img.GetImageInfo()
-// 	}
-
-// 	r.cache[img.Name] = *img
-// }
-
-// // The randomizer used in this function is not used for any cryptographic
-// // operation and hence safe to use.
-// func randString(n int) string {
-// 	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-// 	b := make([]rune, n)
-// 	for i := range b {
-// 		b[i] = letterRunes[rand.Intn(len(letterRunes))] // #nosec
-// 	}
-// 	return string(b)
-// }
-
-// func extractTar(tarname string, tempDir string) ([]string, []string) {
-// 	var fl []string
-// 	var dl []string
-
-// 	f, err := os.Open(filepath.Clean(tarname))
-// 	if err != nil {
-// 		log.WithError(err).WithFields(log.Fields{
-// 			"tar": tarname,
-// 		}).Fatal("os create failed")
-// 	}
-// 	defer hacks.CloseCheckErr(f, tarname)
-// 	if isTarFile(f) {
-// 		_, err := f.Seek(0, 0)
-// 		if err != nil {
-// 			log.WithError(err).WithFields(log.Fields{
-// 				"tar": tarname,
-// 			}).Fatal("Failed to seek to the beginning of the file")
-// 		}
-// 		tr := tar.NewReader(bufio.NewReader(f))
-// 		for {
-// 			hdr, err := tr.Next()
-// 			if err == io.EOF {
-// 				break // End of archive
-// 			}
-// 			if err != nil {
-// 				log.WithError(err).Error("tar next failed")
-// 				return nil, nil
-// 			}
-
-// 			tgt, err := sanitizeArchivePath(tempDir, hdr.Name)
-// 			if err != nil {
-// 				log.WithError(err).WithFields(log.Fields{
-// 					"file": hdr.Name,
-// 				}).Error("ignoring file since it could not be sanitized")
-// 				continue
-// 			}
-
-// 			switch hdr.Typeflag {
-// 			case tar.TypeDir:
-// 				if _, err := os.Stat(tgt); err != nil {
-// 					if err := os.MkdirAll(tgt, 0750); err != nil {
-// 						log.WithError(err).WithFields(log.Fields{
-// 							"target": tgt,
-// 						}).Fatal("tar mkdirall")
-// 					}
-// 				}
-// 				dl = append(dl, tgt)
-// 			case tar.TypeReg:
-// 				f, err := os.OpenFile(filepath.Clean(tgt), os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
-// 				if err != nil {
-// 					log.WithError(err).WithFields(log.Fields{
-// 						"target": tgt,
-// 					}).Error("tar open file")
-// 				} else {
-
-// 					// copy over contents
-// 					if _, err := io.CopyN(f, tr, 2e+9 /*2GB*/); err != io.EOF {
-// 						log.WithError(err).WithFields(log.Fields{
-// 							"target": tgt,
-// 						}).Fatal("tar io.Copy()")
-// 					}
-// 				}
-// 				hacks.CloseCheckErr(f, tgt)
-// 				if strings.HasSuffix(tgt, "layer.tar") {
-// 					ifl, idl := extractTar(tgt, tempDir)
-// 					fl = append(fl, ifl...)
-// 					dl = append(dl, idl...)
-// 				} else if strings.HasPrefix(hdr.Name, "blobs/") {
-// 					ifl, idl := extractTar(tgt, tempDir)
-// 					fl = append(fl, ifl...)
-// 					dl = append(dl, idl...)
-
-// 				} else {
-// 					fl = append(fl, tgt)
-// 				}
-// 			}
-// 		}
-// 	} else {
-// 		log.WithFields(log.Fields{
-// 			"file": tarname,
-// 		}).Error("Not a valid tar file")
-// 	}
-// 	return fl, dl
-// }
-
-// func isTarFile(f *os.File) bool {
-// 	tr := tar.NewReader(bufio.NewReader(f))
-// 	_, err := tr.Next()
-// 	return err == nil
-// }
-
-// func saveImageToTar(imageName string, cli *client.Client, tempDir string) string {
-// 	imgdata, err := cli.ImageSave(context.Background(), []string{imageName})
-// 	if err != nil {
-// 		log.WithError(err).Fatal("could not save image")
-// 	}
-// 	defer func() {
-// 		if err := imgdata.Close(); err != nil {
-// 			kg.Warnf("Error closing io stream %s\n", err)
-// 		}
-// 	}()
-
-// 	tarname := filepath.Join(tempDir, randString(8)+".tar")
-
-// 	f, err := os.Create(filepath.Clean(tarname))
-// 	if err != nil {
-// 		log.WithError(err).Fatal("os create failed")
-// 	}
-
-// 	if _, err := io.CopyN(bufio.NewWriter(f), imgdata, 5e+9 /*5GB*/); err != io.EOF {
-// 		log.WithError(err).WithFields(log.Fields{
-// 			"tar": tarname,
-// 		}).Fatal("io.CopyN() failed")
-// 	}
-// 	hacks.CloseCheckErr(f, tarname)
-// 	log.WithFields(log.Fields{
-// 		"tar": tarname,
-// 	}).Info("dumped image to tar")
-// 	return tarname
-// }
