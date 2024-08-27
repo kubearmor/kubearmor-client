@@ -43,8 +43,11 @@ import (
 
 var white = color.New(color.FgWhite)
 var boldWhite = white.Add(color.Bold)
-var green = color.New(color.FgGreen).SprintFunc()
-var itwhite = color.New(color.Italic).Add(color.Italic).SprintFunc()
+var green = color.New(color.FgGreen)
+var itwhite = color.New(color.Italic).Add(color.Italic)
+var red = color.New(color.FgRed)
+var yellow = color.New(color.FgYellow)
+var blue = color.New(color.FgBlue)
 
 // K8sInstaller for karmor install
 func probeDaemonInstaller(c *k8s.Client, o Options, krnhdr bool) error {
@@ -99,29 +102,27 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(out))
+			o.printLn(string(out))
 		} else {
 
-			color.Green("\nFound KubeArmor running in Systemd mode \n\n")
+			o.printToOutput(green, "\nFound KubeArmor running in Systemd mode \n\n")
 
-			_, err := boldWhite.Printf("Host : \n")
-			if err != nil {
-				color.Red(" Error")
-			}
-			printKubeArmorProbeOutput(kd)
+			o.printToOutput(boldWhite, "Host : \n")
+
+			o.printKubeArmorProbeOutput(kd)
 			if len(policyData.HostMap) > 0 {
-				printHostPolicy(hostPolicyData)
+				o.printHostPolicy(hostPolicyData)
 			}
-			printContainersSystemd(armoredContainers)
+			o.printContainersSystemd(armoredContainers)
 
 		}
 
 		return nil
 	}
-	isRunning, daemonsetStatus := isKubeArmorRunning(c, o)
+	isRunning, daemonsetStatus := isKubeArmorRunning(c)
 	if isRunning {
-		deploymentData := getKubeArmorDeployments(c, o)
-		containerData := getKubeArmorContainers(c, o)
+		deploymentData := getKubeArmorDeployments(c)
+		containerData := getKubeArmorContainers(c)
 		probeData, nodeData, err := ProbeRunningKubeArmorNodes(c, o)
 		if err != nil {
 			log.Println("error occured when probing kubearmor nodes", err)
@@ -144,13 +145,13 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(out))
+			o.printLn(string(out))
 		} else {
-			printDaemonsetData(daemonsetStatus)
-			printKubearmorDeployments(deploymentData)
-			printKubeArmorContainers(containerData)
-			printKubeArmorprobe(probeData)
-			printAnnotatedPods(podData)
+			o.printDaemonsetData(daemonsetStatus)
+			o.printKubearmorDeployments(deploymentData)
+			o.printKubeArmorContainers(containerData)
+			o.printKubeArmorprobe(probeData)
+			o.printAnnotatedPods(podData)
 		}
 
 		return nil
@@ -159,20 +160,20 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 	/*** if kubearmor is not running: ***/
 
 	if o.Full {
-		checkHostAuditSupport()
-		checkLsmSupport(getHostSupportedLSM())
+		checkHostAuditSupport(o)
+		checkLsmSupport(getHostSupportedLSM(), o)
 
 		if err := probeDaemonInstaller(c, o, true); err != nil {
 			return err
 		}
-		color.Yellow("\nCreating probe daemonset ...")
+		o.printToOutput(yellow, "\nCreating probe daemonset ...")
 
 	checkprobe:
 		for timeout := time.After(10 * time.Second); ; {
 			select {
 			case <-timeout:
-				color.Red("Failed to deploy probe daemonset ...")
-				color.Yellow("Cleaning Up Karmor Probe DaemonSet ...\n")
+				o.printToOutput(red, "Failed to deploy probe daemonset ...")
+				o.printToOutput(yellow, "Cleaning Up Karmor Probe DaemonSet ...\n")
 				if err := probeDaemonUninstaller(c, o); err != nil {
 					return err
 				}
@@ -188,7 +189,7 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 					// We redeploy without kernel header mounts
 					if state.Reason == "CreateContainerError" {
 						if strings.Contains(state.Message, "/usr/src") || strings.Contains(state.Message, "/lib/modules") {
-							color.Yellow("Recreating Probe Daemonset ...")
+							o.printToOutput(yellow, "Recreating Probe Daemonset ...")
 							if err := probeDaemonUninstaller(c, o); err != nil {
 								return err
 							}
@@ -201,29 +202,29 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 			}
 		}
 		probeNode(c, o)
-		color.Yellow("\nDeleting Karmor Probe DaemonSet ...\n")
+		o.printToOutput(yellow, "\nDeleting Karmor Probe DaemonSet ...\n")
 		if err := probeDaemonUninstaller(c, o); err != nil {
 			return err
 		}
 	} else {
-		checkHostAuditSupport()
-		checkLsmSupport(getHostSupportedLSM())
-		color.Blue("To get full probe, a daemonset will be deployed in your cluster - This daemonset will be deleted after probing")
-		color.Blue("Use --full tag to get full probing")
+		checkHostAuditSupport(o)
+		checkLsmSupport(getHostSupportedLSM(), o)
+		o.printToOutput(blue, "To get full probe, a daemonset will be deployed in your cluster - This daemonset will be deleted after probing")
+		o.printToOutput(blue, "Use --full tag to get full probing")
 	}
 	return nil
 }
 
-func checkLsmSupport(supportedLSM string) {
-	fmt.Printf("\t Enforcement:")
+func checkLsmSupport(supportedLSM string, o Options) {
+	o.printLn("\t Enforcement:")
 	if strings.Contains(supportedLSM, "bpf") {
-		color.Green(" Full (Supported LSMs: " + supportedLSM + ")")
+		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else if strings.Contains(supportedLSM, "selinux") {
-		color.Yellow(" Partial (Supported LSMs: " + supportedLSM + ") \n\t To have full enforcement support, apparmor must be supported")
+		o.printToOutput(yellow, " Partial (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, apparmor must be supported")
 	} else if strings.Contains(supportedLSM, "apparmor") || strings.Contains(supportedLSM, "bpf") {
-		color.Green(" Full (Supported LSMs: " + supportedLSM + ")")
+		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else {
-		color.Red(" None (Supported LSMs: " + supportedLSM + ") \n\t To have full enforcement support, AppArmor or BPFLSM must be supported")
+		o.printToOutput(red, " None (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, AppArmor or BPFLSM must be supported")
 	}
 }
 
@@ -241,13 +242,13 @@ func kernelVersionSupported(kernelVersion string) bool {
 	return semver.Compare(kernelVersion, "4.14") >= 0
 }
 
-func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool) {
+func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool, o Options) {
 	if kernelVersionSupported(kernelVersion) && kernelHeaderPresent {
-		color.Green(" Supported (Kernel Version " + kernelVersion + ")")
+		o.printToOutput(green, " Supported (Kernel Version "+kernelVersion+")")
 	} else if kernelVersionSupported(kernelVersion) {
-		color.Red(" Not Supported : BTF Information/Kernel Headers must be available")
+		o.printToOutput(red, " Not Supported : BTF Information/Kernel Headers must be available")
 	} else {
-		color.Red(" Not Supported (Kernel Version " + kernelVersion + " \n\t Kernel version must be greater than 4.14) and BTF Information/Kernel Headers must be available")
+		o.printToOutput(red, " Not Supported (Kernel Version "+kernelVersion+" \n\t Kernel version must be greater than 4.14) and BTF Information/Kernel Headers must be available")
 	}
 }
 
@@ -344,22 +345,19 @@ func checkNodeKernelHeaderPresent(c *k8s.Client, o Options, nodeName string) boo
 	return false
 }
 
-func checkHostAuditSupport() {
-	color.Yellow("\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
+func checkHostAuditSupport(o Options) {
+	o.printToOutput(yellow, "\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
 	var uname unix.Utsname
 	if err := unix.Uname(&uname); err == nil {
 		kerVersion := string(uname.Release[:])
 		s := strings.Split(kerVersion, "-")
 		kernelVersion := s[0]
 
-		_, err := boldWhite.Println("Host:")
-		if err != nil {
-			color.Red(" Error")
-		}
-		fmt.Printf("\t Observability/Audit:")
-		checkAuditSupport(kernelVersion, checkBTFSupport() || checkKernelHeaderPresent())
+		o.printToOutput(boldWhite, "Host:")
+		o.printF("\t Observability/Audit:")
+		checkAuditSupport(kernelVersion, checkBTFSupport() || checkKernelHeaderPresent(), o)
 	} else {
-		color.Red(" Error")
+		o.printToOutput(red, " Error")
 	}
 }
 
@@ -384,32 +382,30 @@ func probeNode(c *k8s.Client, o Options) {
 	nodes, _ := c.K8sClientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if len(nodes.Items) > 0 {
 		for i, item := range nodes.Items {
-			_, err := boldWhite.Printf("Node %d : \n", i+1)
-			if err != nil {
-				color.Red(" Error")
-			}
-			fmt.Printf("\t Observability/Audit:")
+			str := fmt.Sprintf("Node %d : \n", i+1)
+			o.printToOutput(boldWhite, str)
+			o.printF("\t Observability/Audit:")
 			kernelVersion := item.Status.NodeInfo.KernelVersion
 			check2 := checkNodeKernelHeaderPresent(c, o, item.Name)
-			checkAuditSupport(kernelVersion, check2)
+			checkAuditSupport(kernelVersion, check2, o)
 			lsm, err := getNodeLsmSupport(c, o, item.Name)
 			if err != nil {
 				color.Red(err.Error())
 			}
-			checkLsmSupport(lsm)
+			checkLsmSupport(lsm, o)
 		}
 	} else {
-		fmt.Println("No kubernetes environment found")
+		o.printLn("No kubernetes environment found")
 	}
 }
 
-func isKubeArmorRunning(c *k8s.Client, o Options) (bool, *Status) {
-	isRunning, DaemonsetStatus := getKubeArmorDaemonset(c, o)
+func isKubeArmorRunning(c *k8s.Client) (bool, *Status) {
+	isRunning, DaemonsetStatus := getKubeArmorDaemonset(c)
 	return isRunning, DaemonsetStatus
 
 }
 
-func getKubeArmorDaemonset(c *k8s.Client, o Options) (bool, *Status) {
+func getKubeArmorDaemonset(c *k8s.Client) (bool, *Status) {
 	// KubeArmor DaemonSet
 	w, err := c.K8sClientset.AppsV1().DaemonSets("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app=kubearmor",
@@ -434,7 +430,7 @@ func getKubeArmorDaemonset(c *k8s.Client, o Options) (bool, *Status) {
 	return true, &DaemonSetStatus
 }
 
-func getKubeArmorDeployments(c *k8s.Client, o Options) map[string]*Status {
+func getKubeArmorDeployments(c *k8s.Client) map[string]*Status {
 	kubearmorDeployments, err := c.K8sClientset.AppsV1().Deployments("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app",
 	})
@@ -460,7 +456,7 @@ func getKubeArmorDeployments(c *k8s.Client, o Options) map[string]*Status {
 	return nil
 }
 
-func getKubeArmorContainers(c *k8s.Client, o Options) map[string]*KubeArmorPodSpec {
+func getKubeArmorContainers(c *k8s.Client) map[string]*KubeArmorPodSpec {
 
 	kubearmorPods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app",
@@ -574,10 +570,7 @@ func getPostureData(probeData []KubeArmorProbeData) map[string]string {
 func isSystemdMode() bool {
 	cmd := exec.Command("systemctl", "status", "kubearmor")
 	_, err := cmd.CombinedOutput()
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func probeSystemdMode() (KubeArmorProbeData, error) {
@@ -622,7 +615,7 @@ func getPolicyData(o Options) (*pb.ProbeResponse, error) {
 
 	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		fmt.Println(err)
+		o.printLn(err)
 		return nil, err
 	}
 
@@ -750,7 +743,7 @@ func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (
 
 	policyMap, err := getPoliciesOnAnnotatedPods(c)
 	if err != nil {
-		color.Red(" Error getting policies on annotated pods")
+		o.printToOutput(red, " Error getting policies on annotated pods")
 	}
 
 	for _, p := range pods.Items {
