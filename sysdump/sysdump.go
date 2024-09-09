@@ -277,7 +277,7 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 	for _, pod := range pods.Items {
 		destPath := path.Join(d, fmt.Sprintf("%s_apparmor.tar.gz", pod.Name))
 		reader, outStream := io.Pipe()
-		cmdArr := []string{"tar", "cf", "-", srcPath}
+		cmdArr := []string{"tar", "czf", "-", srcPath}
 		req := c.K8sClientset.CoreV1().RESTClient().
 			Get().
 			Namespace(pod.Namespace).
