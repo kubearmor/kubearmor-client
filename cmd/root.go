@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var client *k8s.Client
+var k8sClient *k8s.Client
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -18,7 +18,7 @@ var rootCmd = &cobra.Command{
 		var err error
 
 		//Initialise k8sClient for all child commands to inherit
-		client, err = k8s.ConnectK8sClient()
+		k8sClient, err = k8s.ConnectK8sClient()
 		// fmt.Printf("%v", client.K8sClientset)
 		if err != nil {
 			log.Error().Msgf("unable to create Kubernetes clients: %s", err.Error())

@@ -19,7 +19,7 @@ var recommendCmd = &cobra.Command{
 	Short: "Recommend Policies",
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := recommend.Recommend(client, recommendOptions, genericpolicies.GenericPolicy{})
+		err := recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
 		return err
 	},
 }
