@@ -5,7 +5,6 @@
 package recommend
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
 	"github.com/kubearmor/kubearmor-client/recommend/engines"
 	"github.com/kubearmor/kubearmor-client/recommend/image"
@@ -22,7 +20,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var options common.Options
@@ -137,36 +134,15 @@ func writePolicyFile(policMap map[string][]byte, msMap map[string]interface{}) {
 }
 
 // Recommend handler for karmor cli tool
-func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engine) error {
+func Recommend(client Client, o common.Options, policyGenerators ...engines.Engine) error {
 	var policyMap map[string][]byte
 	var msMap map[string]interface{}
 	var err error
-	deployments := []Deployment{}
+	var deployments []Deployment
 
 	labelMap := labelArrayToLabelMap(o.Labels)
 	if len(o.Images) == 0 {
-		// recommendation based on k8s manifest
-		dps, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), v1.ListOptions{})
-		if err != nil {
-			return err
-		}
-		for _, dp := range dps.Items {
-
-			if !matchLabels(labelMap, dp.Spec.Template.Labels) {
-				continue
-			}
-			images := []string{}
-			for _, container := range dp.Spec.Template.Spec.Containers {
-				images = append(images, container.Image)
-			}
-
-			deployments = append(deployments, Deployment{
-				Name:      dp.Name,
-				Namespace: dp.Namespace,
-				Labels:    dp.Spec.Template.Labels,
-				Images:    images,
-			})
-		}
+		deployments, err = client.ListDeployments(o)
 		if len(deployments) == 0 {
 			log.WithFields(log.Fields{
 				"namespace": o.Namespace,

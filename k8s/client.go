@@ -6,6 +6,8 @@ package k8s
 
 import (
 	"context"
+	"github.com/kubearmor/kubearmor-client/recommend"
+	"github.com/kubearmor/kubearmor-client/recommend/common"
 
 	"github.com/rs/zerolog/log"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -28,6 +30,10 @@ type Client struct {
 	APIextClientset apiextensionsclientset.Interface
 	RawConfig       clientcmdapi.Config
 	Config          *rest.Config
+}
+
+type ClientWrapper struct {
+	Client *Client
 }
 
 var (
@@ -101,4 +107,20 @@ func GetKubeArmorCaSecret(client kubernetes.Interface) (string, string) {
 		return "", ""
 	}
 	return secret.Items[0].Name, secret.Items[0].Namespace
+}
+
+func (k *ClientWrapper) ListDeployments(o common.Options) ([]recommend.Deployment, error) {
+	deployments, err := k.Client.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{})
+	if err != nil {
+		log.Error().Msgf("error listing deployments: %v", err)
+		return nil, err
+	}
+	var result []recommend.Deployment
+	for _, deployment := range deployments.Items {
+		result = append(result, recommend.Deployment{
+			Name:      deployment.Name,
+			Namespace: deployment.Namespace,
+		})
+	}
+	return result, nil
 }
