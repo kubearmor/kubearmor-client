@@ -51,17 +51,6 @@ func labelArrayToLabelMap(labels []string) LabelMap {
 	return labelMap
 }
 
-func matchLabels(filter, selector LabelMap) bool {
-	match := true
-	for k, v := range filter {
-		if selector[k] != v {
-			match = false
-			break
-		}
-	}
-	return match
-}
-
 func unique(s []string) []string {
 	inResult := make(map[string]bool)
 	var result []string

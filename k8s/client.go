@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/kubearmor/kubearmor-client/recommend"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -116,11 +117,50 @@ func (k *ClientWrapper) ListDeployments(o common.Options) ([]recommend.Deploymen
 		return nil, err
 	}
 	var result []recommend.Deployment
-	for _, deployment := range deployments.Items {
+	labelMap := labelArrayToLabelMap(o.Labels)
+	for _, dp := range deployments.Items {
+		if !matchLabels(labelMap, dp.Spec.Template.Labels) {
+			continue
+		}
+		var images []string
+		for _, container := range dp.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
 		result = append(result, recommend.Deployment{
-			Name:      deployment.Name,
-			Namespace: deployment.Namespace,
+			Name:      dp.Name,
+			Namespace: dp.Namespace,
+			Labels:    dp.Spec.Template.Labels,
+			Images:    images,
 		})
 	}
+	log.Printf("+%v", result)
 	return result, nil
+}
+
+func labelArrayToLabelMap(labels []string) recommend.LabelMap {
+	labelMap := recommend.LabelMap{}
+	for _, label := range labels {
+		kvPair := strings.FieldsFunc(label, labelSplitter)
+		if len(kvPair) != 2 {
+			continue
+		}
+		labelMap[kvPair[0]] = kvPair[1]
+	}
+	return labelMap
+}
+
+func matchLabels(filter, selector recommend.LabelMap) bool {
+	match := true
+	for k, v := range filter {
+		if selector[k] != v {
+			match = false
+			break
+		}
+	}
+	return match
+}
+
+func labelSplitter(r rune) bool {
+	return r == ':' || r == '='
 }
