@@ -24,33 +24,6 @@ import (
 
 var options common.Options
 
-// Deployment contains brief information about a k8s deployment
-type Deployment struct {
-	Name      string
-	Namespace string
-	Labels    LabelMap
-	Images    []string
-}
-
-// LabelMap is an alias for map[string]string
-type LabelMap = map[string]string
-
-func labelSplitter(r rune) bool {
-	return r == ':' || r == '='
-}
-
-func labelArrayToLabelMap(labels []string) LabelMap {
-	labelMap := LabelMap{}
-	for _, label := range labels {
-		kvPair := strings.FieldsFunc(label, labelSplitter)
-		if len(kvPair) != 2 {
-			continue
-		}
-		labelMap[kvPair[0]] = kvPair[1]
-	}
-	return labelMap
-}
-
 func unique(s []string) []string {
 	inResult := make(map[string]bool)
 	var result []string
@@ -123,23 +96,23 @@ func writePolicyFile(policMap map[string][]byte, msMap map[string]interface{}) {
 }
 
 // Recommend handler for karmor cli tool
-func Recommend(client Client, o common.Options, policyGenerators ...engines.Engine) error {
+func Recommend(client common.Client, o common.Options, policyGenerators ...engines.Engine) error {
 	var policyMap map[string][]byte
 	var msMap map[string]interface{}
 	var err error
-	var deployments []Deployment
+	var Objects []common.Object
 
-	labelMap := labelArrayToLabelMap(o.Labels)
+	labelMap := common.LabelArrayToLabelMap(o.Labels)
 	if len(o.Images) == 0 {
-		deployments, err = client.ListDeployments(o)
-		if len(deployments) == 0 {
+		Objects, err = client.ListObjects(o)
+		if len(Objects) == 0 {
 			log.WithFields(log.Fields{
 				"namespace": o.Namespace,
 			}).Error("no k8s deployments found, hence nothing to recommend!")
 			return nil
 		}
 	} else {
-		deployments = append(deployments, Deployment{
+		Objects = append(Objects, common.Object{
 			Namespace: o.Namespace,
 			Labels:    labelMap,
 			Images:    o.Images,
@@ -161,14 +134,14 @@ func Recommend(client Client, o common.Options, policyGenerators ...engines.Engi
 		if err := gen.Init(); err != nil {
 			log.WithError(err).Error("policy generator init failed")
 		}
-		for _, deployment := range deployments {
-			for _, i := range deployment.Images {
+		for _, obj := range Objects {
+			for _, v := range obj.Images {
 				img := image.Info{
-					Name:       i,
-					Namespace:  deployment.Namespace,
-					Labels:     deployment.Labels,
-					Image:      i,
-					Deployment: deployment.Name,
+					Name:       obj.Name,
+					Namespace:  obj.Namespace,
+					Labels:     obj.Labels,
+					Image:      v,
+					Deployment: obj.Name,
 				}
 				reg.Analyze(&img)
 				if policyMap, msMap, err = gen.Scan(&img, o); err != nil {

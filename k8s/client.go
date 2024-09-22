@@ -6,10 +6,7 @@ package k8s
 
 import (
 	"context"
-	"github.com/kubearmor/kubearmor-client/recommend"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
-	"strings"
-
 	"github.com/rs/zerolog/log"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,14 +107,14 @@ func GetKubeArmorCaSecret(client kubernetes.Interface) (string, string) {
 	return secret.Items[0].Name, secret.Items[0].Namespace
 }
 
-func (k *ClientWrapper) ListDeployments(o common.Options) ([]recommend.Deployment, error) {
+func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	deployments, err := k.Client.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		log.Error().Msgf("error listing deployments: %v", err)
 		return nil, err
 	}
-	var result []recommend.Deployment
-	labelMap := labelArrayToLabelMap(o.Labels)
+	var result []common.Object
+	labelMap := common.LabelArrayToLabelMap(o.Labels)
 	for _, dp := range deployments.Items {
 		if !matchLabels(labelMap, dp.Spec.Template.Labels) {
 			continue
@@ -127,30 +124,19 @@ func (k *ClientWrapper) ListDeployments(o common.Options) ([]recommend.Deploymen
 			images = append(images, container.Image)
 		}
 
-		result = append(result, recommend.Deployment{
-			Name:      dp.Name,
-			Namespace: dp.Namespace,
-			Labels:    dp.Spec.Template.Labels,
-			Images:    images,
+		result = append(result, common.Object{
+			Name:           dp.Name,
+			Namespace:      dp.Namespace,
+			Labels:         dp.Spec.Template.Labels,
+			Images:         images,
+			DeploymentName: dp.Name,
 		})
 	}
 	log.Printf("+%v", result)
 	return result, nil
 }
 
-func labelArrayToLabelMap(labels []string) recommend.LabelMap {
-	labelMap := recommend.LabelMap{}
-	for _, label := range labels {
-		kvPair := strings.FieldsFunc(label, labelSplitter)
-		if len(kvPair) != 2 {
-			continue
-		}
-		labelMap[kvPair[0]] = kvPair[1]
-	}
-	return labelMap
-}
-
-func matchLabels(filter, selector recommend.LabelMap) bool {
+func matchLabels(filter, selector common.LabelMap) bool {
 	match := true
 	for k, v := range filter {
 		if selector[k] != v {
@@ -159,8 +145,4 @@ func matchLabels(filter, selector recommend.LabelMap) bool {
 		}
 	}
 	return match
-}
-
-func labelSplitter(r rune) bool {
-	return r == ':' || r == '='
 }
