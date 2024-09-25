@@ -24,11 +24,10 @@ type Client interface {
 
 // Object contains brief information about a k8s object
 type Object struct {
-	Name           string
-	Namespace      string
-	Labels         LabelMap
-	Images         []string
-	DeploymentName string
+	Name      string
+	Namespace string
+	Labels    LabelMap
+	Images    []string
 }
 
 // MatchSpec spec to match for defining policy

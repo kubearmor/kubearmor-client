@@ -125,11 +125,10 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 		}
 
 		result = append(result, common.Object{
-			Name:           dp.Name,
-			Namespace:      dp.Namespace,
-			Labels:         dp.Spec.Template.Labels,
-			Images:         images,
-			DeploymentName: dp.Name,
+			Name:      dp.Name,
+			Namespace: dp.Namespace,
+			Labels:    dp.Spec.Template.Labels,
+			Images:    images,
 		})
 	}
 	log.Printf("+%v", result)
