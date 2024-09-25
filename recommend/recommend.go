@@ -137,7 +137,7 @@ func Recommend(client common.Client, o common.Options, policyGenerators ...engin
 		for _, obj := range Objects {
 			for _, v := range obj.Images {
 				img := image.Info{
-					Name:       obj.Name,
+					Name:       v,
 					Namespace:  obj.Namespace,
 					Labels:     obj.Labels,
 					Image:      v,
