@@ -108,17 +108,20 @@ func GetKubeArmorCaSecret(client kubernetes.Interface) (string, string) {
 }
 
 func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
-	deployments, err := k.Client.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{})
+	labelSelector := v1.FormatLabelSelector(&v1.LabelSelector{MatchLabels: common.LabelArrayToLabelMap(o.Labels)})
+	if labelSelector == "<none>" {
+		labelSelector = ""
+	}
+	deployments, err := k.Client.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
 	if err != nil {
 		log.Error().Msgf("error listing deployments: %v", err)
 		return nil, err
 	}
+
 	var result []common.Object
-	labelMap := common.LabelArrayToLabelMap(o.Labels)
 	for _, dp := range deployments.Items {
-		if !matchLabels(labelMap, dp.Spec.Template.Labels) {
-			continue
-		}
 		var images []string
 		for _, container := range dp.Spec.Template.Spec.Containers {
 			images = append(images, container.Image)
@@ -133,15 +136,4 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	}
 	log.Printf("+%v", result)
 	return result, nil
-}
-
-func matchLabels(filter, selector common.LabelMap) bool {
-	match := true
-	for k, v := range filter {
-		if selector[k] != v {
-			match = false
-			break
-		}
-	}
-	return match
 }
