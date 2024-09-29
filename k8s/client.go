@@ -148,6 +148,24 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 		return nil, err
 	}
 
+	// ReplicaSets
+	replicaSets, err := k.Client.K8sClientset.AppsV1().ReplicaSets(o.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Error().Msgf("error listing replicasets: %v", err)
+		return nil, err
+	}
+
+	// StatefulSets
+	statefulSets, err := k.Client.K8sClientset.AppsV1().StatefulSets(o.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Error().Msgf("error listing statefulsets: %v", err)
+		return nil, err
+	}
+
 	var result []common.Object
 
 	for _, cj := range cronJobs.Items {
@@ -202,6 +220,44 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 			Name:      j.Name,
 			Namespace: j.Namespace,
 			Labels:    j.Spec.Template.Labels,
+			Images:    images,
+		})
+	}
+
+	for _, rs := range replicaSets.Items {
+		isOwned := false
+		for _, owner := range rs.OwnerReferences {
+			if owner.Kind == "Deployment" || owner.Kind == "StatefulSet" || owner.Kind == "DaemonSet" || owner.Kind == "ReplicaSet" {
+				isOwned = true
+				break
+			}
+		}
+		if isOwned {
+			continue
+		}
+
+		var images []string
+		for _, container := range rs.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+		result = append(result, common.Object{
+			Name:      rs.Name,
+			Namespace: rs.Namespace,
+			Labels:    rs.Spec.Template.Labels,
+			Images:    images,
+		})
+	}
+
+	for _, sts := range statefulSets.Items {
+		var images []string
+		for _, container := range sts.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
+		result = append(result, common.Object{
+			Name:      sts.Name,
+			Namespace: sts.Namespace,
+			Labels:    sts.Spec.Template.Labels,
 			Images:    images,
 		})
 	}
