@@ -30,10 +30,6 @@ type Client struct {
 	Config          *rest.Config
 }
 
-type ClientWrapper struct {
-	Client *Client
-}
-
 var (
 	// KubeConfig specifies the path of kubeconfig file
 	KubeConfig string
@@ -107,13 +103,13 @@ func GetKubeArmorCaSecret(client kubernetes.Interface) (string, string) {
 	return secret.Items[0].Name, secret.Items[0].Namespace
 }
 
-func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
+func (k *Client) ListObjects(o common.Options) ([]common.Object, error) {
 	labelSelector := v1.FormatLabelSelector(&v1.LabelSelector{MatchLabels: common.LabelArrayToLabelMap(o.Labels)})
 	if labelSelector == "<none>" {
 		labelSelector = ""
 	}
 	// CronJobs
-	cronJobs, err := k.Client.K8sClientset.BatchV1().CronJobs(o.Namespace).List(context.Background(), v1.ListOptions{
+	cronJobs, err := k.K8sClientset.BatchV1().CronJobs(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -122,7 +118,7 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	}
 
 	// DaemonSets
-	daemonSets, err := k.Client.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.Background(), v1.ListOptions{
+	daemonSets, err := k.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -131,7 +127,7 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	}
 
 	// Deployments
-	deployments, err := k.Client.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{
+	deployments, err := k.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -140,7 +136,7 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	}
 
 	// Jobs
-	jobs, err := k.Client.K8sClientset.BatchV1().Jobs(o.Namespace).List(context.Background(), v1.ListOptions{
+	jobs, err := k.K8sClientset.BatchV1().Jobs(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -149,7 +145,7 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	}
 
 	// ReplicaSets
-	replicaSets, err := k.Client.K8sClientset.AppsV1().ReplicaSets(o.Namespace).List(context.Background(), v1.ListOptions{
+	replicaSets, err := k.K8sClientset.AppsV1().ReplicaSets(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -158,7 +154,7 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	}
 
 	// StatefulSets
-	statefulSets, err := k.Client.K8sClientset.AppsV1().StatefulSets(o.Namespace).List(context.Background(), v1.ListOptions{
+	statefulSets, err := k.K8sClientset.AppsV1().StatefulSets(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {

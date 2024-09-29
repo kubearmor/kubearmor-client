@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/recommend"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
 	genericpolicies "github.com/kubearmor/kubearmor-client/recommend/engines/generic_policies"
@@ -20,8 +19,7 @@ var recommendCmd = &cobra.Command{
 	Short: "Recommend Policies",
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		k8sClientWrapper := &k8s.ClientWrapper{Client: k8sClient}
-		err := recommend.Recommend(k8sClientWrapper, recommendOptions, genericpolicies.GenericPolicy{})
+		err := recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
 		return err
 	},
 }
