@@ -112,6 +112,25 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 	if labelSelector == "<none>" {
 		labelSelector = ""
 	}
+	// CronJobs
+	cronJobs, err := k.Client.K8sClientset.BatchV1().CronJobs(o.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Error().Msgf("error listing cronjobs: %v", err)
+		return nil, err
+	}
+
+	// DaemonSets
+	daemonSets, err := k.Client.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Error().Msgf("error listing daemonsets: %v", err)
+		return nil, err
+	}
+
+	// Deployments
 	deployments, err := k.Client.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.Background(), v1.ListOptions{
 		LabelSelector: labelSelector,
 	})
@@ -120,7 +139,45 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 		return nil, err
 	}
 
+	// Jobs
+	jobs, err := k.Client.K8sClientset.BatchV1().Jobs(o.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		log.Error().Msgf("error listing jobs: %v", err)
+		return nil, err
+	}
+
 	var result []common.Object
+
+	for _, cj := range cronJobs.Items {
+		var images []string
+		for _, container := range cj.Spec.JobTemplate.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
+		result = append(result, common.Object{
+			Name:      cj.Name,
+			Namespace: cj.Namespace,
+			Labels:    cj.Spec.JobTemplate.Spec.Template.Labels,
+			Images:    images,
+		})
+	}
+
+	for _, ds := range daemonSets.Items {
+		var images []string
+		for _, container := range ds.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
+		result = append(result, common.Object{
+			Name:      ds.Name,
+			Namespace: ds.Namespace,
+			Labels:    ds.Spec.Template.Labels,
+			Images:    images,
+		})
+	}
+
 	for _, dp := range deployments.Items {
 		var images []string
 		for _, container := range dp.Spec.Template.Spec.Containers {
@@ -134,6 +191,21 @@ func (k *ClientWrapper) ListObjects(o common.Options) ([]common.Object, error) {
 			Images:    images,
 		})
 	}
+
+	for _, j := range jobs.Items {
+		var images []string
+		for _, container := range j.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
+		result = append(result, common.Object{
+			Name:      j.Name,
+			Namespace: j.Namespace,
+			Labels:    j.Spec.Template.Labels,
+			Images:    images,
+		})
+	}
+
 	log.Printf("+%v", result)
 	return result, nil
 }
