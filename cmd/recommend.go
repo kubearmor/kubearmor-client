@@ -7,6 +7,7 @@ import (
 	"github.com/kubearmor/kubearmor-client/recommend"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
 	genericpolicies "github.com/kubearmor/kubearmor-client/recommend/engines/generic_policies"
+	"github.com/kubearmor/kubearmor-client/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -19,8 +20,11 @@ var recommendCmd = &cobra.Command{
 	Short: "Recommend Policies",
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
-		return err
+		if utils.IsSystemdMode() {
+			return recommend.Recommend(dockerClient, recommendOptions, genericpolicies.GenericPolicy{})
+		} else {
+			return recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
+		}
 	},
 }
 var updateCmd = &cobra.Command{

@@ -108,7 +108,7 @@ func Recommend(client common.Client, o common.Options, policyGenerators ...engin
 		if len(Objects) == 0 {
 			log.WithFields(log.Fields{
 				"namespace": o.Namespace,
-			}).Error("no k8s deployments found, hence nothing to recommend!")
+			}).Error("no Object found to secure, hence nothing to recommend!")
 			return nil
 		}
 	} else {

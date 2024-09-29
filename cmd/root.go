@@ -5,12 +5,14 @@
 package cmd
 
 import (
+	"github.com/kubearmor/kubearmor-client/docker"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
 var k8sClient *k8s.Client
+var dockerClient *docker.Client
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -19,9 +21,15 @@ var rootCmd = &cobra.Command{
 
 		//Initialise k8sClient for all child commands to inherit
 		k8sClient, err = k8s.ConnectK8sClient()
-		// fmt.Printf("%v", client.K8sClientset)
 		if err != nil {
 			log.Error().Msgf("unable to create Kubernetes clients: %s", err.Error())
+			return err
+		}
+
+		// Initialise dockerClient for all child commands to inherit
+		dockerClient, err = docker.ConnectDockerClient()
+		if err != nil {
+			log.Error().Msgf("unable to create Docker clients: %s", err.Error())
 			return err
 		}
 		return nil
