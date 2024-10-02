@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"regexp"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -138,7 +139,11 @@ func StartObserver(c *k8s.Client, o Options) error {
 	} else {
 		pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 		if err != nil {
-			return err
+			if strings.Contains(err.Error(), "connection refused") && utils.IsSystemdMode() {
+				// do nothing
+			} else {
+				return err
+			}
 		}
 		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 	}
