@@ -7,7 +7,6 @@ import (
 	"github.com/kubearmor/kubearmor-client/recommend"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
 	genericpolicies "github.com/kubearmor/kubearmor-client/recommend/engines/generic_policies"
-	"github.com/kubearmor/kubearmor-client/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -20,10 +19,12 @@ var recommendCmd = &cobra.Command{
 	Short: "Recommend Policies",
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if utils.IsSystemdMode() {
-			return recommend.Recommend(dockerClient, recommendOptions, genericpolicies.GenericPolicy{})
-		} else {
+		if recommendOptions.K8s {
+			log.Info("Using k8s client to recommend policies")
 			return recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
+		} else {
+			log.Info("Using docker client to recommend policies")
+			return recommend.Recommend(dockerClient, recommendOptions, genericpolicies.GenericPolicy{})
 		}
 	},
 }
@@ -32,7 +33,6 @@ var updateCmd = &cobra.Command{
 	Short: "Updates policy-template cache",
 	Long:  "Updates the local cache of policy-templates ($HOME/.cache/karmor)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		if _, err := genericpolicies.DownloadAndUnzipRelease(); err != nil {
 			return err
 		}
@@ -54,4 +54,5 @@ func init() {
 	recommendCmd.Flags().StringVarP(&recommendOptions.ReportFile, "report", "r", "report.txt", "report file")
 	recommendCmd.Flags().StringSliceVarP(&recommendOptions.Tags, "tag", "t", []string{}, "tags (comma-separated) to apply. Eg. PCI-DSS, MITRE")
 	recommendCmd.Flags().StringVarP(&recommendOptions.Config, "config", "c", common.UserHome()+"/.docker/config.json", "absolute path to image registry configuration file")
+	recommendCmd.Flags().BoolVarP(&recommendOptions.K8s, "k8s", "k", true, "Use k8s client instead of docker client")
 }

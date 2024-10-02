@@ -62,6 +62,7 @@ type Options struct {
 	OutDir     string
 	ReportFile string
 	Config     string
+	K8s        bool
 }
 
 // UserHome function returns users home directory
