@@ -4,11 +4,13 @@
 package cmd
 
 import (
+	"context"
 	"github.com/kubearmor/kubearmor-client/recommend"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
 	genericpolicies "github.com/kubearmor/kubearmor-client/recommend/engines/generic_policies"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var recommendOptions common.Options
@@ -20,10 +22,14 @@ var recommendCmd = &cobra.Command{
 	Long:  `Recommend policies based on container image, k8s manifest or the actual runtime env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if recommendOptions.K8s {
-			log.Info("Using k8s client to recommend policies")
+			// Check if k8sClient can connect to the server by listing namespaces
+			_, err := k8sClient.K8sClientset.CoreV1().Namespaces().List(context.Background(), v1.ListOptions{})
+			if err != nil {
+				log.Error("K8s client is not initialized, using docker client instead")
+				return recommend.Recommend(dockerClient, recommendOptions, genericpolicies.GenericPolicy{})
+			}
 			return recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
 		} else {
-			log.Info("Using docker client to recommend policies")
 			return recommend.Recommend(dockerClient, recommendOptions, genericpolicies.GenericPolicy{})
 		}
 	},
