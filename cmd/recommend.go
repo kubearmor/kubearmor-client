@@ -25,7 +25,9 @@ var recommendCmd = &cobra.Command{
 			// Check if k8sClient can connect to the server by listing namespaces
 			_, err := k8sClient.K8sClientset.CoreV1().Namespaces().List(context.Background(), v1.ListOptions{})
 			if err != nil {
-				log.Error("K8s client is not initialized, using docker client instead")
+				if len(recommendOptions.Images) == 0 { // only log the client if no images are provided
+					log.Error("K8s client is not initialized, using docker client instead")
+				}
 				return recommend.Recommend(dockerClient, recommendOptions, genericpolicies.GenericPolicy{})
 			}
 			return recommend.Recommend(k8sClient, recommendOptions, genericpolicies.GenericPolicy{})
