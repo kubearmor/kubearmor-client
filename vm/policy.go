@@ -12,8 +12,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/fatih/color"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	"github.com/olekukonko/tablewriter"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"google.golang.org/grpc"
 	"sigs.k8s.io/yaml"
@@ -28,7 +31,8 @@ const (
 
 // PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
-	GRPC string
+	GRPC   string
+	Output string
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
@@ -143,4 +147,62 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 	}
 
 	return nil
+}
+
+func GetPolicy(o PolicyOptions) (*pb.ProbeResponse, error) {
+	gRPC := ""
+	if o.GRPC != "" {
+		gRPC = o.GRPC
+	} else {
+		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
+			gRPC = val
+		} else {
+			gRPC = "localhost:32767"
+		}
+	}
+	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	client := pb.NewProbeServiceClient(conn)
+
+	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (o *PolicyOptions) PrintContainersSystemd(podData [][]string) {
+	o.printToOutput(color.New(color.FgWhite, color.Bold), "Armored Up Containers : \n")
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
+	for _, v := range podData {
+		table.Append(v)
+	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Render()
+}
+
+func (o *PolicyOptions) printToOutput(c *color.Color, s string) {
+	red := color.New(color.FgRed)
+	if o.Output == "no-color" || c == nil {
+		_, err := fmt.Fprint(os.Stdout, s)
+		if err != nil {
+			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
+			if printErr != nil {
+				fmt.Printf("printing error %s", printErr.Error())
+			}
+		}
+	} else {
+		_, err := c.Fprintf(os.Stdout, s)
+		if err != nil {
+			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
+			if printErr != nil {
+				fmt.Printf("printing error %s", printErr.Error())
+			}
+		}
+	}
 }
