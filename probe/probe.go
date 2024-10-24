@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kubearmor/kubearmor-client/utils"
 	"io"
 	"log"
 	"os"
@@ -89,8 +90,8 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		armoredContainers, containerMap := getArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
-		hostPolicyData := getHostPolicyData(policyData)
+		armoredContainers, containerMap := utils.GetArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
+		hostPolicyData := utils.GetHostPolicyData(policyData)
 		if o.Output == "json" {
 			probeData := map[string]interface{}{"Probe Data": map[string]interface{}{
 				"Host":              kd,
@@ -620,53 +621,6 @@ func getPolicyData(o Options) (*pb.ProbeResponse, error) {
 	}
 
 	return resp, nil
-
-}
-func getArmoredContainerData(containerList []string, containerMap map[string]*pb.ContainerData) ([][]string, map[string][]string) {
-
-	var data [][]string
-	for _, containerName := range containerList {
-
-		if _, ok := containerMap[containerName]; ok {
-			if containerMap[containerName].PolicyEnabled == 1 {
-				for _, policyName := range containerMap[containerName].PolicyList {
-					data = append(data, []string{containerName, policyName})
-				}
-			}
-		} else {
-			data = append(data, []string{containerName, ""})
-		}
-
-	}
-	mp := make(map[string][]string)
-
-	for _, v := range data {
-
-		if val, exists := mp[v[0]]; exists {
-
-			val = append(val, v[1])
-			mp[v[0]] = val
-
-		} else {
-			mp[v[0]] = []string{v[1]}
-		}
-
-	}
-
-	return data, mp
-
-}
-func getHostPolicyData(policyData *pb.ProbeResponse) [][]string {
-
-	var data [][]string
-	for k, v := range policyData.HostMap {
-
-		for _, policy := range v.PolicyList {
-			data = append(data, []string{k, policy})
-		}
-
-	}
-	return data
 
 }
 
