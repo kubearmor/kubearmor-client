@@ -20,7 +20,7 @@ import (
 	"github.com/evertras/bubble-table/table"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	klog "github.com/kubearmor/kubearmor-client/log"
-	profile "github.com/kubearmor/kubearmor-client/profile"
+	"github.com/kubearmor/kubearmor-client/profile"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,15 +62,6 @@ var (
 	}
 )
 
-// Options for filter
-type Options struct {
-	Namespace string
-	Pod       string
-	GRPC      string
-	Container string
-	Save      bool
-}
-
 // Model for main Bubble Tea
 type Model struct {
 	File     table.Model
@@ -100,7 +91,7 @@ func waitForActivity() tea.Cmd {
 	}
 }
 
-var o1 Options
+var o1 profile.Options
 
 func generateColumns(Operation string) []table.Column {
 	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle).WithFiltered(true)
@@ -481,17 +472,19 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 }
 
 // Start entire TUI
-func Start(o Options) {
-	o1 = Options{
+func Start(o profile.Options) {
+	o1 = profile.Options{
 		Namespace: o.Namespace,
 		Pod:       o.Pod,
 		GRPC:      o.GRPC,
+		LogFilter: o.LogFilter,
+		LogType:   o.LogType,
 		Container: o.Container,
 		Save:      o.Save,
 	}
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	go func() {
-		err := profile.GetLogs(o1.GRPC)
+		err := profile.GetLogs(o1)
 		if err != nil {
 			p.Quit()
 			profile.ErrChan <- err
