@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"github.com/kubearmor/kubearmor-client/utils"
 	"net"
 
@@ -84,6 +85,20 @@ var vmPolicyGetCmd = &cobra.Command{
 	Short: "get policy for bare-metal vm/kvms control plane vm",
 	Long:  `get policy for bare-metal vm/kvms control plane vm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("requires a container name as argument")
+		}
+		PolicyData, err := vm.GetPolicy(policyOptions)
+		if err != nil {
+			return err
+		}
+		if containerMap, ok := PolicyData.ContainerMap[args[0]]; ok {
+			for _, policy := range containerMap.PolicyDataList {
+				fmt.Println(string(policy.Policy))
+			}
+		} else {
+			return errors.New("no policy found for container: " + args[0])
+		}
 		return nil
 	},
 }
