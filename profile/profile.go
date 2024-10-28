@@ -83,6 +83,7 @@ func KarmorProfileStart(o Options) <-chan error {
 		//defer close(ErrChan)
 		err = klog.StartObserver(client, klog.Options{
 			LogFilter: o.LogFilter,
+			LogType:   o.LogType,
 			MsgPath:   "none",
 			EventChan: eventChan,
 			GRPC:      o.GRPC,
