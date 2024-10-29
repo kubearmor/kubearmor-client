@@ -76,7 +76,8 @@ type Model struct {
 	height int
 	width  int
 
-	state sessionState
+	state          sessionState
+	profileOptions profile.Options
 }
 
 // SomeData stores incoming row data
@@ -93,33 +94,35 @@ func waitForActivity() tea.Cmd {
 
 var o1 profile.Options
 
-func generateColumns(Operation string) []table.Column {
+func generateColumns(o profile.Options, Operation string) []table.Column {
+	var columns []table.Column
+
 	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle).WithFiltered(true)
-
 	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
-
 	ContainerName := table.NewFlexColumn(ColumnContainerName, "ContainerName", 4).WithStyle(ColumnStyle).WithFiltered(true)
-
 	ProcName := table.NewFlexColumn(ColumnProcessName, "ProcessName", 3).WithStyle(ColumnStyle).WithFiltered(true)
-
 	Resource := table.NewFlexColumn(ColumnResource, Operation, 6).WithStyle(
 		lipgloss.NewStyle().
 			Foreground(lipgloss.Color("202")).
 			Align(lipgloss.Center)).WithFiltered(true)
-
 	Result := table.NewFlexColumn(ColumnResult, "Result", 1).WithStyle(ColumnStyle).WithFiltered(true)
-
 	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(ColumnStyle)
 
-	return []table.Column{
-		Namespace,
-		ContainerName,
+	if o.LogType == "ContainerLog" {
+		columns = append(columns, []table.Column{
+			Namespace,
+			ContainerName,
+		}...)
+	}
+	columns = append(columns, []table.Column{
 		ProcName,
 		Resource,
 		Result,
 		CountCol,
 		Timestamp,
-	}
+	}...)
+
+	return columns
 }
 
 // Init calls initial functions if needed
@@ -130,21 +133,21 @@ func (m Model) Init() tea.Cmd {
 }
 
 // NewModel initializates new bubbletea model
-func NewModel() Model {
+func NewModel(o profile.Options) Model {
 	model := Model{
-		File:    table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
-		Process: table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
-		Network: table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
-		Syscall: table.New(generateColumns("Syscall")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		File:    table.New(generateColumns(o, "File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Process: table.New(generateColumns(o, "Process")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Network: table.New(generateColumns(o, "Network")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		Syscall: table.New(generateColumns(o, "Syscall")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
 		tabs: &tabs{
 			active: "Lip Gloss",
 			items:  []string{"Process", "File", "Network", "Syscall"},
 		},
-		keys:  keys,
-		help:  help.New(),
-		state: processview,
+		keys:           keys,
+		help:           help.New(),
+		state:          processview,
+		profileOptions: o,
 	}
-
 	return model
 }
 
@@ -170,9 +173,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		}
-
 		switch msg.String() {
-
 		case "tab":
 			switch m.state {
 			case processview:
@@ -184,21 +185,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case syscallview:
 				m.state = processview
 			}
-
 		case "u":
 			m.File = m.File.WithPageSize(m.File.PageSize() - 1)
 			m.Network = m.Network.WithPageSize(m.Network.PageSize() - 1)
 			m.Process = m.Process.WithPageSize(m.Process.PageSize() - 1)
 			m.Syscall = m.Syscall.WithPageSize(m.Syscall.PageSize() - 1)
-
 		case "i":
 			m.File = m.File.WithPageSize(m.File.PageSize() + 1)
 			m.Network = m.Network.WithPageSize(m.Network.PageSize() + 1)
 			m.Process = m.Process.WithPageSize(m.Process.PageSize() + 1)
 			m.Syscall = m.Syscall.WithPageSize(m.Syscall.PageSize() + 1)
-
 		}
-
 		switch m.state {
 		case processview:
 			m.Process = m.Process.Focused(true)
@@ -208,12 +205,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.File = m.File.Focused(true)
 			m.File, cmd = m.File.Update(msg)
 			cmds = append(cmds, cmd)
-
 		case networkview:
 			m.Network = m.Network.Focused(true)
 			m.Network, cmd = m.Network.Update(msg)
 			cmds = append(cmds, cmd)
-
 		case syscallview:
 			m.Syscall = m.Syscall.Focused(true)
 			m.Syscall, cmd = m.Syscall.Update(msg)
@@ -221,20 +216,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case klog.EventInfo:
 		profile.TelMutex.RLock()
-		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns("File"))
+		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns(m.profileOptions, "File"))
 		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns("Process"))
+		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns(m.profileOptions, "Process"))
 		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns("Network"))
+		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns(m.profileOptions, "Network"))
 		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		m.Syscall = m.Syscall.WithRows(generateRowsFromData(profile.Telemetry, "Syscall")).WithColumns(generateColumns("Syscall"))
+		m.Syscall = m.Syscall.WithRows(generateRowsFromData(profile.Telemetry, "Syscall")).WithColumns(generateColumns(m.profileOptions, "Syscall"))
 		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
 		profile.TelMutex.RUnlock()
 
 		return m, waitForActivity()
-
 	}
-
 	return m, tea.Batch(cmds...)
 }
 
@@ -482,7 +475,7 @@ func Start(o profile.Options) {
 		Container: o.Container,
 		Save:      o.Save,
 	}
-	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
+	p := tea.NewProgram(NewModel(o1), tea.WithAltScreen())
 	go func() {
 		err := profile.GetLogs(o1)
 		if err != nil {
