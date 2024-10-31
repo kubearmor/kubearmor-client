@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kubearmor/KVMService/src/types"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -205,4 +206,15 @@ func (o *PolicyOptions) printToOutput(c *color.Color, s string) {
 			}
 		}
 	}
+}
+
+func PrettyPrintPolicy(policy pb.Policy) error {
+	var policyJSON types.KubeArmorPolicy
+	err := json.Unmarshal(policy.Policy, &policyJSON)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(prettyJSON.Bytes()))
+	return nil
+
 }
