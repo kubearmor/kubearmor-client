@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/kubearmor/KVMService/src/types"
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
@@ -271,4 +272,15 @@ func (o *PolicyOptions) printToOutput(c *color.Color, s string) {
 			}
 		}
 	}
+}
+
+func PrettyPrintPolicy(policy pb.Policy) error {
+	var policyJSON types.KubeArmorPolicy
+	err := json.Unmarshal(policy.Policy, &policyJSON)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(prettyJSON.Bytes()))
+	return nil
+
 }
