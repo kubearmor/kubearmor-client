@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/kubearmor/kubearmor-client/vm"
@@ -97,8 +96,8 @@ var vmPolicyGetCmd = &cobra.Command{
 			return nil
 		}
 		if containerMap, ok := PolicyData.ContainerMap[args[0]]; ok {
-			for _, policy := range containerMap.PolicyDataList {
-				fmt.Println(string(policy.Policy))
+			for _, p := range containerMap.PolicyDataList {
+				return vm.PrettyPrintPolicy(*p)
 			}
 		} else {
 			return errors.New("no policy found for container: " + args[0])
