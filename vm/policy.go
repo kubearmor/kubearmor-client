@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kubearmor/KVMService/src/types"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -209,12 +208,137 @@ func (o *PolicyOptions) printToOutput(c *color.Color, s string) {
 }
 
 func PrettyPrintPolicy(policy pb.Policy) error {
-	var policyJSON types.KubeArmorPolicy
+	var policyJSON tp.SecurityPolicy
 	err := json.Unmarshal(policy.Policy, &policyJSON)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(prettyJSON.Bytes()))
+	printPolicy(parsePolicy(policyJSON))
 	return nil
+}
 
+// parsePolicy parses the policy data into a 2D slice
+// which can be printed in an indent format
+func parsePolicy(policy tp.SecurityPolicy) [][]string {
+	// Metadata
+	policyData := [][]string{
+		{"Name: ", policy.Metadata["policyName"]},
+	}
+
+	// Spec
+	policyData = append(policyData, [][]string{
+		{"Spec:"},
+		{"", "Selector:"},
+		{"", "", "MatchLabels:"},
+	}...)
+
+	// MatchLabels
+	for k, v := range policy.Spec.Selector.MatchLabels {
+		policyData = append(policyData, []string{
+			"", "", "", k + ": " + v},
+		)
+	}
+
+	// Severity, Tags and Message
+	policyData = append(policyData, []string{
+		"", "Severity: " + fmt.Sprint(policy.Spec.Severity),
+	})
+	if policy.Spec.Message != "" {
+		policyData = append(policyData, []string{
+			"", "Message: " + policy.Spec.Message},
+		)
+	}
+	if len(policy.Spec.Tags) > 0 {
+		policyData = append(policyData, []string{
+			"", "Tags: " + strings.Join(policy.Spec.Tags, ", "),
+		})
+	}
+
+	// Process
+	if len(policy.Spec.Process.MatchDirectories)|len(policy.Spec.Process.MatchPaths)|len(policy.Spec.Process.MatchDirectories) > 0 {
+		policyData = append(policyData, []string{
+			"", "Process:",
+		})
+		// MatchPaths
+		if len(policy.Spec.Process.MatchPaths) > 0 {
+			policyData = append(policyData, []string{
+				"", "", "MatchPaths:",
+			})
+			for _, v := range policy.Spec.Process.MatchPaths {
+				policyData = append(policyData, []string{
+					"", "", "- ", "Path: ", v.Path,
+				})
+				policyData = append(policyData, []string{
+					"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly),
+				})
+				if len(v.FromSource) > 0 {
+					policyData = append(policyData, []string{
+						"", "", "", "FromSource: ",
+					})
+					for _, v1 := range v.FromSource {
+						policyData = append(policyData, []string{
+							"", "", "", "", v1.Path,
+						})
+					}
+				}
+			}
+		}
+
+		// MatchDirectories
+		if len(policy.Spec.Process.MatchDirectories) > 0 {
+			policyData = append(policyData, []string{
+				"", "", "MatchDirectory:",
+			})
+			for _, v := range policy.Spec.Process.MatchDirectories {
+				policyData = append(policyData, []string{
+					"", "", "- ", "Directory: ", v.Directory,
+				})
+				policyData = append(policyData, []string{
+					"", "", "", "Recursive: ", fmt.Sprint(v.Recursive),
+					"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly),
+				})
+				if len(v.FromSource) > 0 {
+					policyData = append(policyData, []string{
+						"", "", "", "FromSource: ",
+					})
+					for _, v1 := range v.FromSource {
+						policyData = append(policyData, []string{
+							"", "", "", "", v1.Path,
+						})
+					}
+				}
+			}
+		}
+
+		// MatchPatterns
+		if len(policy.Spec.Process.MatchPatterns) > 0 {
+			policyData = append(policyData, []string{
+				"", "", "MatchPatterns:",
+			})
+			for _, v := range policy.Spec.Process.MatchPatterns {
+				policyData = append(policyData, []string{
+					"", "", "- ", "Pattern: ", v.Pattern,
+				})
+				policyData = append(policyData, []string{
+					"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly),
+				})
+			}
+		}
+	}
+
+	return policyData
+}
+
+// PrintPolicy prints the policy data in an indent format
+func printPolicy(data [][]string) {
+	for _, v := range data {
+		for _, v1 := range v {
+			if v1 == "" {
+				fmt.Printf("  ")
+				continue
+			}
+			fmt.Printf("%s", v1)
+		}
+		fmt.Println()
+	}
 }
