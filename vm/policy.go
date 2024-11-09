@@ -255,78 +255,212 @@ func parsePolicy(policy tp.SecurityPolicy) [][]string {
 	}
 
 	// Process
-	if len(policy.Spec.Process.MatchDirectories)|len(policy.Spec.Process.MatchPaths)|len(policy.Spec.Process.MatchDirectories) > 0 {
-		policyData = append(policyData, []string{
-			"", "Process:",
-		})
+	policyData = append(policyData, parseProcessData(policy.Spec.Process)...)
+
+	// File
+	policyData = append(policyData, parseFileData(policy.Spec.File)...)
+
+	// Network
+	policyData = append(policyData, parseNetworkData(policy.Spec.Network)...)
+
+	// Capabilities
+	policyData = append(policyData, parseCapabilitiesData(policy.Spec.Capabilities)...)
+
+	// Syscalls
+	policyData = append(policyData, parseSyscallsData(policy.Spec.Syscalls)...)
+
+	// Action
+	policyData = append(policyData, []string{"", "Action: " + policy.Spec.Action})
+
+	return policyData
+}
+
+func parseProcessData(process tp.ProcessType) [][]string {
+	var processData [][]string
+
+	if len(process.MatchDirectories)|len(process.MatchPaths)|len(process.MatchPatterns) > 0 {
+		processData = append(processData, []string{"", "Process:"})
+
 		// MatchPaths
-		if len(policy.Spec.Process.MatchPaths) > 0 {
-			policyData = append(policyData, []string{
-				"", "", "MatchPaths:",
-			})
-			for _, v := range policy.Spec.Process.MatchPaths {
-				policyData = append(policyData, []string{
-					"", "", "- ", "Path: ", v.Path,
-				})
-				policyData = append(policyData, []string{
-					"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly),
-				})
+		if len(process.MatchPaths) > 0 {
+			processData = append(processData, []string{"", "", "MatchPaths:"})
+			for _, v := range process.MatchPaths {
+				processData = append(processData, []string{"", "", "- ", "Path: ", v.Path})
+				processData = append(processData, []string{"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly)})
 				if len(v.FromSource) > 0 {
-					policyData = append(policyData, []string{
-						"", "", "", "FromSource: ",
-					})
+					processData = append(processData, []string{"", "", "", "FromSource: "})
 					for _, v1 := range v.FromSource {
-						policyData = append(policyData, []string{
-							"", "", "", "", v1.Path,
-						})
+						processData = append(processData, []string{"", "", "", "", v1.Path})
 					}
 				}
 			}
 		}
 
 		// MatchDirectories
-		if len(policy.Spec.Process.MatchDirectories) > 0 {
-			policyData = append(policyData, []string{
-				"", "", "MatchDirectory:",
-			})
-			for _, v := range policy.Spec.Process.MatchDirectories {
-				policyData = append(policyData, []string{
-					"", "", "- ", "Directory: ", v.Directory,
-				})
-				policyData = append(policyData, []string{
-					"", "", "", "Recursive: ", fmt.Sprint(v.Recursive),
-					"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly),
-				})
+		if len(process.MatchDirectories) > 0 {
+			processData = append(processData, []string{"", "", "MatchDirectory:"})
+			for _, v := range process.MatchDirectories {
+				processData = append(processData, []string{"", "", "- ", "Directory: ", v.Directory})
+				processData = append(processData, []string{"", "", "", "Recursive: ", fmt.Sprint(v.Recursive), "", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly)})
 				if len(v.FromSource) > 0 {
-					policyData = append(policyData, []string{
-						"", "", "", "FromSource: ",
-					})
+					processData = append(processData, []string{"", "", "", "FromSource: "})
 					for _, v1 := range v.FromSource {
-						policyData = append(policyData, []string{
-							"", "", "", "", v1.Path,
-						})
+						processData = append(processData, []string{"", "", "", "", v1.Path})
 					}
 				}
 			}
 		}
 
 		// MatchPatterns
-		if len(policy.Spec.Process.MatchPatterns) > 0 {
-			policyData = append(policyData, []string{
-				"", "", "MatchPatterns:",
-			})
-			for _, v := range policy.Spec.Process.MatchPatterns {
-				policyData = append(policyData, []string{
-					"", "", "- ", "Pattern: ", v.Pattern,
-				})
-				policyData = append(policyData, []string{
-					"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly),
-				})
+		if len(process.MatchPatterns) > 0 {
+			processData = append(processData, []string{"", "", "MatchPatterns:"})
+			for _, v := range process.MatchPatterns {
+				processData = append(processData, []string{"", "", "- ", "Pattern: ", v.Pattern})
+				processData = append(processData, []string{"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly)})
 			}
 		}
 	}
 
-	return policyData
+	return processData
+}
+
+func parseFileData(file tp.FileType) [][]string {
+	var fileData [][]string
+
+	if len(file.MatchDirectories)|len(file.MatchPaths)|len(file.MatchPatterns) > 0 {
+		fileData = append(fileData, []string{"", "File:"})
+
+		// MatchPaths
+		if len(file.MatchPaths) > 0 {
+			fileData = append(fileData, []string{"", "", "MatchPaths:"})
+			for _, v := range file.MatchPaths {
+				fileData = append(fileData, []string{"", "", "- ", "Path: ", v.Path})
+				fileData = append(fileData, []string{"", "", "", "ReadOnly: ", fmt.Sprint(v.ReadOnly)})
+				fileData = append(fileData, []string{"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly)})
+				if len(v.FromSource) > 0 {
+					fileData = append(fileData, []string{"", "", "", "FromSource: "})
+					for _, v1 := range v.FromSource {
+						fileData = append(fileData, []string{"", "", "", "", v1.Path})
+					}
+				}
+			}
+		}
+
+		// MatchDirectories
+		if len(file.MatchDirectories) > 0 {
+			fileData = append(fileData, []string{"", "", "MatchDirectories:"})
+			for _, v := range file.MatchDirectories {
+				fileData = append(fileData, []string{"", "", "- ", "Directory: ", v.Directory})
+				fileData = append(fileData, []string{"", "", "", "Recursive: ", fmt.Sprint(v.Recursive)})
+				fileData = append(fileData, []string{"", "", "", "ReadOnly: ", fmt.Sprint(v.ReadOnly)})
+				fileData = append(fileData, []string{"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly)})
+				if len(v.FromSource) > 0 {
+					fileData = append(fileData, []string{"", "", "", "FromSource: "})
+					for _, v1 := range v.FromSource {
+						fileData = append(fileData, []string{"", "", "", "", v1.Path})
+					}
+				}
+			}
+		}
+
+		// MatchPatterns
+		if len(file.MatchPatterns) > 0 {
+			fileData = append(fileData, []string{"", "", "MatchPatterns:"})
+			for _, v := range file.MatchPatterns {
+				fileData = append(fileData, []string{"", "", "- ", "Pattern: ", v.Pattern})
+				fileData = append(fileData, []string{"", "", "", "ReadOnly: ", fmt.Sprint(v.ReadOnly)})
+				fileData = append(fileData, []string{"", "", "", "OwnerOnly: ", fmt.Sprint(v.OwnerOnly)})
+			}
+		}
+	}
+
+	return fileData
+}
+
+func parseNetworkData(network tp.NetworkType) [][]string {
+	var networkData [][]string
+
+	if len(network.MatchProtocols) > 0 {
+		networkData = append(networkData, []string{"", "Network:"})
+
+		// MatchProtocols
+		networkData = append(networkData, []string{"", "", "MatchProtocols:"})
+		for _, v := range network.MatchProtocols {
+			networkData = append(networkData, []string{"", "", "- ", "Protocol: ", v.Protocol})
+			if len(v.FromSource) > 0 {
+				networkData = append(networkData, []string{"", "", "", "FromSource: "})
+				for _, v1 := range v.FromSource {
+					networkData = append(networkData, []string{"", "", "", "", v1.Path})
+				}
+			}
+		}
+	}
+
+	return networkData
+}
+
+func parseCapabilitiesData(capabilities tp.CapabilitiesType) [][]string {
+	var capabilitiesData [][]string
+
+	if len(capabilities.MatchCapabilities) > 0 {
+		capabilitiesData = append(capabilitiesData, []string{"", "Capabilities:"})
+
+		// MatchCapabilities
+		capabilitiesData = append(capabilitiesData, []string{"", "", "MatchCapabilities:"})
+		for _, v := range capabilities.MatchCapabilities {
+			capabilitiesData = append(capabilitiesData, []string{"", "", "- ", "Capability: ", v.Capability})
+			if len(v.FromSource) > 0 {
+				capabilitiesData = append(capabilitiesData, []string{"", "", "", "FromSource: "})
+				for _, v1 := range v.FromSource {
+					capabilitiesData = append(capabilitiesData, []string{"", "", "", "", v1.Path})
+				}
+			}
+		}
+	}
+
+	return capabilitiesData
+}
+
+func parseSyscallsData(syscalls tp.SyscallsType) [][]string {
+	var syscallsData [][]string
+
+	if len(syscalls.MatchSyscalls)|len(syscalls.MatchPaths) > 0 {
+		syscallsData = append(syscallsData, []string{"", "Syscalls:"})
+
+		// MatchSyscalls
+		if len(syscalls.MatchSyscalls) > 0 {
+			syscallsData = append(syscallsData, []string{"", "", "MatchSyscalls:"})
+			for _, v := range syscalls.MatchSyscalls {
+				syscallsData = append(syscallsData, []string{"", "", "- ", "Syscall: ", strings.Join(v.Syscalls, ", ")})
+				if len(v.FromSource) > 0 {
+					syscallsData = append(syscallsData, []string{"", "", "", "FromSource: "})
+					for _, v1 := range v.FromSource {
+						syscallsData = append(syscallsData, []string{"", "", "", "", v1.Path})
+					}
+				}
+			}
+		}
+
+		// MatchPaths
+		if len(syscalls.MatchPaths) > 0 {
+			syscallsData = append(syscallsData, []string{"", "", "MatchPaths:"})
+			for _, v := range syscalls.MatchPaths {
+				syscallsData = append(syscallsData, []string{"", "", "- ", "Path: ", v.Path})
+				syscallsData = append(syscallsData, []string{"", "", "", "Recursive: ", fmt.Sprint(v.Recursive)})
+				if len(v.Syscalls) > 0 {
+					syscallsData = append(syscallsData, []string{"", "", "", "Syscall: ", strings.Join(v.Syscalls, ", ")})
+				}
+				if len(v.FromSource) > 0 {
+					syscallsData = append(syscallsData, []string{"", "", "", "FromSource: "})
+					for _, v1 := range v.FromSource {
+						syscallsData = append(syscallsData, []string{"", "", "", "", v1.Path})
+					}
+				}
+			}
+		}
+	}
+
+	return syscallsData
 }
 
 // PrintPolicy prints the policy data in an indent format
