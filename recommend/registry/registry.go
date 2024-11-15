@@ -78,9 +78,6 @@ func (r *Scanner) loadDockerAuthConfigs() {
 		}
 
 		for _, conf := range confsWrapper.Auths {
-			if len(conf.Auth) == 0 {
-				continue
-			}
 			data, _ := base64.StdEncoding.DecodeString(conf.Auth)
 			userPass := strings.SplitN(string(data), ":", 2)
 			r.authConfiguration.authCreds = append(r.authConfiguration.authCreds, getAuthStr(userPass[0], userPass[1]))
