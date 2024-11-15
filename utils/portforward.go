@@ -66,7 +66,6 @@ func (pf *PortForwardOpt) handlePortForward(c *k8s.Client) error {
 		return fmt.Errorf("\ncould not do kubearmor portforward, error=%s", err.Error())
 	}
 	return nil
-
 }
 
 // k8s port forward
@@ -117,7 +116,6 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 	podList, err := c.K8sClientset.CoreV1().Pods(pf.Namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&labelSelector),
 	})
-
 	if err != nil {
 		return err
 	}
@@ -131,7 +129,6 @@ func (pf *PortForwardOpt) getPodName(c *k8s.Client) error {
 
 // Returns the local port for the port forwarder
 func (pf *PortForwardOpt) getLocalPort() (int64, error) {
-
 	for {
 		port, err := getRandomPort()
 		if err != nil {
@@ -146,7 +143,6 @@ func (pf *PortForwardOpt) getLocalPort() (int64, error) {
 			return port, nil
 		}
 	}
-
 }
 
 // Return a port number > 32767
@@ -156,6 +152,6 @@ func getRandomPort() (int64, error) {
 		return -1, errors.New("unable to generate random integer for port")
 	}
 
-	var portNo = n.Int64() + 32768
+	portNo := n.Int64() + 32768
 	return portNo, nil
 }

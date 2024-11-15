@@ -62,13 +62,17 @@ type Options struct {
 }
 
 // StopChan Channel
-var StopChan chan struct{}
-var sigChan chan os.Signal
+var (
+	StopChan chan struct{}
+	sigChan  chan os.Signal
+)
 
 // UnblockSignal is a flag to check whether the Watch* APIs have exited or signal has rcvd
-var UnblockSignal error
-var matchLabels = map[string]string{"kubearmor-app": "kubearmor-relay"}
-var port int64 = 32767
+var (
+	UnblockSignal error
+	matchLabels         = map[string]string{"kubearmor-app": "kubearmor-relay"}
+	port          int64 = 32767
+)
 
 // GetOSSigChannel Function
 func GetOSSigChannel() chan os.Signal {

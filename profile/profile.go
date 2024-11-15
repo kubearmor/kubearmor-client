@@ -6,6 +6,7 @@ package profile
 
 import (
 	"errors"
+
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	klog "github.com/kubearmor/kubearmor-client/log"
@@ -62,7 +63,7 @@ func KarmorProfileStart(logFilter string, grpc string) <-chan error {
 	}
 
 	go func() {
-		//defer close(ErrChan)
+		// defer close(ErrChan)
 		err = klog.StartObserver(client, klog.Options{
 			LogFilter: logFilter,
 			MsgPath:   "none",

@@ -108,7 +108,7 @@ func doSelfUpdate(curver string) error {
 
 // SelfUpdate handler for karmor cli tool
 func SelfUpdate(c *k8s.Client) error {
-	var ver = GitSummary
+	ver := GitSummary
 	fmt.Printf("current karmor version %s\n", ver)
 	if !isValidVersion(ver) {
 		fmt.Println("version does not match the pattern. Maybe using a locally built karmor!")

@@ -59,7 +59,6 @@ func CurrentRelease() string {
 	if err != nil {
 		CurrentVersion = strings.Trim(updateRulesYAML([]byte{}), "\"")
 	} else {
-
 		CurrentVersion = strings.Trim(updateRulesYAML(path), "\"")
 	}
 	return CurrentVersion
@@ -68,7 +67,6 @@ func CurrentRelease() string {
 func getCachePath() string {
 	cache := fmt.Sprintf("%s/%s", common.UserHome(), cache)
 	return cache
-
 }
 
 //go:embed yaml/rules.yaml
@@ -152,7 +150,7 @@ func DownloadAndUnzipRelease() (string, error) {
 	if err != nil {
 		log.WithError(err).Error("failed to remove cache files")
 	}
-	err = os.MkdirAll(filepath.Dir(getCachePath()), 0750)
+	err = os.MkdirAll(filepath.Dir(getCachePath()), 0o750)
 	if err != nil {
 		return "", err
 	}
@@ -160,7 +158,6 @@ func DownloadAndUnzipRelease() (string, error) {
 	downloadURL := fmt.Sprintf("%s%s.zip", url, latestVersion)
 	zipPath := getCachePath() + ".zip"
 	err = downloadZip(downloadURL, zipPath)
-
 	if err != nil {
 		err = removeData(getCachePath())
 		if err != nil {
@@ -212,7 +209,7 @@ func unZip(source, dest string) error {
 		if err != nil {
 			return err
 		}
-		err = os.MkdirAll(path.Dir(name), 0750)
+		err = os.MkdirAll(path.Dir(name), 0o750)
 		if err != nil {
 			log.WithError(err).Error("failed to create directory")
 		}
