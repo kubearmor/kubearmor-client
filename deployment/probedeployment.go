@@ -16,25 +16,24 @@ var Karmorprobe = "karmor-probe"
 
 // GenerateDaemonSet Function
 func GenerateDaemonSet(namespace string, krnhdr bool) *appsv1.DaemonSet {
-
-	var label = map[string]string{
+	label := map[string]string{
 		"kubearmor-app": Karmorprobe,
 	}
-	var privileged = bool(true)
-	var terminationGracePeriodSeconds = int64(30)
-	var args = []string{
+	privileged := bool(true)
+	terminationGracePeriodSeconds := int64(30)
+	args := []string{
 		"while true; do sleep 30; done;",
 	}
 
-	var volumeMounts = []corev1.VolumeMount{
+	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      "lsm-path", //lsm (read-only)
+			Name:      "lsm-path", // lsm (read-only)
 			MountPath: "/sys/kernel/security",
 			ReadOnly:  true,
 		},
 	}
 
-	var volumes = []corev1.Volume{
+	volumes := []corev1.Volume{
 		{
 			Name: "lsm-path",
 			VolumeSource: corev1.VolumeSource{
@@ -48,12 +47,12 @@ func GenerateDaemonSet(namespace string, krnhdr bool) *appsv1.DaemonSet {
 	if krnhdr {
 		volumeMounts = append(volumeMounts, []corev1.VolumeMount{
 			{
-				Name:      "lib-modules", //lib modules (read-only)
+				Name:      "lib-modules", // lib modules (read-only)
 				MountPath: "/lib/modules",
 				ReadOnly:  true,
 			},
 			{
-				Name:      "kernel-header", //kernel header (read-only)
+				Name:      "kernel-header", // kernel header (read-only)
 				MountPath: "/usr/src",
 				ReadOnly:  true,
 			},

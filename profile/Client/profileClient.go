@@ -7,6 +7,8 @@ package profileclient
 import (
 	"bytes"
 	"fmt"
+	"os"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,7 +17,6 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	profile "github.com/kubearmor/kubearmor-client/profile"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // Column keys
@@ -47,7 +48,7 @@ var (
 	styleBase = lipgloss.NewStyle().
 			BorderForeground(lipgloss.Color("12")).
 			Align(lipgloss.Right)
-	//ColumnStyle for column color
+	// ColumnStyle for column color
 	ColumnStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00af00")).Align(lipgloss.Center).Bold(true)
 
@@ -461,5 +462,4 @@ func Start() {
 	default:
 		break
 	}
-
 }

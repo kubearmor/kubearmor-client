@@ -32,8 +32,10 @@ type EventInfo struct {
 }
 
 // Limitchan handles telemetry event output limit
-var Limitchan chan bool
-var i uint32
+var (
+	Limitchan chan bool
+	i         uint32
+)
 
 // ============ //
 // == Common == //
@@ -53,7 +55,7 @@ func StrToFile(str, destFile string) {
 	}
 
 	// #nosec
-	file, err := os.OpenFile(destFile, os.O_WRONLY|os.O_APPEND, 0644)
+	file, err := os.OpenFile(destFile, os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to open a file (%s, %s)\n", destFile, err.Error())
 	}
@@ -81,7 +83,7 @@ type Feeder struct {
 	// server
 	server string
 
-	//limit
+	// limit
 	limit uint32
 
 	// connection
@@ -228,7 +230,6 @@ func (fd *Feeder) WatchMessages(msgPath string, jsonFormat bool) error {
 }
 
 func regexMatcher(filter *regexp.Regexp, res string) bool {
-
 	match := filter.MatchString(res)
 	if !match {
 		return false
@@ -413,7 +414,6 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 
 		var prettyJSON bytes.Buffer
 		err = json.Indent(&prettyJSON, arr, "", "  ")
-
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to prettify JSON (%s)\n", err.Error())
 		}
@@ -483,7 +483,6 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 	} else if o.LogPath != "" {
 		StrToFile(str, o.LogPath)
 	}
-
 }
 
 // DestroyClient Function
@@ -502,7 +501,6 @@ func selectLabels(o Options, labels []string) error {
 				return nil
 			}
 		}
-
 	}
 	return errors.New("Not found any flag")
 }

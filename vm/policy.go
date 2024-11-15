@@ -70,7 +70,6 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) er
 	}
 	fmt.Printf("Policy %s \n", resp.Status)
 	return nil
-
 }
 
 // PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server

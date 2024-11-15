@@ -79,7 +79,6 @@ func (m tabs) View() string {
 	out := []string{}
 	cursor := " "
 	for i, item := range m.items {
-
 		if m.cursor == i {
 			cursor = activeTab.Render(item)
 			m.active = item
