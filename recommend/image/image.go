@@ -253,7 +253,6 @@ func (img *Info) getPolicyFile(spec string, outDir string) string {
 }
 
 func addPolicyRule(policy *pol.KubeArmorPolicy, r pol.KubeArmorPolicySpec) {
-
 	if len(r.File.MatchDirectories) != 0 || len(r.File.MatchPaths) != 0 {
 		policy.Spec.File = r.File
 	}
@@ -270,7 +269,8 @@ func (img *Info) createPolicy(ms common.MatchSpec) (pol.KubeArmorPolicy, error) 
 		Spec: pol.KubeArmorPolicySpec{
 			Severity: 1, // by default
 			Selector: pol.SelectorType{
-				MatchLabels: map[string]string{}},
+				MatchLabels: map[string]string{},
+			},
 		},
 	}
 	policy.APIVersion = "security.kubearmor.com/v1"
@@ -313,7 +313,7 @@ func (img *Info) GetPolicy(ms common.MatchSpec, options common.Options) ([]byte,
 
 	arr, _ := json.Marshal(policy)
 	outFile := img.getPolicyFile(ms.Name, options.OutDir)
-	err = os.MkdirAll(filepath.Dir(outFile), 0750)
+	err = os.MkdirAll(filepath.Dir(outFile), 0o750)
 	if err != nil {
 		log.WithError(err).Error("failed to create directory")
 	}

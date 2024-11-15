@@ -79,11 +79,9 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) er
 	}
 	fmt.Printf("Policy %s \n", resp.Status)
 	return nil
-
 }
 
 func sendPolicyOverHTTP(address string, kind string, policyEventData []byte) error {
-
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
@@ -203,7 +201,6 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 			// Systemd mode, hence send policy over gRPC
 			if err = sendPolicyOverGRPC(o, policyEventData, k.Kind); err != nil {
 				return err
-
 			}
 		}
 	}

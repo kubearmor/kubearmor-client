@@ -6,14 +6,13 @@ package install
 
 import (
 	"context"
-	"io"
-	"path/filepath"
-
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -75,10 +74,12 @@ type envOption struct {
 	Environment string
 }
 
-var verify bool
-var progress int
-var cursorcount int
-var validEnvironments = []string{"k0s", "k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
+var (
+	verify            bool
+	progress          int
+	cursorcount       int
+	validEnvironments = []string{"k0s", "k3s", "microK8s", "minikube", "gke", "bottlerocket", "eks", "docker", "oke", "generic"}
+)
 
 // Checks if passed string is a valid environment
 func (env *envOption) CheckAndSetValidEnvironmentOption(envOption string) error {
@@ -377,7 +378,6 @@ func checkPodsLegacy(c *k8s.Client, o Options) {
 		}
 		break
 	}
-
 }
 
 func checkTerminatingPods(c *k8s.Client, ns string) int {
@@ -903,7 +903,7 @@ func writeHelmManifests(manifests string, filename string, printYAML []interface
 		}
 	}
 
-	file, _ := os.OpenFile("kubearmor.yaml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	file, _ := os.OpenFile("kubearmor.yaml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	// Write the string to the file
 	_, err = file.WriteString(manifests + "\n")
 	if err != nil {
@@ -972,7 +972,7 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 
 	var repoFile repo.File
 	repoFile.Update(entry)
-	if err := repoFile.WriteFile(settings.RepositoryConfig, 0644); err != nil {
+	if err := repoFile.WriteFile(settings.RepositoryConfig, 0o644); err != nil {
 		return fmt.Errorf("failed to write repository file: %w", err)
 	}
 
