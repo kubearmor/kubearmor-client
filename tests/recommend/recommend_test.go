@@ -21,13 +21,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var testOptions common.Options
-var err error
+var (
+	testOptions common.Options
+	err         error
+)
 
 var client *k8s.Client
 
 func compareData(file1, file2 string) bool {
-
 	var pol1, pol2 common.MatchSpec
 	data1, err := os.ReadFile(filepath.Clean(file1))
 	if err != nil {
@@ -65,12 +66,11 @@ func compareData(file1, file2 string) bool {
 }
 
 var _ = Describe("karmor", func() {
-
 	BeforeEach(func() {
 		testOptions.OutDir = "out"
 		testOptions.ReportFile = "report.txt"
 		testOptions.Policy = []string{"KubeArmorPolicy"}
-		//Initialise k8sClient for all child commands to inherit
+		// Initialise k8sClient for all child commands to inherit
 		client, err = k8s.ConnectK8sClient()
 		Expect(err).To(BeNil())
 	})
@@ -80,17 +80,15 @@ var _ = Describe("karmor", func() {
 	})
 
 	Describe("recommend", func() {
-
 		Context("when called with `update` command", func() {
-
 			It("should fetch the latest policy-template release and modify the rule under ~/.cache/karmor/", func() {
-				//os.MkdirAll(testOptions.OutDir, 0777)
+				// os.MkdirAll(testOptions.OutDir, 0777)
 				_, err := genericpolicies.DownloadAndUnzipRelease()
 				Expect(err).To(BeNil())
 				files, err := os.ReadDir(fmt.Sprintf("%s/.cache/karmor", os.Getenv("HOME")))
 				Expect(err).To(BeNil())
 				Expect(len(files)).To(BeNumerically(">=", 1))
-				//os.RemoveAll(testOptions.OutDir)
+				// os.RemoveAll(testOptions.OutDir)
 			})
 		})
 
@@ -111,10 +109,8 @@ var _ = Describe("karmor", func() {
 					filesRes, err := os.ReadDir("res/out/ubuntu-18-04")
 					Expect(err).To(BeNil())
 					for _, fileRes := range filesRes {
-
 						if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
 							count++
-
 						}
 					}
 				}
@@ -145,7 +141,6 @@ var _ = Describe("karmor", func() {
 						if compareData(testOptions.OutDir+"/ubuntu-18-04/"+file.Name(), "res/out/ubuntu-18-04/"+fileRes.Name()) {
 							count++
 						}
-
 					}
 				}
 				fmt.Printf("Matched files count: %v\n", count)
@@ -172,10 +167,8 @@ var _ = Describe("karmor", func() {
 					filesRes, err := os.ReadDir("res/out/wordpress-mysql-wordpress")
 					Expect(err).To(BeNil())
 					for _, fileRes := range filesRes {
-
 						if compareData(testOptions.OutDir+"/wordpress-mysql-wordpress/"+file.Name(), "res/out/wordpress-mysql-wordpress/"+fileRes.Name()) {
 							count++
-
 						}
 					}
 				}

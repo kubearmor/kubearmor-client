@@ -10,10 +10,12 @@ import (
 	"strings"
 )
 
-var WildPathDigit string = "/[0-9]+"
-var WildPathDigitLeaf string = "/[0-9^/]+"
-var WildPathChar string = "/.+"
-var WildPathCharLeaf string = "/.[^/]+"
+var (
+	WildPathDigit     string = "/[0-9]+"
+	WildPathDigitLeaf string = "/[0-9^/]+"
+	WildPathChar      string = "/.+"
+	WildPathCharLeaf  string = "/.[^/]+"
+)
 
 var WildPaths []string
 
@@ -136,7 +138,6 @@ func (n *Node) findChildNode(path string, depth int) *Node {
 		} else if child.path == path && child.depth == depth {
 			return child
 		}
-
 	}
 
 	return nil
@@ -328,7 +329,7 @@ func AggregatePathsExt(paths []string) []string {
 			if !strings.HasSuffix(rec, "/") {
 				rec = rec + "/"
 			}
-			if dirlist[rec] { //already part of dirlist above
+			if dirlist[rec] { // already part of dirlist above
 				continue
 			}
 		}

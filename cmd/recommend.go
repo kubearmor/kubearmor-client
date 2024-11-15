@@ -36,6 +36,7 @@ var recommendCmd = &cobra.Command{
 		}
 	},
 }
+
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates policy-template cache",

@@ -9,10 +9,12 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 )
 
-var eventChan chan EventInfo
-var done chan bool
-var gotAlerts = 0
-var gotLogs = 0
+var (
+	eventChan chan EventInfo
+	done      chan bool
+	gotAlerts = 0
+	gotLogs   = 0
+)
 
 const maxEvents = 5
 
@@ -36,7 +38,7 @@ func genericWaitOnEvent(cnt int) {
 }
 
 func TestLogClient(t *testing.T) {
-	var res = &pb.Alert{
+	res := &pb.Alert{
 		ClusterName:    "breaking-bad",
 		HostName:       "saymyname",
 		NamespaceName:  "heisenberg",
@@ -48,7 +50,7 @@ func TestLogClient(t *testing.T) {
 		Type:           "MatchedPolicy",
 	}
 	eventChan = make(chan EventInfo, maxEvents)
-	var o = Options{
+	o := Options{
 		EventChan: eventChan,
 		Selector:  []string{"substance=meth"},
 	}

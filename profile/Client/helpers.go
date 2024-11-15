@@ -3,14 +3,14 @@ package profileclient
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/evertras/bubble-table/table"
-	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"os"
 	"path/filepath"
+
+	"github.com/evertras/bubble-table/table"
+	pb "github.com/kubearmor/KubeArmor/protobuf"
 )
 
 func generateRowFromLog(entry pb.Log) table.Row {
-
 	logType := "Container"
 	if entry.Type == "HostLog" {
 		logType = "Host"
@@ -46,7 +46,6 @@ func generateRowFromLog(entry pb.Log) table.Row {
 }
 
 func isCorrectLog(entry pb.Log) bool {
-
 	if (ProfileOpts.Namespace != "") && (entry.NamespaceName != ProfileOpts.Namespace) {
 		return false
 	}
@@ -89,7 +88,7 @@ func ExportRowsToJSON(columns []table.Column, rows []table.Row, operation string
 
 	// Create ProfileSummary directory if it doesn't exist
 	outputDir := filepath.Join(cwd, "ProfileSummary")
-	if err := os.MkdirAll(outputDir, 0700); err != nil {
+	if err := os.MkdirAll(outputDir, 0o700); err != nil {
 		return "", fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -98,7 +97,7 @@ func ExportRowsToJSON(columns []table.Column, rows []table.Row, operation string
 	filePath := filepath.Join(outputDir, fileName)
 
 	// Write JSON to file
-	if err := os.WriteFile(filePath, jsonBytes, 0600); err != nil {
+	if err := os.WriteFile(filePath, jsonBytes, 0o600); err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 

@@ -100,7 +100,6 @@ func Collect(c *k8s.Client, o Options) error {
 		pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 			LabelSelector: "kubearmor-app",
 		})
-
 		if err != nil {
 			fmt.Printf("kubearmor pod not found. (possible if kubearmor is running in process mode)\n")
 			return nil
@@ -250,7 +249,7 @@ func Collect(c *k8s.Client, o Options) error {
 }
 
 func writeToFile(p, v string) error {
-	return os.WriteFile(p, []byte(v), 0600)
+	return os.WriteFile(p, []byte(v), 0o600)
 }
 
 func writeYaml(p string, o runtime.Object) error {
@@ -309,7 +308,7 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(destPath, buf, 0600); err != nil {
+		if err := os.WriteFile(destPath, buf, 0o600); err != nil {
 			return err
 		}
 	}
@@ -319,7 +318,6 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 // IsDirEmpty Function
 func IsDirEmpty(name string) (bool, error) {
 	files, err := os.ReadDir(name)
-
 	if err != nil {
 		return false, err
 	}

@@ -11,7 +11,7 @@ const (
 	MinDockerComposeWithWaitSupported = "v2.17.0"
 	DefaultConfigPathDirName          = ".kubearmor-config"
 	DefaultDockerTag                  = "stable"
-	//systemd path
+	// systemd path
 	DownloadDir           string = "/tmp/kubearmor-downloads/"
 	SystemdDir            string = "/usr/lib/systemd/system/"
 	KubeArmorPort                = "32767"

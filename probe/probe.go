@@ -11,6 +11,7 @@ package probe
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -29,17 +30,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
-
-	"errors"
 )
 
-var white = color.New(color.FgWhite)
-var boldWhite = white.Add(color.Bold)
-var green = color.New(color.FgGreen)
-var itwhite = color.New(color.Italic).Add(color.Italic)
-var red = color.New(color.FgRed)
-var yellow = color.New(color.FgYellow)
-var blue = color.New(color.FgBlue)
+var (
+	white     = color.New(color.FgWhite)
+	boldWhite = white.Add(color.Bold)
+	green     = color.New(color.FgGreen)
+	itwhite   = color.New(color.Italic).Add(color.Italic)
+	red       = color.New(color.FgRed)
+	yellow    = color.New(color.FgYellow)
+	blue      = color.New(color.FgBlue)
+)
 
 var ErrKubeArmorNotRunningOnK8s = errors.New("kubearmor is not running in k8s")
 
@@ -60,13 +61,14 @@ func printWhenKubeArmorIsRunningInK8s(c *k8s.Client, o Options, daemonsetStatus 
 		log.Println("error occured when getting annotated pods", err)
 	}
 	if o.Output == "json" {
-		ProbeData := map[string]interface{}{"Probe Data": map[string]interface{}{
-			"DaemonsetStatus": daemonsetStatus,
-			"Deployments":     deploymentData,
-			"Containers":      containerData,
-			"Nodes":           nodeData,
-			"ArmoredPods":     armoredPodData,
-		},
+		ProbeData := map[string]interface{}{
+			"Probe Data": map[string]interface{}{
+				"DaemonsetStatus": daemonsetStatus,
+				"Deployments":     deploymentData,
+				"Containers":      containerData,
+				"Nodes":           nodeData,
+				"ArmoredPods":     armoredPodData,
+			},
 		}
 		out, err := json.Marshal(ProbeData)
 		if err != nil {
@@ -87,7 +89,6 @@ func printWhenKubeArmorIsRunningInK8s(c *k8s.Client, o Options, daemonsetStatus 
 func isKubeArmorRunning(c *k8s.Client) (bool, *Status) {
 	isRunning, DaemonsetStatus := getKubeArmorDaemonset(c)
 	return isRunning, DaemonsetStatus
-
 }
 
 func getKubeArmorDaemonset(c *k8s.Client) (bool, *Status) {
@@ -142,11 +143,9 @@ func getKubeArmorDeployments(c *k8s.Client) map[string]*Status {
 }
 
 func getKubeArmorContainers(c *k8s.Client) map[string]*KubeArmorPodSpec {
-
 	kubearmorPods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 		LabelSelector: "kubearmor-app",
 	})
-
 	if err != nil {
 		log.Println("error occured when getting kubearmor pods", err)
 		return nil
@@ -154,7 +153,6 @@ func getKubeArmorContainers(c *k8s.Client) map[string]*KubeArmorPodSpec {
 	KAContainerData := make(map[string]*KubeArmorPodSpec)
 	if len(kubearmorPods.Items) > 0 {
 		for _, kubearmorPodItem := range kubearmorPods.Items {
-
 			KAContainerData[kubearmorPodItem.Name] = &KubeArmorPodSpec{
 				Running:       strconv.Itoa(len(kubearmorPodItem.Spec.Containers)),
 				Image_Version: kubearmorPodItem.Spec.Containers[0].Image,
@@ -232,13 +230,14 @@ func readDataFromKubeArmor(c *k8s.Client, pod corev1.Pod) (KubeArmorProbeData, e
 		return KubeArmorProbeData{}, fmt.Errorf("read empty data from kubearmor pod")
 	}
 	var kd KubeArmorProbeData
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err = json.Unmarshal(buf, &kd)
 	if err != nil {
 		return KubeArmorProbeData{}, fmt.Errorf("error occured while parsing data from kubeArmor pod %s", err.Error())
 	}
 	return kd, nil
 }
+
 func getPostureData(probeData []KubeArmorProbeData) map[string]string {
 	postureData := make(map[string]string)
 	if len(probeData) > 0 {
@@ -265,7 +264,6 @@ func getNsSecurityPostureAndVisibility(c *k8s.Client, postureData map[string]str
 
 	mp := make(map[string]*NamespaceData)
 	namespaces, err := c.K8sClientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-
 	if err != nil {
 		return mp, err
 	}
@@ -308,7 +306,6 @@ func getNsSecurityPostureAndVisibility(c *k8s.Client, postureData map[string]str
 }
 
 func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (map[string]interface{}, [][]string, error) {
-
 	// Annotated Pods Description
 	var data [][]string
 	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
@@ -328,7 +325,6 @@ func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (
 	}
 
 	for _, p := range pods.Items {
-
 		if p.Annotations["kubearmor-policy"] == "enabled" {
 			armoredPod, err := c.K8sClientset.CoreV1().Pods(p.Namespace).Get(context.Background(), p.Name, metav1.GetOptions{})
 			if err != nil {
@@ -341,18 +337,25 @@ func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (
 			}
 			labels := getAnnotatedPodLabels(armoredPod.Labels)
 
-			for policyKey, policyValue := range policyMap {
-				s2 := sliceToSet(policyValue)
-				if s2.IsSubset(labels) {
-					if !checkIfDataAlreadyContainsPodName(data, armoredPod.Name, policyKey) {
-
-						data = append(data, []string{armoredPod.Namespace, mp[armoredPod.Namespace].NsPostureString, mp[armoredPod.Namespace].NsVisibilityString, armoredPod.Name, policyKey})
-
+			for _, policy := range policyMap {
+				s2 := sliceToSet(policy["labels"].([]string))
+				namespaces := policy["namespaces"].([]string)
+				found := false
+				for _, namespace := range namespaces {
+					if namespace == armoredPod.Namespace {
+						found = true
+						break
+					}
+				}
+				if found && s2.IsSubset(labels) {
+					if !checkIfDataAlreadyContainsPodName(data, armoredPod.Name, policy["name"].(string)) {
+						data = append(data, []string{armoredPod.Namespace, mp[armoredPod.Namespace].NsPostureString, mp[armoredPod.Namespace].NsVisibilityString, armoredPod.Name, policy["name"].(string)})
 					}
 				}
 			}
 		}
 	}
+
 	// sorting according to namespaces, for merging of cells with same namespaces
 	sort.SliceStable(data, func(i, j int) bool {
 		return data[i][0] < data[j][0]
@@ -372,8 +375,8 @@ func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (
 	return map[string]interface{}{"Namespaces": armoredPodData}, data, nil
 }
 
-func getPoliciesOnAnnotatedPods(c *k8s.Client) (map[string][]string, error) {
-	maps := make(map[string][]string)
+func getPoliciesOnAnnotatedPods(c *k8s.Client) ([]map[string]interface{}, error) {
+	var maps []map[string]interface{}
 	kspInterface := c.KSPClientset.KubeArmorPolicies("")
 	policies, err := kspInterface.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -381,17 +384,26 @@ func getPoliciesOnAnnotatedPods(c *k8s.Client) (map[string][]string, error) {
 	}
 	if len(policies.Items) > 0 {
 		for _, policy := range policies.Items {
+			p := make(map[string]interface{})
 			selectLabels := policy.Spec.Selector.MatchLabels
+			labels := []string{}
+			namespaces := []string{}
 			for key, value := range selectLabels {
-				maps[policy.Name] = append(maps[policy.Name], key+":"+value)
+				labels = append(labels, key+":"+value)
+				namespaces = append(namespaces, policy.Namespace)
 			}
+			p["name"] = policy.Name
+			p["labels"] = labels
+			p["namespaces"] = namespaces
+			maps = append(maps, p)
 		}
 	}
 	return maps, nil
 }
+
 func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy string) bool {
 	for _, slice := range input {
-		//if slice contains podname, then append the policy to the existing policies
+		// if slice contains podname, then append the policy to the existing policies
 		if slices.Contains(slice, name) {
 			if slice[4] == "" {
 				slice[4] = policy
@@ -400,7 +412,6 @@ func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy str
 			}
 			return true
 		}
-
 	}
 	return false
 }

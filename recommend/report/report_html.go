@@ -198,21 +198,21 @@ func (r HTMLReport) Render(out string) error {
 
 	outPath = outPath + "/.static/"
 
-	err = os.MkdirAll(outPath, 0740)
+	err = os.MkdirAll(outPath, 0o740)
 	if err != nil {
 		log.WithError(err)
 	}
 
-	if err := os.WriteFile(outPath+"main.css", []byte(mainCSS), 0600); err != nil {
+	if err := os.WriteFile(outPath+"main.css", []byte(mainCSS), 0o600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}
-	if err := os.WriteFile(outPath+"v38_6837.png", []byte(imageV38_6837), 0600); err != nil {
+	if err := os.WriteFile(outPath+"v38_6837.png", []byte(imageV38_6837), 0o600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}
-	if err := os.WriteFile(outPath+"v38_7029.png", []byte(imageV38_7029), 0600); err != nil {
+	if err := os.WriteFile(outPath+"v38_7029.png", []byte(imageV38_7029), 0o600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}
-	if err := os.WriteFile(out, []byte(r.outString.String()), 0600); err != nil {
+	if err := os.WriteFile(out, []byte(r.outString.String()), 0o600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}
 	return nil
