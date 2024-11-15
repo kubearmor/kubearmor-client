@@ -10,9 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	labelOptions vm.LabelOptions
-)
+var labelOptions vm.LabelOptions
 
 // vmLabelCmd represents the vm command for label management
 var vmLabelCmd = &cobra.Command{

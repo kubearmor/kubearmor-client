@@ -102,7 +102,6 @@ func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPo
 
 	o.printToOutput(boldWhite, "Containers : \n")
 	for name, spec := range containerData {
-
 		data = append(data, []string{" ", name, "Running: " + spec.Running, "Image Version: " + spec.Image_Version})
 	}
 	o.renderOutputInTableWithNoBorders(data)
@@ -110,12 +109,10 @@ func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPo
 
 // printKubeArmorprobe function
 func (o *Options) printKubeArmorprobe(probeData []KubeArmorProbeData) {
-
 	for i, pd := range probeData {
 		o.printToOutput(boldWhite, "Node "+fmt.Sprint(i+1)+" : \n")
 		o.printKubeArmorProbeOutput(pd)
 	}
-
 }
 
 // printKubeArmorProbeOutput function
@@ -136,7 +133,6 @@ func (o *Options) printKubeArmorProbeOutput(kd KubeArmorProbeData) {
 
 // printAnnotatedPods function
 func (o *Options) printAnnotatedPods(podData [][]string) {
-
 	o.printToOutput(boldWhite, "Armored Up pods : \n")
 	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"NAMESPACE", "DEFAULT POSTURE", "VISIBILITY", "NAME", "POLICY"})
@@ -147,6 +143,7 @@ func (o *Options) printAnnotatedPods(podData [][]string) {
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1, 2})
 	table.Render()
 }
+
 func (o *Options) printContainersSystemd(podData [][]string) {
 	o.printToOutput(boldWhite, "Armored Up Containers : \n")
 
@@ -158,8 +155,8 @@ func (o *Options) printContainersSystemd(podData [][]string) {
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 	table.Render()
-
 }
+
 func (o *Options) printHostPolicy(hostPolicy [][]string) {
 	o.printToOutput(boldWhite, "Host Policies : \n")
 

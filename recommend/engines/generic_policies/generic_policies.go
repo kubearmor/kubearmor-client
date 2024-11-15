@@ -8,7 +8,6 @@ import (
 	_ "embed" // need for embedding
 	"fmt"
 	"path/filepath"
-
 	"regexp"
 	"strings"
 
@@ -27,8 +26,7 @@ const (
 )
 
 // GenericPolicy defines Policy Generators
-type GenericPolicy struct {
-}
+type GenericPolicy struct{}
 
 // Init initializing Policy Generator
 func (P GenericPolicy) Init() error {

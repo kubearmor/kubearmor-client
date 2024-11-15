@@ -23,12 +23,12 @@ var recommendCmd = &cobra.Command{
 		return err
 	},
 }
+
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates policy-template cache",
 	Long:  "Updates the local cache of policy-templates ($HOME/.cache/karmor)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		if _, err := genericpolicies.DownloadAndUnzipRelease(); err != nil {
 			return err
 		}
