@@ -67,7 +67,7 @@ func finalReport() {
 		log.WithError(err).Fatal("failed to read report file")
 		return
 	}
-	fmt.Println(string(data))
+	fmt.Println(strings.Trim(string(data), "\n"))
 }
 
 func writePolicyFile(policMap map[string][]byte, msMap map[string]interface{}) {
