@@ -1401,6 +1401,238 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 		}
 	}
 
+	commonUninstall(c, o)
+
+	fmt.Print("👻  KubeArmor Controller TLS certificates\n")
+	tlsCertificatesList, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	for _, tlsCert := range tlsCertificatesList.Items {
+		if err := c.K8sClientset.CoreV1().Secrets(tlsCert.Namespace).Delete(context.Background(), tlsCert.Name, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				fmt.Print(err)
+				continue
+			}
+			fmt.Print("ℹ️  KubeArmor Controller TLS certificates not found\n")
+			continue
+		}
+		fmt.Printf("    ❌  KubeArmor Controller TLS certificate %s removed\n", tlsCert.Name)
+	}
+
+	fmt.Print("👻  KubeArmor ConfigMap\n")
+	configmapList, err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	for _, cm := range configmapList.Items {
+		if err := c.K8sClientset.CoreV1().ConfigMaps(cm.Namespace).Delete(context.Background(), cm.Name, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				fmt.Print(err)
+				continue
+			}
+			fmt.Print("ℹ️  KubeArmor ConfigMap not found\n")
+			continue
+		}
+		fmt.Printf("    ❌  ConfigMap %s removed\n", cm.Name)
+	}
+
+	fmt.Print("👻  KubeArmor DaemonSet\n")
+	daemonsetList, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(daemonsetList.Items) == 0 {
+		fmt.Print("    ℹ️  KubeArmor Daemonset not found\n")
+	} else {
+		for _, ds := range daemonsetList.Items {
+			if err := c.K8sClientset.AppsV1().DaemonSets(ds.Namespace).Delete(context.Background(), ds.Name, metav1.DeleteOptions{}); err != nil {
+				if !strings.Contains(err.Error(), "not found") {
+					fmt.Print(err)
+					continue
+				}
+				fmt.Print("ℹ️  KubeArmor DaemonSet not found\n")
+				continue
+			}
+			fmt.Printf("    ❌  KubeArmor DaemonSet %s removed\n", ds.Name)
+		}
+	}
+
+	fmt.Print("👻  KubeArmor Deployments\n")
+	kaDeploymentsList, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(kaDeploymentsList.Items) == 0 {
+		fmt.Print("    ℹ️  KubeArmor Deployments not found\n")
+	} else {
+		for _, d := range kaDeploymentsList.Items {
+			if err := c.K8sClientset.AppsV1().Deployments(d.Namespace).Delete(context.Background(), d.Name, metav1.DeleteOptions{}); err != nil {
+				fmt.Printf("    ℹ️  Error while uninstalling KubeArmor Deployment %s : %s\n", d.Name, err.Error())
+				continue
+			}
+			fmt.Printf("    ❌  KubeArmor Deployment %s removed\n", d.Name)
+		}
+	}
+
+	if !o.Force {
+		fmt.Println("ℹ️   Please use karmor uninstall --force in order to clean up kubearmor completely including it's annotations and CRDs")
+		listPods(c)
+	} else {
+		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
+		if err != nil {
+			return fmt.Errorf("failed to create operator clientset: %w", err)
+		}
+
+		fmt.Printf("CR kubearmorconfig-default\n")
+		if err := operatorClientSet.OperatorV1().KubeArmorConfigs(o.Namespace).Delete(context.Background(), "kubearmorconfig-default", metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
+			fmt.Printf("CR %s not found\n", kocName)
+		}
+
+		fmt.Printf("CRD %s\n", kocName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kocName, metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
+			fmt.Printf("CRD %s not found\n", kocName)
+		}
+
+		fmt.Printf("CRD %s\n", kspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", kspName)
+		}
+
+		fmt.Printf("CRD %s\n", cspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), cspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", cspName)
+		}
+
+		fmt.Printf("CRD %s\n", hspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", hspName)
+		}
+
+		removeAnnotations(c)
+	}
+
+	if verify {
+		checkTerminatingPods(c, o.Namespace)
+	}
+	return nil
+}
+
+// K8sUninstaller for karmor uninstall
+func K8sUninstaller(c *k8s.Client, o Options) error {
+	var ns string
+	settings := cli.New()
+
+	actionConfig := actionConfigInit("", settings)
+	statusClient := action.NewStatus(actionConfig)
+	res, err := statusClient.Run("kubearmor-operator")
+	if err != nil {
+		fmt.Println("ℹ️   Helm release not found. Switching to legacy uninstaller.")
+		return err
+	}
+	ns = res.Namespace
+
+	fmt.Printf("ℹ️   Uninstalling KubeArmor\n")
+	actionConfig = actionConfigInit(ns, settings)
+	client := action.NewUninstall(actionConfig)
+	client.Timeout = 5 * time.Minute
+	client.DeletionPropagation = "background"
+
+	log.SetOutput(io.Discard)
+	_, err = client.Run("kubearmor-operator")
+	log.SetOutput(os.Stdout)
+	if err != nil {
+		fmt.Println("ℹ️   Error uninstalling through Helm. Switching to legacy uninstaller.")
+		return err
+	}
+	commonUninstall(c, o)
+
+	if !o.Force {
+		fmt.Println("ℹ️   Resources not managed by helm/Global Resources are not cleaned up. Please use karmor uninstall --force if you want complete cleanup.")
+		listPods(c)
+	} else {
+		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
+		if err != nil {
+			return fmt.Errorf("failed to create operator clientset: %w", err)
+		}
+
+		fmt.Printf("❌  Removing CR kubearmorconfig-default\n")
+		if err := operatorClientSet.OperatorV1().KubeArmorConfigs(ns).Delete(context.Background(), "kubearmorconfig-default", metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
+			fmt.Printf("CR %s not found\n", kocName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", kocName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kocName, metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
+			fmt.Printf("CRD %s not found\n", kocName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", kspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", kspName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", cspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), cspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", cspName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", hspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", hspName)
+		}
+
+		removeAnnotations(c)
+	}
+
+	fmt.Println("❌  KubeArmor resources removed")
+
+	if o.Verify {
+		checkTerminatingPods(c, ns)
+	}
+
+	return nil
+}
+
+func writeToYAML(f *os.File, o interface{}) error {
+	// Use "clarketm/json" to marshal so as to support zero values of structs with omitempty
+	j, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+
+	object, err := yaml.JSONToYAML(j)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(append([]byte("---\n"), object...))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// this function stores the common elements for legacy and helm-based uninstallation
+func commonUninstall(c *k8s.Client, o Options) {
 	fmt.Print("💨  Cluster Roles\n")
 	clusterRoleList, err := c.K8sClientset.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
 	if err != nil {
@@ -1565,229 +1797,4 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 			fmt.Printf("    ❌  RoleBinding %s removed\n", deployments.KubeArmorControllerLeaderElectionRoleBindingName)
 		}
 	}
-
-	fmt.Print("👻  KubeArmor Controller TLS certificates\n")
-	tlsCertificatesList, err := c.K8sClientset.CoreV1().Secrets(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
-	if err != nil {
-		fmt.Print(err)
-	}
-	for _, tlsCert := range tlsCertificatesList.Items {
-		if err := c.K8sClientset.CoreV1().Secrets(tlsCert.Namespace).Delete(context.Background(), tlsCert.Name, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				fmt.Print(err)
-				continue
-			}
-			fmt.Print("ℹ️  KubeArmor Controller TLS certificates not found\n")
-			continue
-		}
-		fmt.Printf("    ❌  KubeArmor Controller TLS certificate %s removed\n", tlsCert.Name)
-	}
-
-	fmt.Print("👻  KubeArmor ConfigMap\n")
-	configmapList, err := c.K8sClientset.CoreV1().ConfigMaps(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
-	if err != nil {
-		fmt.Print(err)
-	}
-	for _, cm := range configmapList.Items {
-		if err := c.K8sClientset.CoreV1().ConfigMaps(cm.Namespace).Delete(context.Background(), cm.Name, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				fmt.Print(err)
-				continue
-			}
-			fmt.Print("ℹ️  KubeArmor ConfigMap not found\n")
-			continue
-		}
-		fmt.Printf("    ❌  ConfigMap %s removed\n", cm.Name)
-	}
-
-	fmt.Print("👻  KubeArmor DaemonSet\n")
-	daemonsetList, err := c.K8sClientset.AppsV1().DaemonSets(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
-	if err != nil {
-		fmt.Print(err)
-	}
-	if len(daemonsetList.Items) == 0 {
-		fmt.Print("    ℹ️  KubeArmor Daemonset not found\n")
-	} else {
-		for _, ds := range daemonsetList.Items {
-			if err := c.K8sClientset.AppsV1().DaemonSets(ds.Namespace).Delete(context.Background(), ds.Name, metav1.DeleteOptions{}); err != nil {
-				if !strings.Contains(err.Error(), "not found") {
-					fmt.Print(err)
-					continue
-				}
-				fmt.Print("ℹ️  KubeArmor DaemonSet not found\n")
-				continue
-			}
-			fmt.Printf("    ❌  KubeArmor DaemonSet %s removed\n", ds.Name)
-		}
-	}
-
-	fmt.Print("👻  KubeArmor Deployments\n")
-	kaDeploymentsList, err := c.K8sClientset.AppsV1().Deployments(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
-	if err != nil {
-		fmt.Print(err)
-	}
-	if len(kaDeploymentsList.Items) == 0 {
-		fmt.Print("    ℹ️  KubeArmor Deployments not found\n")
-	} else {
-		for _, d := range kaDeploymentsList.Items {
-			if err := c.K8sClientset.AppsV1().Deployments(d.Namespace).Delete(context.Background(), d.Name, metav1.DeleteOptions{}); err != nil {
-				fmt.Printf("    ℹ️  Error while uninstalling KubeArmor Deployment %s : %s\n", d.Name, err.Error())
-				continue
-			}
-			fmt.Printf("    ❌  KubeArmor Deployment %s removed\n", d.Name)
-		}
-	}
-
-	if !o.Force {
-		fmt.Println("ℹ️   Please use karmor uninstall --force in order to clean up kubearmor completely including it's annotations and CRDs")
-		listPods(c)
-	} else {
-		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
-		if err != nil {
-			return fmt.Errorf("failed to create operator clientset: %w", err)
-		}
-
-		fmt.Printf("CR kubearmorconfig-default\n")
-		if err := operatorClientSet.OperatorV1().KubeArmorConfigs(o.Namespace).Delete(context.Background(), "kubearmorconfig-default", metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
-			fmt.Printf("CR %s not found\n", kocName)
-		}
-
-		fmt.Printf("CRD %s\n", kocName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kocName, metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
-			fmt.Printf("CRD %s not found\n", kocName)
-		}
-
-		fmt.Printf("CRD %s\n", kspName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			}
-			fmt.Printf("CRD %s not found\n", kspName)
-		}
-
-		fmt.Printf("CRD %s\n", cspName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), cspName, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			}
-			fmt.Printf("CRD %s not found\n", cspName)
-		}
-
-		fmt.Printf("CRD %s\n", hspName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			}
-			fmt.Printf("CRD %s not found\n", hspName)
-		}
-
-		removeAnnotations(c)
-	}
-
-	if verify {
-		checkTerminatingPods(c, o.Namespace)
-	}
-	return nil
-}
-
-// K8sUninstaller for karmor uninstall
-func K8sUninstaller(c *k8s.Client, o Options) error {
-	var ns string
-	settings := cli.New()
-
-	actionConfig := actionConfigInit("", settings)
-	statusClient := action.NewStatus(actionConfig)
-	res, err := statusClient.Run("kubearmor-operator")
-	if err != nil {
-		fmt.Println("ℹ️   Helm release not found. Switching to legacy uninstaller.")
-		return err
-	}
-	ns = res.Namespace
-
-	actionConfig = actionConfigInit(ns, settings)
-	client := action.NewUninstall(actionConfig)
-	client.Timeout = 5 * time.Minute
-	client.DeletionPropagation = "background"
-
-	log.SetOutput(io.Discard)
-	_, err = client.Run("kubearmor-operator")
-	log.SetOutput(os.Stdout)
-	if err != nil {
-		fmt.Println("ℹ️   Error uninstalling through Helm. Switching to legacy uninstaller.")
-		return err
-	}
-
-	if !o.Force {
-		fmt.Println("ℹ️   Resources not managed by helm/Global Resources are not cleaned up. Please use karmor uninstall --force if you want complete cleanup.")
-		listPods(c)
-	} else {
-		operatorClientSet, err := operatorClient.NewForConfig(c.Config)
-		if err != nil {
-			return fmt.Errorf("failed to create operator clientset: %w", err)
-		}
-
-		fmt.Printf("❌  Removing CR kubearmorconfig-default\n")
-		if err := operatorClientSet.OperatorV1().KubeArmorConfigs(ns).Delete(context.Background(), "kubearmorconfig-default", metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
-			fmt.Printf("CR %s not found\n", kocName)
-		}
-
-		fmt.Printf("❌  Removing CRD %s\n", kocName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kocName, metav1.DeleteOptions{}); apierrors.IsNotFound(err) {
-			fmt.Printf("CRD %s not found\n", kocName)
-		}
-
-		fmt.Printf("❌  Removing CRD %s\n", kspName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), kspName, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			}
-			fmt.Printf("CRD %s not found\n", kspName)
-		}
-
-		fmt.Printf("❌  Removing CRD %s\n", cspName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), cspName, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			}
-			fmt.Printf("CRD %s not found\n", cspName)
-		}
-
-		fmt.Printf("❌  Removing CRD %s\n", hspName)
-		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), hspName, metav1.DeleteOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			}
-			fmt.Printf("CRD %s not found\n", hspName)
-		}
-
-		removeAnnotations(c)
-	}
-
-	fmt.Println("❌  KubeArmor resources removed")
-
-	if o.Verify {
-		checkTerminatingPods(c, ns)
-	}
-
-	return nil
-}
-
-func writeToYAML(f *os.File, o interface{}) error {
-	// Use "clarketm/json" to marshal so as to support zero values of structs with omitempty
-	j, err := json.Marshal(o)
-	if err != nil {
-		return err
-	}
-
-	object, err := yaml.JSONToYAML(j)
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Write(append([]byte("---\n"), object...))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
