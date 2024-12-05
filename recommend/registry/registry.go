@@ -151,7 +151,7 @@ func (r *Scanner) Analyze(img *image.Info) {
 // The randomizer used in this function is not used for any cryptographic
 // operation and hence safe to use.
 func randString(n int) string {
-	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	letterRunes := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))] // #nosec
@@ -242,7 +242,7 @@ func extractTar(tarname string, tempDir string) ([]string, []string) {
 			switch hdr.Typeflag {
 			case tar.TypeDir:
 				if _, err := os.Stat(tgt); err != nil {
-					if err := os.MkdirAll(tgt, 0750); err != nil {
+					if err := os.MkdirAll(tgt, 0o750); err != nil {
 						log.WithError(err).WithFields(log.Fields{
 							"target": tgt,
 						}).Fatal("tar mkdirall")
@@ -256,7 +256,6 @@ func extractTar(tarname string, tempDir string) ([]string, []string) {
 						"target": tgt,
 					}).Error("tar open file")
 				} else {
-
 					// copy over contents
 					if _, err := io.CopyN(f, tr, 2e+9 /*2GB*/); err != io.EOF {
 						log.WithError(err).WithFields(log.Fields{

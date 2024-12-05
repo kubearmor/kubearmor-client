@@ -5,29 +5,35 @@ package install
 
 var kubearmor = "kubearmor"
 
-var serviceAccountName = kubearmor
-var operatorServiceAccountName = "kubearmor-operator"
-var KubeArmorOperatorClusterRoleName = "kubearmor-operator-clusterrole"
-var KubeArmorOperatorManageClusterRoleName = "kubearmor-operator-manage-kubearmor-clusterrole"
-var KubeArmorOperatorManageControllerClusterRoleName = "kubearmor-operator-manage-controller-clusterrole"
-var KubeArmorClusterRoleName = "kubearmor-clusterrole"
-var RelayClusterRoleName = "kubearmor-relay-clusterrole"
-var KubeArmorControllerClusterRoleName = "kubearmor-controller-clusterrole"
-var KubeArmorSnitchClusterRoleName = "kubearmor-snitch"
-var KubeArmorControllerProxyClusterRoleName = "kubearmor-controller-proxy-role"
+var (
+	serviceAccountName                               = kubearmor
+	operatorServiceAccountName                       = "kubearmor-operator"
+	KubeArmorOperatorClusterRoleName                 = "kubearmor-operator-clusterrole"
+	KubeArmorOperatorManageClusterRoleName           = "kubearmor-operator-manage-kubearmor-clusterrole"
+	KubeArmorOperatorManageControllerClusterRoleName = "kubearmor-operator-manage-controller-clusterrole"
+	KubeArmorClusterRoleName                         = "kubearmor-clusterrole"
+	RelayClusterRoleName                             = "kubearmor-relay-clusterrole"
+	KubeArmorControllerClusterRoleName               = "kubearmor-controller-clusterrole"
+	KubeArmorSnitchClusterRoleName                   = "kubearmor-snitch"
+	KubeArmorControllerProxyClusterRoleName          = "kubearmor-controller-proxy-role"
+)
 
-var KubeArmorSnitchClusterroleBindingName = "kubearmor-snitch-binding"
-var RelayClusterRoleBindingName = "kubearmor-relay-clusterrolebinding"
-var KubeArmorControllerProxyClusterRoleBindingName = "kubearmor-controller-proxy-rolebinding"
-var KubeArmorControllerClusterRoleBindingName = "kubearmor-controller-clusterrolebinding"
-var KubeArmorClusterRoleBindingName = "kubearmor-clusterrolebinding"
-var KubeArmorOperatorManageControllerClusterRoleBindingName = "kubearmor-operator-manage-controller-clusterrole-binding"
-var KubeArmorOperatorManageClusterRoleBindingName = "kubearmor-operator-manage-kubearmor-clusterrole-binding"
-var KubeArmorOperatorClusterRoleBindingName = "kubearmor-operator-clusterrole-binding"
+var (
+	KubeArmorSnitchClusterroleBindingName                   = "kubearmor-snitch-binding"
+	RelayClusterRoleBindingName                             = "kubearmor-relay-clusterrolebinding"
+	KubeArmorControllerProxyClusterRoleBindingName          = "kubearmor-controller-proxy-rolebinding"
+	KubeArmorControllerClusterRoleBindingName               = "kubearmor-controller-clusterrolebinding"
+	KubeArmorClusterRoleBindingName                         = "kubearmor-clusterrolebinding"
+	KubeArmorOperatorManageControllerClusterRoleBindingName = "kubearmor-operator-manage-controller-clusterrole-binding"
+	KubeArmorOperatorManageClusterRoleBindingName           = "kubearmor-operator-manage-kubearmor-clusterrole-binding"
+	KubeArmorOperatorClusterRoleBindingName                 = "kubearmor-operator-clusterrole-binding"
+)
 
-var relayServiceName = kubearmor
-var relayDeploymentName = "kubearmor-relay"
-var policyManagerServiceName = "kubearmor-policy-manager-metrics-service"
-var policyManagerDeploymentName = "kubearmor-policy-manager"
-var hostPolicyManagerServiceName = "kubearmor-host-policy-manager-metrics-service"
-var hostPolicyManagerDeploymentName = "kubearmor-host-policy-manager"
+var (
+	relayServiceName                = kubearmor
+	relayDeploymentName             = "kubearmor-relay"
+	policyManagerServiceName        = "kubearmor-policy-manager-metrics-service"
+	policyManagerDeploymentName     = "kubearmor-policy-manager"
+	hostPolicyManagerServiceName    = "kubearmor-host-policy-manager-metrics-service"
+	hostPolicyManagerDeploymentName = "kubearmor-host-policy-manager"
+)
