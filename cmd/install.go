@@ -65,6 +65,10 @@ func init() {
 	installCmd.Flags().BoolVar(&installOptions.PreserveUpstream, "preserve-upstream", true, "Do not override the image registry when using -r flag, prefix only")
 	installCmd.Flags().StringVarP(&installOptions.Env.Environment, "env", "e", "", "Supported KubeArmor Environment [k0s,k3s,microK8s,minikube,gke,bottlerocket,eks,docker,oke,generic]")
 	installCmd.MarkFlagsMutuallyExclusive("verify", "save")
+	installCmd.Flags().BoolVar(&installOptions.AlertThrottling, "alertThrottling", true, "Enable/Disable Alert Throttling, by default it's enabled")
+	installCmd.Flags().Int32Var(&installOptions.MaxAlertPerSec, "maxAlertPerSec", 10, "Maximum number of alerts required to trigger alert throttling")
+	installCmd.Flags().Int32Var(&installOptions.ThrottleSec, "throttleSec", 30, "Time window(in sec) for which there will be no alerts genrated after alert throttling is triggered")
+
 	markDeprecated(installCmd, "env", "Only relevant when using legacy")
 	markDeprecated(installCmd, "legacy", "KubeArmor now utilizes operator-based installation. This command may not set up KubeArmor in the intended way.")
 }
