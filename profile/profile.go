@@ -25,9 +25,20 @@ var Telemetry []pb.Log
 // TelMutex to prevent deadlock
 var TelMutex sync.RWMutex
 
+// Options for filter
+type Options struct {
+	Namespace string
+	Pod       string
+	LogFilter string
+	LogType   string
+	GRPC      string
+	Container string
+	Save      bool
+}
+
 // GetLogs to fetch logs
-func GetLogs(grpc string) error {
-	errCh := KarmorProfileStart("system", grpc)
+func GetLogs(o Options) error {
+	errCh := KarmorProfileStart(o)
 	var err error
 	if eventChan == nil {
 		log.Error("event channel not set. Did you call KarmorQueueLog()?")
@@ -58,7 +69,7 @@ func GetLogs(grpc string) error {
 }
 
 // KarmorProfileStart starts observer
-func KarmorProfileStart(logFilter string, grpc string) <-chan error {
+func KarmorProfileStart(o Options) <-chan error {
 	ErrChan = make(chan error, 1)
 	if eventChan == nil {
 		eventChan = make(chan klog.EventInfo)
@@ -71,10 +82,11 @@ func KarmorProfileStart(logFilter string, grpc string) <-chan error {
 	go func() {
 		//defer close(ErrChan)
 		err = klog.StartObserver(client, klog.Options{
-			LogFilter: logFilter,
+			LogFilter: o.LogFilter,
+			LogType:   o.LogType,
 			MsgPath:   "none",
 			EventChan: eventChan,
-			GRPC:      grpc,
+			GRPC:      o.GRPC,
 		})
 
 		select {
