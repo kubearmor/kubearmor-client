@@ -4,6 +4,8 @@ go 1.21.0
 
 toolchain go1.21.9
 
+replace google.golang.org/grpc v1.65.0 => google.golang.org/grpc v1.58.3
+
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cilium/cilium v1.14.5
@@ -11,7 +13,7 @@ require (
 	github.com/docker/docker v25.0.5+incompatible
 	github.com/fatih/color v1.16.0
 	github.com/json-iterator/go v1.1.12
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20241202070738-a42103eb5827
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20240110164432-c2c1b121cd94
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.5.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -356,7 +358,7 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
-	google.golang.org/api v0.153.0 // indirect
+	google.golang.org/api v0.155.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240725223205-93522f1f2a9f // indirect
 	gopkg.in/evanphx/json-patch.v5 v5.6.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
