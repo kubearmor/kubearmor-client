@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"errors"
+	"github.com/kubearmor/kubearmor-client/utils"
 	"net"
 
 	"github.com/kubearmor/kubearmor-client/vm"
@@ -63,6 +64,31 @@ var vmPolicyDeleteCmd = &cobra.Command{
 	},
 }
 
+var vmPolicyGetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "get policy for bare-metal vm/kvms control plane vm",
+	Long:  `get policy for bare-metal vm/kvms control plane vm`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		PolicyData, err := vm.GetPolicy(policyOptions)
+		if err != nil {
+			return err
+		}
+		if len(args) == 0 {
+			armoredContainer, _ := utils.GetArmoredContainerData(PolicyData.ContainerList, PolicyData.ContainerMap)
+			policyOptions.PrintContainersSystemd(armoredContainer)
+			return nil
+		}
+		if containerMap, ok := PolicyData.ContainerMap[args[0]]; ok {
+			for _, p := range containerMap.PolicyDataList {
+				return vm.PrettyPrintPolicy(*p)
+			}
+		} else {
+			return errors.New("no policy found for container: " + args[0])
+		}
+		return nil
+	},
+}
+
 // ========== //
 // == Init == //
 // ========== //
@@ -73,6 +99,7 @@ func init() {
 	// Subcommand for policy command
 	vmPolicyCmd.AddCommand(vmPolicyAddCmd)
 	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
+	vmPolicyCmd.AddCommand(vmPolicyGetCmd)
 
 	// gRPC endpoint flag to communicate with KubeArmor. Available across subcommands.
 	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "gRPC server information")
