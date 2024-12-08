@@ -42,21 +42,21 @@ func (o *Options) getWriter() io.Writer {
 	return o.Writer
 }
 
-func (o *Options) printLn(a ...any) {
+func (o *Options) PrintLn(a ...any) {
 	_, err := fmt.Fprintln(o.getWriter(), a...)
 	if err != nil {
 		log.Println("Error in printing: ", err.Error())
 	}
 }
 
-func (o *Options) printF(format string, a ...interface{}) {
+func (o *Options) PrintF(format string, a ...interface{}) {
 	_, err := fmt.Fprintf(o.getWriter(), format, a...)
 	if err != nil {
 		log.Println("Error in printing: ", err.Error())
 	}
 }
 
-func (o *Options) printToOutput(c *color.Color, s string) {
+func (o *Options) PrintToOutput(c *color.Color, s string) {
 	if o.Output == "no-color" || c == nil {
 		_, err := fmt.Fprint(o.getWriter(), s)
 		if err != nil {
@@ -79,15 +79,15 @@ func (o *Options) printToOutput(c *color.Color, s string) {
 // printDaemonsetData function
 func (o *Options) printDaemonsetData(daemonsetStatus *Status) {
 	var data [][]string
-	o.printToOutput(green, "\nFound KubeArmor running in Kubernetes\n\n")
-	o.printToOutput(boldWhite, "Daemonset :\n")
+	o.PrintToOutput(green, "\nFound KubeArmor running in Kubernetes\n\n")
+	o.PrintToOutput(boldWhite, "Daemonset :\n")
 	data = append(data, []string{" ", "kubearmor ", "Desired: " + daemonsetStatus.Desired, "Ready: " + daemonsetStatus.Ready, "Available: " + daemonsetStatus.Available})
 	o.renderOutputInTableWithNoBorders(data)
 }
 
 // printKubeArmorDeployments function
 func (o *Options) printKubearmorDeployments(deploymentData map[string]*Status) {
-	o.printToOutput(boldWhite, "Deployments : \n")
+	o.PrintToOutput(boldWhite, "Deployments : \n")
 	var data [][]string
 	for depName, depStatus := range deploymentData {
 		data = append(data, []string{" ", depName, "Desired: " + depStatus.Desired, "Ready: " + depStatus.Ready, "Available: " + depStatus.Available})
@@ -100,7 +100,7 @@ func (o *Options) printKubearmorDeployments(deploymentData map[string]*Status) {
 func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPodSpec) {
 	var data [][]string
 
-	o.printToOutput(boldWhite, "Containers : \n")
+	o.PrintToOutput(boldWhite, "Containers : \n")
 	for name, spec := range containerData {
 
 		data = append(data, []string{" ", name, "Running: " + spec.Running, "Image Version: " + spec.Image_Version})
@@ -112,14 +112,14 @@ func (o *Options) printKubeArmorContainers(containerData map[string]*KubeArmorPo
 func (o *Options) printKubeArmorprobe(probeData []KubeArmorProbeData) {
 
 	for i, pd := range probeData {
-		o.printToOutput(boldWhite, "Node "+fmt.Sprint(i+1)+" : \n")
-		o.printKubeArmorProbeOutput(pd)
+		o.PrintToOutput(boldWhite, "Node "+fmt.Sprint(i+1)+" : \n")
+		o.PrintKubeArmorProbeOutput(pd)
 	}
 
 }
 
-// printKubeArmorProbeOutput function
-func (o *Options) printKubeArmorProbeOutput(kd KubeArmorProbeData) {
+// PrintKubeArmorProbeOutput function
+func (o *Options) PrintKubeArmorProbeOutput(kd KubeArmorProbeData) {
 	var data [][]string
 	data = append(data, []string{" ", "OS Image:", o.getPrintableString(green, kd.OSImage)})
 	data = append(data, []string{" ", "Kernel Version:", o.getPrintableString(green, kd.KernelVersion)})
@@ -137,7 +137,7 @@ func (o *Options) printKubeArmorProbeOutput(kd KubeArmorProbeData) {
 // printAnnotatedPods function
 func (o *Options) printAnnotatedPods(podData [][]string) {
 
-	o.printToOutput(boldWhite, "Armored Up pods : \n")
+	o.PrintToOutput(boldWhite, "Armored Up pods : \n")
 	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"NAMESPACE", "DEFAULT POSTURE", "VISIBILITY", "NAME", "POLICY"})
 	for _, v := range podData {
@@ -147,8 +147,8 @@ func (o *Options) printAnnotatedPods(podData [][]string) {
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1, 2})
 	table.Render()
 }
-func (o *Options) printContainersSystemd(podData [][]string) {
-	o.printToOutput(boldWhite, "Armored Up Containers : \n")
+func (o *Options) PrintContainersSystemd(podData [][]string) {
+	o.PrintToOutput(boldWhite, "Armored Up Containers : \n")
 
 	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
@@ -160,8 +160,8 @@ func (o *Options) printContainersSystemd(podData [][]string) {
 	table.Render()
 
 }
-func (o *Options) printHostPolicy(hostPolicy [][]string) {
-	o.printToOutput(boldWhite, "Host Policies : \n")
+func (o *Options) PrintHostPolicy(hostPolicy [][]string) {
+	o.PrintToOutput(boldWhite, "Host Policies : \n")
 
 	table := tablewriter.NewWriter(o.getWriter())
 	table.SetHeader([]string{"HOST NAME ", "POLICY"})

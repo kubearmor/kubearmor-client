@@ -130,8 +130,8 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 	policies := strings.Split(string(policyFile), "---")
 
 	for _, policy := range policies {
-
-		if matched, _ := regexp.MatchString("^\\s*$", policy); matched {
+		re := regexp.MustCompile(`^\\s*$`)
+		if matched := re.MatchString(policy); matched {
 			continue
 		}
 

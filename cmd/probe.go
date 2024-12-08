@@ -22,8 +22,7 @@ and what KubeArmor features will be supported e.g: observability, enforcement, e
 If KubeArmor is running, It probes which environment KubeArmor is running on (e.g: systemd mode, kubernetes etc.), 
 the supported KubeArmor features in the environment, the pods being handled by KubeArmor and the policies running on each of these pods`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-
-		err := probe.PrintProbeResult(client, probeInstallOptions)
+		err := probe.PrintProbeResultCmd(client, probeInstallOptions)
 		return err
 
 	},
