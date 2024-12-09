@@ -72,7 +72,7 @@ func printWhenKubeArmorIsRunningInK8s(c *k8s.Client, o Options, daemonsetStatus 
 		if err != nil {
 			return err
 		}
-		o.PrintLn(string(out))
+		o.printLn(string(out))
 	} else {
 		o.printDaemonsetData(daemonsetStatus)
 		o.printKubearmorDeployments(deploymentData)
@@ -324,7 +324,7 @@ func getAnnotatedPods(c *k8s.Client, o Options, postureData map[string]string) (
 
 	policyMap, err := getPoliciesOnAnnotatedPods(c)
 	if err != nil {
-		o.PrintToOutput(red, " Error getting policies on annotated pods")
+		o.printToOutput(red, " Error getting policies on annotated pods")
 	}
 
 	for _, p := range pods.Items {
