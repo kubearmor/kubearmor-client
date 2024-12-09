@@ -56,8 +56,8 @@ func printProbeResultForUnix(c *k8s.Client, o Options) error {
 	} else {
 		checkHostAuditSupport(o)
 		checkLsmSupport(getHostSupportedLSM(), o)
-		o.PrintToOutput(blue, "To get full probe, a daemonset will be deployed in your cluster - This daemonset will be deleted after probing")
-		o.PrintToOutput(blue, "Use --full tag to get full probing")
+		o.printToOutput(blue, "To get full probe, a daemonset will be deployed in your cluster - This daemonset will be deleted after probing")
+		o.printToOutput(blue, "Use --full tag to get full probing")
 	}
 	return nil
 }
@@ -74,8 +74,8 @@ func probeNode(c *k8s.Client, o Options) {
 	if len(nodes.Items) > 0 {
 		for i, item := range nodes.Items {
 			str := fmt.Sprintf("Node %d : \n", i+1)
-			o.PrintToOutput(boldWhite, str)
-			o.PrintF("\t Observability/Audit:")
+			o.printToOutput(boldWhite, str)
+			o.printF("\t Observability/Audit:")
 			kernelVersion := item.Status.NodeInfo.KernelVersion
 			check2 := checkNodeKernelHeaderPresent(c, o, item.Name)
 			checkAuditSupport(kernelVersion, check2, o)
@@ -86,7 +86,7 @@ func probeNode(c *k8s.Client, o Options) {
 			checkLsmSupport(lsm, o)
 		}
 	} else {
-		o.PrintLn("No kubernetes environment found")
+		o.printLn("No kubernetes environment found")
 	}
 }
 
@@ -177,14 +177,14 @@ func printWhenKubeArmorIsNotRunning(c *k8s.Client, o Options) error {
 	if err := probeDaemonInstaller(c, o, true); err != nil {
 		return err
 	}
-	o.PrintToOutput(yellow, "\nCreating probe daemonset ...")
+	o.printToOutput(yellow, "\nCreating probe daemonset ...")
 
 checkprobe:
 	for timeout := time.After(10 * time.Second); ; {
 		select {
 		case <-timeout:
-			o.PrintToOutput(red, "Failed to deploy probe daemonset ...")
-			o.PrintToOutput(yellow, "Cleaning Up Karmor Probe DaemonSet ...\n")
+			o.printToOutput(red, "Failed to deploy probe daemonset ...")
+			o.printToOutput(yellow, "Cleaning Up Karmor Probe DaemonSet ...\n")
 			if err := probeDaemonUninstaller(c, o); err != nil {
 				return err
 			}
@@ -200,7 +200,7 @@ checkprobe:
 				// We redeploy without kernel header mounts
 				if state.Reason == "CreateContainerError" {
 					if strings.Contains(state.Message, "/usr/src") || strings.Contains(state.Message, "/lib/modules") {
-						o.PrintToOutput(yellow, "Recreating Probe Daemonset ...")
+						o.printToOutput(yellow, "Recreating Probe Daemonset ...")
 						if err := probeDaemonUninstaller(c, o); err != nil {
 							return err
 						}
@@ -213,7 +213,7 @@ checkprobe:
 		}
 	}
 	probeNode(c, o)
-	o.PrintToOutput(yellow, "\nDeleting Karmor Probe DaemonSet ...\n")
+	o.printToOutput(yellow, "\nDeleting Karmor Probe DaemonSet ...\n")
 	if err := probeDaemonUninstaller(c, o); err != nil {
 		return err
 	}
@@ -265,18 +265,18 @@ func printWhenKubeArmorIsRunningInSystemmd(o Options) error {
 		if err != nil {
 			return err
 		}
-		o.PrintLn(string(out))
+		o.printLn(string(out))
 	} else {
 
-		o.PrintToOutput(green, "\nFound KubeArmor running in Systemd mode \n\n")
+		o.printToOutput(green, "\nFound KubeArmor running in Systemd mode \n\n")
 
-		o.PrintToOutput(boldWhite, "Host : \n")
+		o.printToOutput(boldWhite, "Host : \n")
 
-		o.PrintKubeArmorProbeOutput(kd)
+		o.printKubeArmorProbeOutput(kd)
 		if len(policyData.HostMap) > 0 {
-			o.PrintHostPolicy(hostPolicyData)
+			o.printHostPolicy(hostPolicyData)
 		}
-		o.PrintContainersSystemd(armoredContainers)
+		o.printContainersSystemd(armoredContainers)
 
 	}
 
@@ -333,15 +333,15 @@ func getArmoredContainerData(containerList []string, containerMap map[string]*pb
 }
 
 func checkLsmSupport(supportedLSM string, o Options) {
-	o.PrintLn("\t Enforcement:")
+	o.printLn("\t Enforcement:")
 	if strings.Contains(supportedLSM, "bpf") {
-		o.PrintToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
+		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else if strings.Contains(supportedLSM, "selinux") {
-		o.PrintToOutput(yellow, " Partial (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, apparmor must be supported")
+		o.printToOutput(yellow, " Partial (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, apparmor must be supported")
 	} else if strings.Contains(supportedLSM, "apparmor") || strings.Contains(supportedLSM, "bpf") {
-		o.PrintToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
+		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else {
-		o.PrintToOutput(red, " None (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, AppArmor or BPFLSM must be supported")
+		o.printToOutput(red, " None (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, AppArmor or BPFLSM must be supported")
 	}
 }
 
@@ -361,11 +361,11 @@ func kernelVersionSupported(kernelVersion string) bool {
 
 func checkAuditSupport(kernelVersion string, kernelHeaderPresent bool, o Options) {
 	if kernelVersionSupported(kernelVersion) && kernelHeaderPresent {
-		o.PrintToOutput(green, " Supported (Kernel Version "+kernelVersion+")")
+		o.printToOutput(green, " Supported (Kernel Version "+kernelVersion+")")
 	} else if kernelVersionSupported(kernelVersion) {
-		o.PrintToOutput(red, " Not Supported : BTF Information/Kernel Headers must be available")
+		o.printToOutput(red, " Not Supported : BTF Information/Kernel Headers must be available")
 	} else {
-		o.PrintToOutput(red, " Not Supported (Kernel Version "+kernelVersion+" \n\t Kernel version must be greater than 4.14) and BTF Information/Kernel Headers must be available")
+		o.printToOutput(red, " Not Supported (Kernel Version "+kernelVersion+" \n\t Kernel version must be greater than 4.14) and BTF Information/Kernel Headers must be available")
 	}
 }
 
@@ -400,18 +400,18 @@ func checkKernelHeaderPresent() bool {
 }
 
 func checkHostAuditSupport(o Options) {
-	o.PrintToOutput(yellow, "\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
+	o.printToOutput(yellow, "\nDidn't find KubeArmor in systemd or Kubernetes, probing for support for KubeArmor\n\n")
 	var uname unix.Utsname
 	if err := unix.Uname(&uname); err == nil {
 		kerVersion := string(uname.Release[:])
 		s := strings.Split(kerVersion, "-")
 		kernelVersion := s[0]
 
-		o.PrintToOutput(boldWhite, "Host:")
-		o.PrintF("\t Observability/Audit:")
+		o.printToOutput(boldWhite, "Host:")
+		o.printF("\t Observability/Audit:")
 		checkAuditSupport(kernelVersion, checkBTFSupport() || checkKernelHeaderPresent(), o)
 	} else {
-		o.PrintToOutput(red, " Error")
+		o.printToOutput(red, " Error")
 	}
 }
 
@@ -457,7 +457,7 @@ func getPolicyData(o Options) (*pb.ProbeResponse, error) {
 
 	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		o.PrintLn(err)
+		o.printLn(err)
 		return nil, err
 	}
 
