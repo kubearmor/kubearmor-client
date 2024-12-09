@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	v2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
@@ -29,10 +28,6 @@ const (
 	KubeArmorPolicy = "KubeArmorPolicy"
 	// KubeArmorHostPolicy is the Kind used for KubeArmor host policies
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
-	// CiliumNetworkPolicy is the Kind used for Cilium network policies
-	CiliumNetworkPolicy = "CiliumNetworkPolicy"
-	// CiliumClusterwideNetworkPolicy is the Kind used for Cilium network policies
-	CiliumClusterwideNetworkPolicy = "CiliumClusterwideNetworkPolicy"
 )
 
 // PolicyOptions are optional configuration for kArmor vm policy
@@ -92,8 +87,6 @@ func sendPolicyOverHTTP(address string, kind string, policyEventData []byte) err
 	var url string
 	if kind == KubeArmorHostPolicy {
 		url = address + "/policy/kubearmor"
-	} else {
-		url = address + "/policy/cilium"
 	}
 
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(policyEventData))
@@ -130,8 +123,8 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 	policies := strings.Split(string(policyFile), "---")
 
 	for _, policy := range policies {
-
-		if matched, _ := regexp.MatchString("^\\s*$", policy); matched {
+		re := regexp.MustCompile(`^\\s*$`)
+		if matched := re.MatchString(policy); matched {
 			continue
 		}
 
@@ -147,7 +140,6 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 
 		var containerPolicy tp.K8sKubeArmorPolicy
 		var hostPolicy tp.K8sKubeArmorHostPolicy
-		var networkPolicy v2.CiliumNetworkPolicy
 		var policyEvent interface{}
 
 		if k.Kind == KubeArmorHostPolicy {
@@ -172,23 +164,7 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 				Object: containerPolicy,
 			}
 
-		} else if k.Kind == CiliumNetworkPolicy || k.Kind == CiliumClusterwideNetworkPolicy {
-			err = json.Unmarshal(js, &networkPolicy)
-			if err != nil {
-				return err
-			}
-
-			if networkPolicy.Spec == nil {
-				continue
-			}
-
-			policyEvent = NetworkPolicyRequest{
-				Type:   t,
-				Object: networkPolicy,
-			}
-
 		}
-
 		policyEventData, err := json.Marshal(policyEvent)
 		if err != nil {
 			return err
