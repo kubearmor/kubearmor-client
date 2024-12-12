@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kubearmor/kubearmor-client/utils"
 	"os"
 	"strings"
 	"time"
@@ -103,6 +104,8 @@ func waitForActivity() tea.Cmd {
 var o1 Options
 
 func generateColumns(Operation string) []table.Column {
+	var columns []table.Column
+
 	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle).WithFiltered(true)
 
 	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
@@ -120,15 +123,22 @@ func generateColumns(Operation string) []table.Column {
 
 	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(ColumnStyle)
 
-	return []table.Column{
-		Namespace,
-		ContainerName,
+	if !utils.IsSystemdMode() {
+		columns = append(columns, []table.Column{
+			Namespace,
+			ContainerName,
+		}...)
+	}
+
+	columns = append(columns, []table.Column{
 		ProcName,
 		Resource,
 		Result,
 		CountCol,
 		Timestamp,
-	}
+	}...)
+
+	return columns
 }
 
 // Init calls initial functions if needed
