@@ -6,7 +6,6 @@ package recommend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +18,7 @@ import (
 	"github.com/kubearmor/kubearmor-client/recommend/image"
 	"github.com/kubearmor/kubearmor-client/recommend/registry"
 	"github.com/kubearmor/kubearmor-client/recommend/report"
+	utils "github.com/kubearmor/kubearmor-client/utils"
 	"sigs.k8s.io/yaml"
 
 	log "github.com/sirupsen/logrus"
@@ -76,22 +76,6 @@ func unique(s []string) []string {
 		}
 	}
 	return result
-}
-
-func createOutDir(dir string) error {
-	if dir == "" {
-		return nil
-	}
-	_, err := os.Stat(dir)
-	if errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(dir, 0750)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-	return nil
 }
 
 func finalReport() {
@@ -185,7 +169,7 @@ func Recommend(c *k8s.Client, o common.Options, policyGenerators ...engines.Engi
 	options = o
 	reg := registry.New(o.Config)
 
-	if err = createOutDir(o.OutDir); err != nil {
+	if err = utils.CreateOutDir(o.OutDir); err != nil {
 		return err
 	}
 
