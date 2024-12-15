@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -379,17 +380,37 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 
 func convertToJSON(Operation string, data []Profile) {
 	var jsonArray []string
-	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
+	jsonByte, err := json.MarshalIndent(data, " ", "   ")
+	if err != nil {
+		log.Fatal("Cannot marshal JSON", err)
+	}
+
 	//unmarshalling here because it is marshalled two times for some reason
 	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
-		fmt.Println("Error parsing JSON array:", err)
+		log.Fatal("Cannot unmarshal JSON", err)
 	}
+
 	if len(jsonArray) > 0 {
-		filepath := "Profile_Summary/"
-		err := os.MkdirAll(filepath, 0600)
-		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
+		directory := "Profile_Summary/"
+		err := os.MkdirAll(directory, 0700)
 		if err != nil {
-			panic(err)
+			log.Fatal("Cannot create directory", err)
+		}
+
+		// Create file
+		file_name := filepath.Clean(filepath.Join(directory, Operation+".json"))
+		output_file, err := os.Create(file_name)
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		defer output_file.Close()
+
+		// Write JSON array to file
+		for _, line := range jsonArray {
+			_, err := output_file.WriteString(line + "\n")
+			if err != nil {
+				log.Fatal("Cannot write to file", err)
+			}
 		}
 	}
 }
