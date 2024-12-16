@@ -253,7 +253,7 @@ func extractTar(tarname string, tempDir string) ([]string, []string) {
 				}
 				dl = append(dl, tgt)
 			case tar.TypeReg:
-				f, err := os.OpenFile(filepath.Clean(tgt), os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+				f, err := os.OpenFile(filepath.Clean(tgt), os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode)) //#nosec G115 // hdr.mode bits are trusted here
 				if err != nil {
 					log.WithError(err).WithFields(log.Fields{
 						"target": tgt,
