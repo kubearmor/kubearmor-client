@@ -9,10 +9,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kubearmor/kubearmor-client/utils"
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"runtime"
 	"sort"
 	"strconv"
@@ -80,7 +80,7 @@ func PrintProbeResult(c *k8s.Client, o Options) error {
 			return errors.New("unsupported environment or cluster not configured correctly")
 		}
 	}
-	if isSystemdMode() {
+	if utils.IsSystemdMode() {
 		kd, err := probeSystemdMode()
 		if err != nil {
 			return err
@@ -564,13 +564,6 @@ func getPostureData(probeData []KubeArmorProbeData) map[string]string {
 	}
 
 	return postureData
-}
-
-// sudo systemctl status kubearmor
-func isSystemdMode() bool {
-	cmd := exec.Command("systemctl", "status", "kubearmor")
-	_, err := cmd.CombinedOutput()
-	return err == nil
 }
 
 func probeSystemdMode() (KubeArmorProbeData, error) {
