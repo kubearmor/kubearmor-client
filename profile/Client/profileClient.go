@@ -52,7 +52,7 @@ var (
 	styleBase = lipgloss.NewStyle().
 			BorderForeground(lipgloss.Color("12")).
 			Align(lipgloss.Right)
-	//ColumnStyle for column color
+	// ColumnStyle for column color
 	ColumnStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00af00")).Align(lipgloss.Center).Bold(true)
 
@@ -177,7 +177,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
 			return m, tea.Quit
-
 		}
 
 		switch msg.String() {
@@ -298,7 +297,6 @@ func (m Model) View() string {
 		))
 	}
 	return total
-
 }
 
 // Profile Row Data to display
@@ -380,14 +378,14 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 func convertToJSON(Operation string, data []Profile) {
 	var jsonArray []string
 	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
-	//unmarshalling here because it is marshalled two times for some reason
+	// unmarshalling here because it is marshalled two times for some reason
 	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
 		fmt.Println("Error parsing JSON array:", err)
 	}
 	if len(jsonArray) > 0 {
 		filepath := "Profile_Summary/"
-		err := os.MkdirAll(filepath, 0600)
-		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
+		err := os.MkdirAll(filepath, 0o600)
+		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0o600)
 		if err != nil {
 			panic(err)
 		}
@@ -405,7 +403,6 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
-
 		if entry.Operation == Operation {
 			if (entry.NamespaceName == o1.Namespace) ||
 				(entry.PodName == o1.Pod) ||
@@ -508,5 +505,4 @@ func Start(o Options) {
 	default:
 		break
 	}
-
 }

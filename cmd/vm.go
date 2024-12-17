@@ -16,7 +16,7 @@ var (
 	HTTPIP string
 	// HTTPPort : Port of the http request
 	HTTPPort string
-	//IsKvmsEnv : Is kubearmor virtual machine env?
+	// IsKvmsEnv : Is kubearmor virtual machine env?
 	IsKvmsEnv bool
 )
 

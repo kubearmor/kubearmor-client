@@ -21,7 +21,6 @@ import (
 )
 
 func postHTTPRequest(eventData []byte, vmAction string, address string) (string, error) {
-
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,

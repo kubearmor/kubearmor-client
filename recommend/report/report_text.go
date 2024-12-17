@@ -106,8 +106,7 @@ func wrapPolicyName(name string, limit int) string {
 
 // Render output the table
 func (r TextReport) Render(out string) error {
-
-	if err := os.WriteFile(out, []byte(r.outString.String()), 0600); err != nil {
+	if err := os.WriteFile(out, []byte(r.outString.String()), 0o600); err != nil {
 		log.WithError(err).Error("failed to write file")
 	}
 	return nil
