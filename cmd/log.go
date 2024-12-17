@@ -17,7 +17,7 @@ var logCmd = &cobra.Command{
 	Long:  `Observe Logs from KubeArmor`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.StopChan = make(chan struct{})
-		return log.StartObserver(client, logOptions)
+		return log.StartObserver(k8sClient, logOptions)
 	},
 }
 

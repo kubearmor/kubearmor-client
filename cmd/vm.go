@@ -34,8 +34,7 @@ var vmScriptCmd = &cobra.Command{
 	Long:  `download vm installation script for kvms control plane`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ip := HTTPIP
-
-		if err := vm.GetScript(client, scriptOptions, ip, IsKvmsEnv); err != nil {
+		if err := vm.GetScript(k8sClient, scriptOptions, ip, IsKvmsEnv); err != nil {
 			return err
 		}
 		return nil
