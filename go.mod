@@ -41,7 +41,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20240313131335-9ae900daa38d
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20240313131335-9ae900daa38d
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20241219091822-6bd41e2bdaad
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20240709192358-fc2173d2587c
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240821100559-bed86b50142c
 	github.com/onsi/ginkgo/v2 v2.19.0
@@ -159,7 +159,6 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
@@ -331,7 +330,6 @@ require (
 	github.com/vbatts/tar-split v0.11.5 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20231127184239-0ced8385386a // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/go-gitlab v0.95.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
