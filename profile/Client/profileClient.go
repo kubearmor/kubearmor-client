@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
+	"github.com/kubearmor/kubearmor-client/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -68,7 +70,7 @@ type Options struct {
 	Pod       string
 	GRPC      string
 	Container string
-	Save      bool
+	Output    string
 }
 
 // Model for main Bubble Tea
@@ -379,17 +381,37 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 
 func convertToJSON(Operation string, data []Profile) {
 	var jsonArray []string
-	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
+	jsonByte, err := json.MarshalIndent(data, " ", "   ")
+	if err != nil {
+		log.Fatal("Cannot marshal JSON", err)
+	}
+
 	//unmarshalling here because it is marshalled two times for some reason
 	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
-		fmt.Println("Error parsing JSON array:", err)
+		log.Fatal("Cannot unmarshal JSON", err)
 	}
+
 	if len(jsonArray) > 0 {
-		filepath := "Profile_Summary/"
-		err := os.MkdirAll(filepath, 0600)
-		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
+
+		err := utils.CreateOutDir(o1.Output)
 		if err != nil {
-			panic(err)
+			log.Fatal("Cannot create output directory", err)
+		}
+
+		// Create file
+		file_name := filepath.Clean(filepath.Join(o1.Output, Operation+".json"))
+		output_file, err := os.Create(file_name)
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		defer output_file.Close()
+
+		// Write JSON array to file
+		for _, line := range jsonArray {
+			_, err := output_file.WriteString(line + "\n")
+			if err != nil {
+				log.Fatal("Cannot write to file", err)
+			}
 		}
 	}
 }
@@ -465,7 +487,7 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 		s.rows = append(s.rows, row)
 	}
 
-	if o1.Save {
+	if o1.Output != "" {
 		if Operation == "File" {
 			convertToJSON("File", jsondata)
 		} else if Operation == "Process" {
@@ -487,7 +509,7 @@ func Start(o Options) {
 		Pod:       o.Pod,
 		GRPC:      o.GRPC,
 		Container: o.Container,
-		Save:      o.Save,
+		Output:    o.Output,
 	}
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	go func() {

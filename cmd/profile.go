@@ -27,5 +27,5 @@ func init() {
 	profilecmd.Flags().StringVarP(&profileOptions.Namespace, "namespace", "n", "", "Filter using namespace")
 	profilecmd.Flags().StringVar(&profileOptions.Pod, "pod", "", "Filter using Pod name")
 	profilecmd.Flags().StringVarP(&profileOptions.Container, "container", "c", "", "name of the container ")
-	profilecmd.Flags().BoolVar(&profileOptions.Save, "save", false, "Save Profile data in json format")
+	profilecmd.Flags().StringVarP(&profileOptions.Output, "output", "o", "", "Output profile data to the specified directory")
 }
