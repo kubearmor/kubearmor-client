@@ -27,7 +27,7 @@ func loadTLSCredentials(client kubernetes.Interface, o Options) (credentials.Tra
 	if o.TlsCertProvider == SelfCertProvider {
 		// create certificate configurations
 		clientCertCfg = cert.DefaultKubeArmorClientConfig
-		clientCertCfg.NotAfter = time.Now().AddDate(1, 0, 0) //valid for 1 year
+		clientCertCfg.NotAfter = time.Now().AddDate(1, 0, 0) // valid for 1 year
 	}
 	tlsConfig := cert.TlsConfig{
 		CertCfg:              clientCertCfg,

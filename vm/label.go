@@ -30,7 +30,6 @@ type KubeArmorVirtualMachineLabel struct {
 
 // LabelHandling Function recives path to YAML file with the type of event and HTTP Server
 func LabelHandling(t string, o LabelOptions, address string, isKvmsEnv bool) error {
-
 	var respBody []byte
 
 	if isKvmsEnv {
