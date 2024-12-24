@@ -31,11 +31,14 @@ const (
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
 )
 
+var (
+	BoldWhite = color.New(color.FgWhite, color.Bold)
+)
+
 // PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
-	GRPC   string
-	Output string
-	Type   string
+	GRPC string
+	Type string
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
@@ -210,7 +213,7 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 }
 
 func (o *PolicyOptions) printContainerTable(podData [][]string) {
-	o.printToOutput(color.New(color.FgWhite, color.Bold), "Armored Up Containers : \n")
+	BoldWhite.Println("Armored Up Containers:")
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
@@ -223,7 +226,7 @@ func (o *PolicyOptions) printContainerTable(podData [][]string) {
 }
 
 func (o *PolicyOptions) printHostTable(hostPolicy [][]string) {
-	o.printToOutput(color.New(color.FgWhite, color.Bold), "Host Policies : \n")
+	BoldWhite.Println("Host Policy:")
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"HOST NAME ", "POLICY"})
@@ -233,27 +236,6 @@ func (o *PolicyOptions) printHostTable(hostPolicy [][]string) {
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 	table.Render()
-}
-
-func (o *PolicyOptions) printToOutput(c *color.Color, s string) {
-	red := color.New(color.FgRed)
-	if o.Output == "no-color" || c == nil {
-		_, err := fmt.Fprint(os.Stdout, s)
-		if err != nil {
-			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
-			if printErr != nil {
-				fmt.Printf("printing error %s", printErr.Error())
-			}
-		}
-	} else {
-		_, err := c.Fprintf(os.Stdout, s)
-		if err != nil {
-			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
-			if printErr != nil {
-				fmt.Printf("printing error %s", printErr.Error())
-			}
-		}
-	}
 }
 
 func prettyPrintPolicy(policy pb.Policy) error {
