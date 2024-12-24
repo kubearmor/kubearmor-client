@@ -195,6 +195,9 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 		for _, container := range policyData.GetContainerMap() {
 			for i, policy := range container.GetPolicyList() {
 				if policy == targetPolicy { // access the policyDataList using the index from the policyList
+					if len(container.GetPolicyDataList()) <= i { // check if the index is valid. fallback for backward compatibility
+						return errors.New("Cannot retrieve data for policy " + targetPolicy)
+					}
 					return prettyPrintPolicy(*container.GetPolicyDataList()[i])
 				}
 			}
@@ -213,6 +216,9 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 		for _, host := range policyData.HostMap {
 			for i, policy := range host.GetPolicyList() {
 				if policy == targetPolicy {
+					if len(host.GetPolicyDataList()) <= i { // check if the index is valid. fallback for backward compatibility
+						return errors.New("Cannot retrieve data for policy " + targetPolicy)
+					}
 					return prettyPrintPolicy(*host.GetPolicyDataList()[i])
 				}
 			}
