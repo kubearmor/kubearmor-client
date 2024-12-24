@@ -10,6 +10,8 @@ import (
 
 var kspName = "kubearmorpolicies.security.kubearmor.com"
 var hspName = "kubearmorhostpolicies.security.kubearmor.com"
+var cspName = "kubearmorclusterpolicies.security.kubearmor.com"
+var kocName = "kubearmorconfigs.operator.kubearmor.com"
 
 // CreateCustomResourceDefinition creates the CRD and add it into Kubernetes.
 func CreateCustomResourceDefinition(crdName string) apiextensions.CustomResourceDefinition {
