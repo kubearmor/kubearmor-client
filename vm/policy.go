@@ -185,7 +185,7 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 	case "ksp", "Container", "container":
 		if len(args) == 0 {
 			armoredContainer, _ := utils.GetArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
-			o.printContainersSystemd(armoredContainer)
+			o.printContainerTable(armoredContainer)
 			return nil
 		}
 		container := args[0]
@@ -196,18 +196,37 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 		} else {
 			return errors.New("no policy found for container: " + args[0])
 		}
+	case "hsp", "Host", "host":
+		hostPolicyData := utils.GetHostPolicyData(policyData)
+		if len(hostPolicyData) == 0 {
+			return errors.New("no host policies found")
+		}
+		o.printHostTable(hostPolicyData)
 	default:
 		return errors.New("invalid type: " + o.Type)
 	}
 	return nil
 }
 
-func (o *PolicyOptions) printContainersSystemd(podData [][]string) {
+func (o *PolicyOptions) printContainerTable(podData [][]string) {
 	o.printToOutput(color.New(color.FgWhite, color.Bold), "Armored Up Containers : \n")
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
 	for _, v := range podData {
+		table.Append(v)
+	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Render()
+}
+
+func (o *PolicyOptions) printHostTable(hostPolicy [][]string) {
+	o.printToOutput(color.New(color.FgWhite, color.Bold), "Host Policies : \n")
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"HOST NAME ", "POLICY"})
+	for _, v := range hostPolicy {
 		table.Append(v)
 	}
 	table.SetRowLine(true)
