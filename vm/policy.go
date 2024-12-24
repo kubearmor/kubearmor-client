@@ -201,11 +201,23 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 		}
 		return errors.New("Policy " + targetPolicy + " not found")
 	case "hsp", "Host", "host":
-		hostPolicyData := utils.GetHostPolicyData(policyData)
-		if len(hostPolicyData) == 0 {
-			return errors.New("no host policies found")
+		if len(args) == 0 {
+			hostPolicyData := utils.GetHostPolicyData(policyData)
+			if len(hostPolicyData) == 0 {
+				return errors.New("no host policies found")
+			}
+			o.printHostTable(hostPolicyData)
+			return nil
 		}
-		o.printHostTable(hostPolicyData)
+		targetPolicy := args[0]
+		for _, host := range policyData.HostMap {
+			for i, policy := range host.GetPolicyList() {
+				if policy == targetPolicy {
+					return prettyPrintPolicy(*host.GetPolicyDataList()[i])
+				}
+			}
+		}
+		return errors.New("Policy " + targetPolicy + " not found")
 	default:
 		return errors.New("invalid type: " + o.Type)
 	}
