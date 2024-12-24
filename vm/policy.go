@@ -188,14 +188,15 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 			o.printContainerTable(armoredContainer)
 			return nil
 		}
-		container := args[0]
-		if containerMap, ok := policyData.ContainerMap[container]; ok {
-			for _, p := range containerMap.GetPolicyDataList() {
-				return prettyPrintPolicy(*p)
+		targetPolicy := args[0]
+		for _, container := range policyData.GetContainerMap() {
+			for i, policy := range container.GetPolicyList() {
+				if policy == targetPolicy { // access the policyDataList using the index from the policyList
+					return prettyPrintPolicy(*container.GetPolicyDataList()[i])
+				}
 			}
-		} else {
-			return errors.New("no policy found for container: " + args[0])
 		}
+		return errors.New("Policy " + targetPolicy + " not found")
 	case "hsp", "Host", "host":
 		hostPolicyData := utils.GetHostPolicyData(policyData)
 		if len(hostPolicyData) == 0 {
@@ -265,6 +266,6 @@ func prettyPrintPolicy(policy pb.Policy) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(yamlPolicy))
+	fmt.Println(strings.TrimRight(string(yamlPolicy), "\n"))
 	return nil
 }
