@@ -6,7 +6,6 @@ package cmd
 import (
 	"errors"
 
-	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/kubearmor/kubearmor-client/vm"
 	"github.com/spf13/cobra"
 )
@@ -86,23 +85,7 @@ var vmPolicyGetCmd = &cobra.Command{
 	Short: "get policy for bare-metal vm/kvms control plane vm",
 	Long:  `get policy for bare-metal vm/kvms control plane vm`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		PolicyData, err := vm.GetPolicy(policyOptions)
-		if err != nil {
-			return err
-		}
-		if len(args) == 0 {
-			armoredContainer, _ := utils.GetArmoredContainerData(PolicyData.ContainerList, PolicyData.ContainerMap)
-			policyOptions.PrintContainersSystemd(armoredContainer)
-			return nil
-		}
-		if containerMap, ok := PolicyData.ContainerMap[args[0]]; ok {
-			for _, p := range containerMap.PolicyDataList {
-				return vm.PrettyPrintPolicy(*p)
-			}
-		} else {
-			return errors.New("no policy found for container: " + args[0])
-		}
-		return nil
+		return policyOptions.HandleGet(args)
 	},
 }
 
@@ -112,6 +95,9 @@ var vmPolicyGetCmd = &cobra.Command{
 
 func init() {
 	vmCmd.AddCommand(vmPolicyCmd)
+
+	// Add flags to vmPolicyGetCmd
+	vmPolicyGetCmd.Flags().StringVarP(&policyOptions.Type, "type", "t", "ksp", "Specify the type of policy to get. (ksp or hsp)")
 
 	// Subcommand for policy command
 	vmPolicyCmd.AddCommand(vmPolicyAddCmd)

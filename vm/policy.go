@@ -6,6 +6,7 @@ package vm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"github.com/fatih/color"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -33,6 +35,7 @@ const (
 type PolicyOptions struct {
 	GRPC   string
 	Output string
+	Type   string
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
@@ -149,7 +152,7 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 	return nil
 }
 
-func GetPolicy(o PolicyOptions) (*pb.ProbeResponse, error) {
+func (o *PolicyOptions) getPolicyData() (*pb.ProbeResponse, error) {
 	gRPC := ""
 	if o.GRPC != "" {
 		gRPC = o.GRPC
@@ -173,7 +176,33 @@ func GetPolicy(o PolicyOptions) (*pb.ProbeResponse, error) {
 	return resp, nil
 }
 
-func (o *PolicyOptions) PrintContainersSystemd(podData [][]string) {
+func (o *PolicyOptions) HandleGet(args []string) error {
+	policyData, err := o.getPolicyData()
+	if err != nil {
+		return err
+	}
+	switch o.Type {
+	case "ksp", "Container", "container":
+		if len(args) == 0 {
+			armoredContainer, _ := utils.GetArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
+			o.printContainersSystemd(armoredContainer)
+			return nil
+		}
+		container := args[0]
+		if containerMap, ok := policyData.ContainerMap[container]; ok {
+			for _, p := range containerMap.GetPolicyDataList() {
+				return prettyPrintPolicy(*p)
+			}
+		} else {
+			return errors.New("no policy found for container: " + args[0])
+		}
+	default:
+		return errors.New("invalid type: " + o.Type)
+	}
+	return nil
+}
+
+func (o *PolicyOptions) printContainersSystemd(podData [][]string) {
 	o.printToOutput(color.New(color.FgWhite, color.Bold), "Armored Up Containers : \n")
 
 	table := tablewriter.NewWriter(os.Stdout)
@@ -207,7 +236,7 @@ func (o *PolicyOptions) printToOutput(c *color.Color, s string) {
 	}
 }
 
-func PrettyPrintPolicy(policy pb.Policy) error {
+func prettyPrintPolicy(policy pb.Policy) error {
 	var policyJSON tp.SecurityPolicy
 	err := json.Unmarshal(policy.Policy, &policyJSON)
 	if err != nil {
