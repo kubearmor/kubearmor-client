@@ -105,6 +105,9 @@ func Recommend(client common.Client, o common.Options, policyGenerators ...engin
 	labelMap := common.LabelArrayToLabelMap(o.Labels)
 	if len(o.Images) == 0 {
 		Objects, err = client.ListObjects(o)
+		if err != nil {
+			return err
+		}
 		if len(Objects) == 0 {
 			log.WithFields(log.Fields{
 				"namespace": o.Namespace,
