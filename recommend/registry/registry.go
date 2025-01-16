@@ -23,7 +23,7 @@ import (
 	image "github.com/kubearmor/kubearmor-client/recommend/image"
 	"github.com/moby/term"
 
-	dockerTypes "github.com/docker/docker/api/types"
+	dockerTypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/kubearmor/kubearmor-client/hacks"
@@ -171,7 +171,7 @@ func (r *Scanner) pullImage(imageName string) (err error) {
 
 	for _, cred := range r.authConfiguration.authCreds {
 		out, err = r.cli.ImagePull(context.Background(), imageName,
-			dockerTypes.ImagePullOptions{
+			dockerTypes.PullOptions{
 				RegistryAuth: cred,
 			})
 		if err == nil {
