@@ -5,6 +5,7 @@ package profile
 import (
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -126,7 +127,7 @@ func (n *Node) makeChildNodeToDir() {
 func (n *Node) findChildNode(path string, depth int) *Node {
 	for _, child := range n.childNodes {
 		// case 1: regex matching
-		if ContainsElement(WildPaths, child.path) && child.depth == depth {
+		if slices.Contains(WildPaths, child.path) && child.depth == depth {
 			r, _ := regexp.Compile(child.path)
 			if r.FindString(path) == path {
 				return child
@@ -135,6 +136,7 @@ func (n *Node) findChildNode(path string, depth int) *Node {
 		} else if child.path == path && child.depth == depth {
 			return child
 		}
+
 	}
 
 	return nil

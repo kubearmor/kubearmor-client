@@ -1,8 +1,6 @@
 module github.com/kubearmor/kubearmor-client
 
-go 1.21.0
-
-toolchain go1.21.9
+go 1.23.4
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.65.0
 
