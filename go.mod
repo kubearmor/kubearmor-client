@@ -50,12 +50,12 @@ require (
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	helm.sh/helm/v3 v3.14.3
-	k8s.io/api v0.29.11
-	k8s.io/apiextensions-apiserver v0.29.11
-	k8s.io/apimachinery v0.29.11
-	k8s.io/cli-runtime v0.29.11
-	k8s.io/client-go v0.29.11
-	k8s.io/kubectl v0.29.0
+	k8s.io/api v0.32.1
+	k8s.io/apiextensions-apiserver v0.32.1
+	k8s.io/apimachinery v0.32.1
+	k8s.io/cli-runtime v0.32.1
+	k8s.io/client-go v0.32.1
+	k8s.io/kubectl v0.32.1
 )
 
 require (
