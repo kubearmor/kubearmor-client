@@ -39,7 +39,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/deckarep/golang-set/v2 v2.6.0
-	github.com/evertras/bubble-table v0.15.6
+	github.com/evertras/bubble-table v0.17.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
