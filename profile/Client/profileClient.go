@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/accuknox/auto-policy-discovery/src/common"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -353,7 +352,7 @@ func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Pro
 		}
 	}
 	inputMap = updatedSumMap
-	aggregatedPaths := common.AggregatePaths(fileArr)
+	aggregatedPaths := profile.AggregatePaths(fileArr)
 	for summary, countTime := range fileSumMap {
 		for _, path := range aggregatedPaths {
 			if strings.HasPrefix(summary.Resource, path.Path) && (len(summary.Resource) == len(path.Path) || summary.Resource[len(strings.TrimSuffix(path.Path, "/"))] == '/') {

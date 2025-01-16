@@ -69,7 +69,7 @@ func writeScriptDataToFile(options ScriptOptions, scriptData string) error {
 	return nil
 }
 
-func getClusterIP(c *k8s.Client, options ScriptOptions) (string, error) {
+func getClusterIP(c *k8s.Client) (string, error) {
 	externalIP := ""
 
 	svcInfo, err := c.K8sClientset.CoreV1().Services(namespace).Get(context.Background(), serviceAccountName, metav1.GetOptions{})
@@ -112,7 +112,7 @@ func GetScript(c *k8s.Client, options ScriptOptions, httpIP string, isNonK8sEnv 
 			break
 		}
 
-		clusterIP, err := getClusterIP(c, options)
+		clusterIP, err := getClusterIP(c)
 		if err != nil || clusterIP == "" {
 			return err
 		}
