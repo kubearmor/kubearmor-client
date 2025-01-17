@@ -84,7 +84,7 @@ Available Commands:
   sysdump     Collect system dump information for troubleshooting and error report
   uninstall   Uninstall KubeArmor from a Kubernetes Cluster
   version     Display version information
-  vm          VM commands for kvmservice
+  vm          VM commands for non kubernetes/bare metal KubeArmor
 
 Flags:
       --context string      Name of the kubeconfig context to use
