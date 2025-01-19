@@ -18,7 +18,7 @@ Contributions are not necessarily in the form of code changes. KubeArmor communi
 
 2. Blogs
 
-   a. Explain The use of KubeArmor-Client's features (KVMService, Event Auditor, Visibility, etc)
+   a. Explain The use of KubeArmor-Client's features (Event Auditor, Visibility, etc)
 
    b. Describe How to use KubeArmor-Client to protect your workload with specific use-cases you may have. Please do not shy away from getting as technical as you can.
 

@@ -192,7 +192,7 @@ func Collect(c *k8s.Client, o Options) error {
 		if err != nil {
 			return err
 		}
-		err = probe.PrintProbeResult(c, probe.Options{
+		err = probe.PrintProbeResultCmd(c, probe.Options{
 			Namespace: "",
 			Full:      false,
 			Output:    "no-color",
