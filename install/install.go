@@ -319,7 +319,7 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 		}
 	}
 	if !allPodsReady {
-		fmt.Printf("⚠️\tFailed verifying KubeArmor functionality, kubearmor deamonset failed to start due to pod ran into %s", podStatus)
+		fmt.Printf("\n⚠️\tFailed verifying KubeArmor functionality, kubearmor deamonset failed to start due to pod ran into %s\n", podStatus)
 		return
 	}
 	fmt.Print("\n🔧\tVerifying KubeArmor functionality (this may take upto a minute)...")
