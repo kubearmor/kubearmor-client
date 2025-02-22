@@ -697,10 +697,6 @@ func K8sLegacyInstaller(c *k8s.Client, o Options) error {
 	controllerClusterRoleBinding := deployments.GetKubeArmorControllerClusterRoleBinding(o.Namespace)
 	controllerRole := deployments.GetKubeArmorControllerLeaderElectionRole(o.Namespace)
 	controllerRoleBinding := deployments.GetKubeArmorControllerLeaderElectionRoleBinding(o.Namespace)
-	controllerProxyRole := deployments.GetKubeArmorControllerProxyRole()
-	controllerProxyRoleBinding := deployments.GetKubeArmorControllerProxyRoleBinding(o.Namespace)
-	controllerMetricsReaderRole := deployments.GetKubeArmorControllerMetricsReaderRole()
-	controllerMetricsReaderRoleBinding := deployments.GetKubeArmorControllerMetricsReaderRoleBinding(o.Namespace)
 	if !o.Save {
 		printMessage("⚙️\tKubeArmor Controller Roles  ", true)
 		if _, err := c.K8sClientset.RbacV1().ClusterRoles().Create(context.Background(), controllerClusterRole, metav1.CreateOptions{}); err != nil {
@@ -723,35 +719,11 @@ func K8sLegacyInstaller(c *k8s.Client, o Options) error {
 				fmt.Print("Error while installing KubeArmor Controller RoleBinding")
 			}
 		}
-		if _, err := c.K8sClientset.RbacV1().ClusterRoles().Create(context.Background(), controllerProxyRole, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				fmt.Print("Error while installing KubeArmor Controller ProxyRole")
-			}
-		}
-		if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), controllerProxyRoleBinding, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				fmt.Print("Error while installing KubeArmor Controller ProxyRoleBinding")
-			}
-		}
-		if _, err := c.K8sClientset.RbacV1().ClusterRoles().Create(context.Background(), controllerMetricsReaderRole, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				fmt.Print("Error while installing KubeArmor Controller MetricsReaderRole")
-			}
-		}
-		if _, err := c.K8sClientset.RbacV1().ClusterRoleBindings().Create(context.Background(), controllerMetricsReaderRoleBinding, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				fmt.Print("Error while installing KubeArmor Controller MetricsReaderRoleBinding")
-			}
-		}
 	} else {
 		printYAML = append(printYAML, controllerClusterRole)
 		printYAML = append(printYAML, controllerClusterRoleBinding)
 		printYAML = append(printYAML, controllerRole)
 		printYAML = append(printYAML, controllerRoleBinding)
-		printYAML = append(printYAML, controllerProxyRole)
-		printYAML = append(printYAML, controllerProxyRoleBinding)
-		printYAML = append(printYAML, controllerMetricsReaderRole)
-		printYAML = append(printYAML, controllerMetricsReaderRoleBinding)
 	}
 
 	kubearmorControllerDeployment := deployments.GetKubeArmorControllerDeployment(o.Namespace)
@@ -781,19 +753,6 @@ func K8sLegacyInstaller(c *k8s.Client, o Options) error {
 		}
 	} else {
 		printYAML = append(printYAML, kubearmorControllerDeployment)
-	}
-
-	kubearmorControllerMetricsService := deployments.GetKubeArmorControllerMetricsService(o.Namespace)
-	if !o.Save {
-		printMessage("🚀\tKubeArmor Controller Metrics Service  ", true)
-		if _, err := c.K8sClientset.CoreV1().Services(o.Namespace).Create(context.Background(), kubearmorControllerMetricsService, metav1.CreateOptions{}); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-			printMessage("ℹ️\tKubeArmor Controller Metrics Service already exists  ", false)
-		}
-	} else {
-		printYAML = append(printYAML, kubearmorControllerMetricsService)
 	}
 
 	kubearmorControllerWebhookService := deployments.GetKubeArmorControllerWebhookService(o.Namespace)

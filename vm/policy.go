@@ -4,7 +4,6 @@
 package vm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,15 +12,11 @@ import (
 	"github.com/kubearmor/kubearmor-client/utils"
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
-	v2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
-	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 
@@ -34,10 +29,6 @@ const (
 	KubeArmorPolicy = "KubeArmorPolicy"
 	// KubeArmorHostPolicy is the Kind used for KubeArmor host policies
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
-	// CiliumNetworkPolicy is the Kind used for Cilium network policies
-	CiliumNetworkPolicy = "CiliumNetworkPolicy"
-	// CiliumClusterwideNetworkPolicy is the Kind used for Cilium network policies
-	CiliumClusterwideNetworkPolicy = "CiliumClusterwideNetworkPolicy"
 )
 
 var (
@@ -92,42 +83,8 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) er
 
 }
 
-func sendPolicyOverHTTP(address string, kind string, policyEventData []byte) error {
-
-	timeout := time.Duration(5 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
-
-	var url string
-	if kind == KubeArmorHostPolicy {
-		url = address + "/policy/kubearmor"
-	} else {
-		url = address + "/policy/cilium"
-	}
-
-	request, err := http.NewRequest("POST", url, bytes.NewBuffer(policyEventData))
-	request.Header.Set("Content-type", "application/json")
-	if err != nil {
-		return fmt.Errorf("failed to send policy")
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		return fmt.Errorf("failed to send policy")
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			kg.Warnf("Error closing http stream %s\n", err)
-		}
-	}()
-
-	fmt.Println("Success")
-	return nil
-}
-
 // PolicyHandling Function recives path to YAML file with the type of event and emits an Host Policy Event to KubeArmor gRPC/HTTP Server
-func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, isKvmsEnv bool) error {
+func PolicyHandling(t string, path string, o PolicyOptions) error {
 	var k struct {
 		Kind string `json:"kind"`
 	}
@@ -140,8 +97,8 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 	policies := strings.Split(string(policyFile), "---")
 
 	for _, policy := range policies {
-
-		if matched, _ := regexp.MatchString("^\\s*$", policy); matched {
+		re := regexp.MustCompile(`^\\s*$`)
+		if matched := re.MatchString(policy); matched {
 			continue
 		}
 
@@ -157,7 +114,6 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 
 		var containerPolicy tp.K8sKubeArmorPolicy
 		var hostPolicy tp.K8sKubeArmorHostPolicy
-		var networkPolicy v2.CiliumNetworkPolicy
 		var policyEvent interface{}
 
 		if k.Kind == KubeArmorHostPolicy {
@@ -182,40 +138,18 @@ func PolicyHandling(t string, path string, o PolicyOptions, httpAddress string, 
 				Object: containerPolicy,
 			}
 
-		} else if k.Kind == CiliumNetworkPolicy || k.Kind == CiliumClusterwideNetworkPolicy {
-			err = json.Unmarshal(js, &networkPolicy)
-			if err != nil {
-				return err
-			}
-
-			if networkPolicy.Spec == nil {
-				continue
-			}
-
-			policyEvent = NetworkPolicyRequest{
-				Type:   t,
-				Object: networkPolicy,
-			}
-
 		}
-
 		policyEventData, err := json.Marshal(policyEvent)
 		if err != nil {
 			return err
 		}
 
-		if isKvmsEnv {
-			// Non-K8s control plane with kvmservice, hence send policy over HTTP
-			if err = sendPolicyOverHTTP(httpAddress, k.Kind, policyEventData); err != nil {
-				return err
-			}
-		} else {
-			// Systemd mode, hence send policy over gRPC
-			if err = sendPolicyOverGRPC(o, policyEventData, k.Kind); err != nil {
-				return err
+		// Systemd mode, hence send policy over gRPC
+		if err = sendPolicyOverGRPC(o, policyEventData, k.Kind); err != nil {
+			return err
 
-			}
 		}
+
 	}
 
 	return nil
