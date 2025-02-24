@@ -188,8 +188,7 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 	case "ksp", "Container", "container":
 		if len(args) == 0 {
 			armoredContainer, _ := utils.GetArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
-			o.printContainerTable(armoredContainer)
-			return nil
+			return o.printContainerTable(armoredContainer)
 		}
 		targetPolicy := args[0]
 		for _, container := range policyData.GetContainerMap() {
@@ -209,8 +208,7 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 			if len(hostPolicyData) == 0 {
 				return errors.New("no host policies found")
 			}
-			o.printHostTable(hostPolicyData)
-			return nil
+			return o.printHostTable(hostPolicyData)
 		}
 		targetPolicy := args[0]
 		for _, host := range policyData.HostMap {
@@ -230,8 +228,11 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 	return nil
 }
 
-func (o *PolicyOptions) printContainerTable(podData [][]string) {
-	BoldWhite.Println("Armored Up Containers:")
+func (o *PolicyOptions) printContainerTable(podData [][]string) error {
+	_, err := BoldWhite.Println("Armored Up Containers:")
+	if err != nil {
+		return err
+	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
@@ -241,10 +242,14 @@ func (o *PolicyOptions) printContainerTable(podData [][]string) {
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 	table.Render()
+	return nil
 }
 
-func (o *PolicyOptions) printHostTable(hostPolicy [][]string) {
-	BoldWhite.Println("Host Policy:")
+func (o *PolicyOptions) printHostTable(hostPolicy [][]string) error {
+	_, err := BoldWhite.Println("Host Policy:")
+	if err != nil {
+		return err
+	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"HOST NAME ", "POLICY"})
@@ -254,6 +259,7 @@ func (o *PolicyOptions) printHostTable(hostPolicy [][]string) {
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 	table.Render()
+	return nil
 }
 
 func prettyPrintPolicy(policy pb.Policy) error {
