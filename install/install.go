@@ -73,6 +73,7 @@ type Options struct {
 	AlertThrottling        bool
 	MaxAlertPerSec         int32
 	ThrottleSec            int32
+	AnnotateExisting       bool
 }
 
 type envOption struct {
@@ -320,6 +321,22 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			color.Yellow("\n\n\t⚠️\tKubeArmor is running in Audit mode, only Observability will be available and Policy Enforcement won't be available. \n")
 		}
 		break
+	}
+	// add annotation for apparmor
+	if !o.AnnotateExisting {
+		nodeList, err := getApparmorNodes(c)
+		if err != nil {
+			fmt.Printf("\n⚠️\tError fetching apparmor nodes %s", err.Error())
+		} else if len(nodeList) > 0 {
+			fmt.Printf("⚠️\tWARNING: Pre-existing pods will not be annotated. Policy enforcement for pre-existing pods on the following AppArmor nodes will not work:\n")
+			for i, node := range nodeList {
+				fmt.Printf("\t	➤ Node %d: %s", i+1, node)
+			}
+			fmt.Printf("\n\t•To annotate existing pods using controller, run:")
+			fmt.Printf("\n\t	➤ karmor uninstall followed by karmor install --annotateExisting=true")
+			fmt.Printf("\n\t• Alternatively, if you prefer manual control, you can restart your deployments yourself using:")
+			fmt.Printf("\n\t	➤ kubectl rollout restart deployment <deployment> -n <namespace>\n")
+		}
 	}
 }
 
@@ -905,7 +922,8 @@ func getOperatorConfig(o Options) map[string]interface{} {
 				"repository": operatorImage,
 				"tag":        operatorImageTag,
 			},
-			"imagePullPolicy": operatorImagePullPolicy,
+			"imagePullPolicy":  operatorImagePullPolicy,
+			"annotateExisting": o.AnnotateExisting,
 		},
 	}
 }
@@ -1762,4 +1780,18 @@ func commonUninstall(c *k8s.Client, o Options) {
 			fmt.Printf("    ❌  RoleBinding %s removed\n", deployments.KubeArmorControllerLeaderElectionRoleBindingName)
 		}
 	}
+}
+
+func getApparmorNodes(c *k8s.Client) ([]string, error) {
+	nodes, err := c.K8sClientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error listing nodes: %v", err)
+	}
+	var appArmorNodes []string
+	for _, node := range nodes.Items {
+		if enforcer, exists := node.Labels["kubearmor.io/enforcer"]; exists && enforcer == "apparmor" {
+			appArmorNodes = append(appArmorNodes, node.Name)
+		}
+	}
+	return appArmorNodes, nil
 }
