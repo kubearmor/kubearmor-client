@@ -20,6 +20,4 @@ var vmCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(vmCmd)
-	// All subcommands
-	rootCmd.AddCommand(vmPolicyCmd)
 }
