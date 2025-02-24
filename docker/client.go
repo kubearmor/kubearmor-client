@@ -14,7 +14,7 @@ type Client struct {
 }
 
 func ConnectDockerClient() (*Client, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
 	}
