@@ -39,7 +39,7 @@ require (
 	github.com/evertras/bubble-table v0.17.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20250115110030-a82efe763c39
+	github.com/kubearmor/KubeArmor/KubeArmor 652f96cb5336
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250115110030-a82efe763c39
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20250115110030-a82efe763c39
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20250115110030-a82efe763c39
