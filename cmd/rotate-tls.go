@@ -11,7 +11,7 @@ var rotateCmd = &cobra.Command{
 	Short: "Rotate webhook controller tls certificates",
 	Long:  `Rotate webhook controller tls certificates`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := rotatetls.RotateTLS(client, namespace); err != nil {
+		if err := rotatetls.RotateTLS(k8sClient, namespace); err != nil {
 			return err
 		}
 		return nil
@@ -20,6 +20,5 @@ var rotateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(rotateCmd)
-
 	rotateCmd.Flags().StringVarP(&namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 }
