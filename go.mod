@@ -41,7 +41,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20250115110030-a82efe763c39
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250115110030-a82efe763c39
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20250115110030-a82efe763c39
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController 652f96cb5336
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20250115110030-a82efe763c39
 	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/onsi/gomega v1.35.1
