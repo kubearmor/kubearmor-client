@@ -34,6 +34,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/compose-spec/compose-go/v2 v2.4.6
+	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/evertras/bubble-table v0.15.6
 	github.com/google/go-cmp v0.6.0
@@ -45,6 +46,7 @@ require (
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240313131335-9ae900daa38d
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
+	github.com/opencontainers/image-spec v1.1.0
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.14.3
 	k8s.io/api v0.29.2
@@ -52,6 +54,7 @@ require (
 	k8s.io/apimachinery v0.29.2
 	k8s.io/cli-runtime v0.29.0
 	k8s.io/client-go v0.29.2
+	oras.land/oras-go/v2 v2.3.1
 )
 
 require (
@@ -185,6 +188,7 @@ require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/go-viper/mapstructure/v2 v2.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -272,7 +276,6 @@ require (
 	github.com/open-policy-agent/gatekeeper v0.0.0-20210824170141-dd97b8a7e966 // indirect
 	github.com/open-policy-agent/opa v0.60.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect

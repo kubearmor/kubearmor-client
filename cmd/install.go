@@ -4,12 +4,15 @@ package cmd
 
 import (
 	"fmt"
-    "github.com/spf13/cobra"
 	"github.com/kubearmor/kubearmor-client/install"
+	"github.com/spf13/cobra"
 )
 
 var secureRuntime string
 var installOptions install.Options
+var configOptions install.Config
+var composeConfigOptions install.ComposeConfig
+var releaseVersion string
 
 var installCmd = &cobra.Command{
 	Use:   "install",
@@ -43,28 +46,65 @@ var k8sInstallCmd = &cobra.Command{
 var nonK8sInstallCmd = &cobra.Command{
 	Use:   "non-k8s",
 	Short: "Install KubeArmor in non-Kubernetes mode",
-	Long: "Install KubeArmor in non-Kubernetes mode",
+	Long:  "Install KubeArmor in non-Kubernetes mode",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		availableRuntimes := install.DetectRuntimes()
 		if len(availableRuntimes) == 0 {
 			return fmt.Errorf("no supported container runtime found")
 		}
-		runtime := install.SelectRuntime(secureRuntime, availableRuntimes)
+		runtime := install.SelectRuntime(availableRuntimes, secureRuntime)
 
-		composeFilePath, err := install.EnsureComposeFile()
+		// err := install.EnsureComposeFile()
+		// if err != nil {
+		// 	return fmt.Errorf("failed to ensure Compose file: %v", err)
+		// }
+		err := install.UpdateConfigCommandInComposeFile(composeConfigOptions)
 		if err != nil {
-			return fmt.Errorf("failed to ensure Compose file: %v", err)
+			return fmt.Errorf("failed to configure the Compose file: %v", err)
 		}
-      
-		err = install.ParseAndValidateComposeFile(composeFilePath, runtime)
+
+		err = install.ParseAndValidateComposeFile(runtime)
 		if err != nil {
 			return fmt.Errorf("error validating Compose file: %v", err)
 		}
-		err = install.RunCompose(runtime, composeFilePath)
+		err = install.Run(runtime)
 		if err != nil {
 			return fmt.Errorf("error running Compose file: %v", err)
 		}
 		fmt.Println("😄 KubeArmor installed successfully in non-Kubernetes mode.")
+		return nil
+	},
+}
+var systemdInstallCmd = &cobra.Command{
+	Use:   "systemd",
+	Short: "Install KubeArmor using systemd",
+	Long:  `Install KubeArmor using systemd mode.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		exist, err := install.KubearmorPresentAsSystemd()
+		if err != nil {
+			return fmt.Errorf("error checking systemd service: %w", err)
+		}
+		if exist {
+			fmt.Println("KubeArmor already present as systemd.")
+			return nil
+		}
+
+		err = install.EnsureSystemdPackage(releaseVersion)
+		if err != nil {
+			return fmt.Errorf("error ensuring systemd package: %v", err)
+		}
+
+		err = install.GenerateKubeArmorConfig(configOptions)
+		if err != nil {
+			return fmt.Errorf("error configuring the KubeArmor config: %v", err)
+		}
+
+		if err := install.Run(install.SystemdRuntime); err != nil {
+			return fmt.Errorf("error running systemd installation: %v", err)
+		}
+
+		fmt.Println("KubeArmor installed successfully using systemd.")
+
 		return nil
 	},
 }
@@ -80,8 +120,9 @@ func init() {
 	// Add subcommands for k8s and non-k8s modes
 	installCmd.AddCommand(k8sInstallCmd)
 	installCmd.AddCommand(nonK8sInstallCmd)
+	installCmd.AddCommand(systemdInstallCmd)
 
-    //these flags should only be availabe only for mode k8s
+	//these flags should only be availabe only for mode k8s
 	k8sInstallCmd.Flags().StringVarP(&installOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 	k8sInstallCmd.Flags().StringVarP(&installOptions.KubearmorImage, "image", "i", "kubearmor/kubearmor:stable", "Kubearmor daemonset image to use")
 	k8sInstallCmd.Flags().StringVarP(&installOptions.InitImage, "init-image", "", "kubearmor/kubearmor-init:stable", "Kubearmor daemonset init container image to use")
@@ -107,6 +148,23 @@ func init() {
 	markDeprecated(k8sInstallCmd, "env", "Only relevant when using legacy")
 	markDeprecated(k8sInstallCmd, "legacy", "KubeArmor now utilizes operator-based installation. This command may not set up KubeArmor in the intended way.")
 	//this flag --secure should only be availabe only for mode non-k8s
-    nonK8sInstallCmd.Flags().StringVar(&secureRuntime, "secure", "", "Specify the container runtime (e.g., podman, docker)")
+	nonK8sInstallCmd.Flags().StringVar(&secureRuntime, "secure", "", "Specify the container runtime (e.g., podman, docker)")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.Visibility, "visibility", "process,file,network,capabilities", "Specify visibility settings for container telemetry")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.HostVisibility, "hostVisibility", "process,file,network,capabilities", "Specify visibility settings for host telemetry")
+	nonK8sInstallCmd.Flags().BoolVar(&composeConfigOptions.EnableKubeArmorHostPolicy, "enableKubeArmorHostPolicy", true, "Enable KubeArmor host policy")
+	nonK8sInstallCmd.Flags().BoolVar(&composeConfigOptions.EnableKubeArmorPolicy, "enableKubeArmorPolicy", true, "Enable KubeArmor policy")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.DefaultFilePosture, "defaultFilePosture", "audit", "Set default file posture")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.DefaultNetworkPosture, "defaultNetworkPosture", "audit", "Set default network posture")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.DefaultCapabilitiesPosture, "defaultCapabilitiesPosture", "audit", "Set default capabilities network posture")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.HostDefaultFilePosture, "hostDefaultFilePosture", "audit", "Set default host file posture")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.HostDefaultNetworkPosture, "hostDefaultNetworkPosture", "audit", "Set default host network posture")
+	nonK8sInstallCmd.Flags().StringVar(&composeConfigOptions.HostDefaultCapabilitiesPosture, "hostDefaultCapabilitiesPosture", "audit", "Set default host capabilities network posture")
+	//systemd installation takes these flags
+	systemdInstallCmd.Flags().StringVar(&releaseVersion, "version", "latest", "Specify the version of Kubearmor")
+	systemdInstallCmd.Flags().StringVar(&configOptions.HostVisibility, "hostVisibility", "process,file,network,capabilities", "Specify visibility settings for host telemetry")
+	systemdInstallCmd.Flags().BoolVar(&configOptions.EnableKubeArmorHostPolicy, "enableKubeArmorHostPolicy", true, "Enable KubeArmor host policy")
+	systemdInstallCmd.Flags().BoolVar(&configOptions.EnableKubeArmorVm, "enableKubeArmorVm", false, "Enable KubeArmor for virtual machines")
+	systemdInstallCmd.Flags().BoolVar(&configOptions.AlertThrottling, "alertThrottling", true, "Enable alert throttling")
+	systemdInstallCmd.Flags().IntVar(&configOptions.MaxAlertPerSec, "maxAlertPerSec", 10, "Set maximum alerts per second")
+	systemdInstallCmd.Flags().IntVar(&configOptions.ThrottleSec, "throttleSec", 30, "Set alert throttle duration in seconds")
 }
-
