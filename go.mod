@@ -32,26 +32,32 @@ require (
 )
 
 require (
-	github.com/charmbracelet/bubbles v0.20.0
-	github.com/charmbracelet/bubbletea v1.2.4
-	github.com/charmbracelet/lipgloss v1.0.0
-	github.com/deckarep/golang-set/v2 v2.7.0
-	github.com/evertras/bubble-table v0.17.1
+	github.com/accuknox/auto-policy-discovery/src v0.0.0-20230912162532-0b5b73425c5a
+	github.com/charmbracelet/bubbles v0.17.1
+	github.com/charmbracelet/bubbletea v0.25.0
+	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/compose-spec/compose-go/v2 v2.4.6
+	github.com/coreos/go-systemd/v22 v22.5.0
+	github.com/deckarep/golang-set/v2 v2.6.0
+	github.com/evertras/bubble-table v0.15.6
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20250115110030-a82efe763c39
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250115110030-a82efe763c39
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20250115110030-a82efe763c39
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20250115110030-a82efe763c39
-	github.com/onsi/ginkgo/v2 v2.21.0
-	github.com/onsi/gomega v1.35.1
-	helm.sh/helm/v3 v3.17.0
-	k8s.io/api v0.32.1
-	k8s.io/apiextensions-apiserver v0.32.1
-	k8s.io/apimachinery v0.32.1
-	k8s.io/cli-runtime v0.32.1
-	k8s.io/client-go v0.32.1
-	k8s.io/kubectl v0.32.1
+	github.com/kubearmor/KVMService/src/types v0.0.0-20220714130113-b0eba8c9ff34
+	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20240313131335-9ae900daa38d
+	github.com/kubearmor/KubeArmor/deployments v0.0.0-20240313131335-9ae900daa38d
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20240313131335-9ae900daa38d
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20240313131335-9ae900daa38d
+	github.com/onsi/ginkgo/v2 v2.14.0
+	github.com/onsi/gomega v1.30.0
+	github.com/opencontainers/image-spec v1.1.0
+	gopkg.in/yaml.v2 v2.4.0
+	helm.sh/helm/v3 v3.14.3
+	k8s.io/api v0.29.2
+	k8s.io/apiextensions-apiserver v0.29.2
+	k8s.io/apimachinery v0.29.2
+	k8s.io/cli-runtime v0.29.0
+	k8s.io/client-go v0.29.2
+	oras.land/oras-go/v2 v2.3.1
 )
 
 require (
@@ -107,6 +113,7 @@ require (
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -162,8 +169,9 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
+	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
+	github.com/pborman/uuid v1.2.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

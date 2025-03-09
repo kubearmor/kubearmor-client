@@ -1,0 +1,10 @@
+cluster: "default"
+gRPC: "32767"
+hostVisibility: "{{ .HostVisibility }}"
+enableKubeArmorHostPolicy: {{ .EnableKubeArmorHostPolicy }}
+enableKubeArmorVm: {{ .EnableKubeArmorVm }}
+k8s: false
+alertThrottling: {{ .AlertThrottling }}
+maxAlertPerSec: {{ .MaxAlertPerSec }}
+throttleSec: {{ .ThrottleSec }}
+

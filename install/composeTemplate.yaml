@@ -13,17 +13,21 @@ services:
     - DAC_READ_SEARCH
     command:
     - -k8s=false
+    {{- if .EnableKubeArmorPolicy }}
     - -enableKubeArmorPolicy
+    {{- end }}
+    {{- if .EnableKubeArmorHostPolicy }}
     - -enableKubeArmorHostPolicy
-    - -visibility=process,network
-    - -hostVisibility=process,network
+    {{- end }}
+    - -visibility={{ .Visibility }}
+    - -hostVisibility={{ .HostVisibility }}
     - -criSocket=unix:///run/podman/podman.sock
-    - -defaultFilePosture=audit
-    - -defaultNetworkPosture=audit
-    - -defaultCapabilitiesPosture=audit
-    - -hostDefaultFilePosture=audit
-    - -hostDefaultNetworkPosture=audit
-    - -hostDefaultCapabilitiesPosture=audit
+    - -defaultFilePosture={{.DefaultFilePosture}}
+    - -defaultNetworkPosture={{.DefaultNetworkPosture}}
+    - -defaultCapabilitiesPosture={{.DefaultCapabilitiesPosture}}
+    - -hostDefaultFilePosture={{.HostDefaultFilePosture}}
+    - -hostDefaultNetworkPosture={{.HostDefaultNetworkPosture}}
+    - -hostDefaultCapabilitiesPosture={{.HostDefaultCapabilitiesPosture}}
     container_name: kubearmor
     depends_on:
       kubearmor-init:
@@ -51,6 +55,8 @@ services:
     - /etc/containers/oci/hooks.d/:/etc/containers/oci/hooks.d/:rw
     - /usr/share/kubearmor:/usr/share/kubearmor:rw
     - /var/run/kubearmor:/var/run/kubearmor:rw
+
+    
   kubearmor-init:
     cap_add:
     - SETUID
