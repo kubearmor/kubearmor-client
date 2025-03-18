@@ -1310,15 +1310,6 @@ func listPods(c *k8s.Client) {
 
 func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 	verify = o.Verify
-
-	fmt.Print("🗑️  Mutation Admission Registration\n")
-	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerMutatingWebhookConfiguration, metav1.DeleteOptions{}); err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			fmt.Print(err)
-		}
-		fmt.Print("    ℹ️  Mutation Admission Registration not found\n")
-	}
-
 	fmt.Print("🗑️  KubeArmor Services\n")
 	servicesList, err := c.K8sClientset.CoreV1().Services(o.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
 	if err != nil {
@@ -1616,6 +1607,15 @@ func writeToYAML(f *os.File, o interface{}) error {
 
 // this function stores the common elements for legacy and helm-based uninstallation
 func commonUninstall(c *k8s.Client, o Options) {
+
+	fmt.Print("🗑️  Mutation Admission Registration\n")
+	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerMutatingWebhookConfiguration, metav1.DeleteOptions{}); err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			fmt.Print(err)
+		}
+		fmt.Print("    ℹ️  Mutation Admission Registration not found\n")
+	}
+
 	fmt.Print("💨  Cluster Roles\n")
 	clusterRoleList, err := c.K8sClientset.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app"})
 	if err != nil {
