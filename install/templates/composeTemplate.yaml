@@ -1,0 +1,68 @@
+volumes:
+  kubearmor-init-vol:
+    name: kubearmor-init-vol
+
+services:
+  kubearmor-init:
+    profiles:
+      - "kubearmor"
+    container_name: kubearmor-init
+    image: {{.KubeArmorInitImage}}
+    pull_policy: "{{.ImagePullPolicy}}"
+    user: root
+    labels:
+      app: kubearmor-init
+    volumes:
+      - "kubearmor-init-vol:/opt/kubearmor/BPF:rw"
+      - "/lib/modules:/lib/modules:ro"
+      - "/sys/fs/bpf:/sys/fs/bpf:ro"
+      - "/sys/kernel/security:/sys/kernel/security:ro"
+      - "/sys/kernel/debug:/sys/kernel/debug:ro"
+      - "/media/root/etc/os-release:/media/root/etc/os-release:ro"
+    restart: on-failure
+    privileged: true
+
+  kubearmor:
+    profiles:
+      - "kubearmor"
+    depends_on:
+      kubearmor-init:
+        condition: service_completed_successfully
+    hostname: {{.Hostname}}
+    container_name: kubearmor
+    image: "{{.KubeArmorImage}}"
+    pull_policy: "{{.ImagePullPolicy}}"
+    command:
+      - "-k8s=false"
+      - "-enableKubeArmorPolicy"
+      - "-enableKubeArmorHostPolicy"
+      - "-visibility={{.KubeArmorVisibility}}"
+      - "-hostVisibility={{.KubeArmorHostVisibility}}"
+      - "-criSocket=unix:///var/run/docker.sock"
+      - "-enableKubeArmorStateAgent"
+      - "-defaultFilePosture={{.KubeArmorFilePosture}}"
+      - "-defaultNetworkPosture={{.KubeArmorNetworkPosture}}"
+      - "-defaultCapabilitiesPosture={{.KubeArmorCapPosture}}"
+      - "-hostDefaultFilePosture={{.KubeArmorHostFilePosture}}"
+      - "-hostDefaultNetworkPosture={{.KubeArmorHostNetworkPosture}}"
+      - "-hostDefaultCapabilitiesPosture={{.KubeArmorHostCapPosture}}"
+      - "-alertThrottling={{.KubeArmorAlertThrottling}}"
+      - "-maxAlertPerSec={{.KubeArmorMaxAlertsPerSec}}"
+      - "-throttleSec={{.KubeArmorThrottleSec}}"
+    labels:
+      app: kubearmor
+    volumes:
+      - "kubearmor-init-vol:/opt/kubearmor/BPF"
+      - "/sys/fs/bpf:/sys/fs/bpf"
+      - "/sys/kernel/security:/sys/kernel/security"
+      - "/sys/kernel/debug:/sys/kernel/debug"
+      - "/etc/apparmor.d:/etc/apparmor.d"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/run/docker:/run/docker"
+      - "/var/lib/docker:/var/lib/docker"
+    restart: always
+    ports:
+      - "{{.KubeArmorPort}}:32767"
+    pid: "host"
+    privileged: true
+

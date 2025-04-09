@@ -28,6 +28,7 @@ import (
 	"github.com/kubearmor/kubearmor-client/hacks"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/probe"
+	"github.com/kubearmor/kubearmor-client/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -57,7 +58,10 @@ type Options struct {
 	ImageRegistry          string
 	Audit                  string
 	Block                  string
+	HostAudit              string
+	HostBlock              string
 	Visibility             string
+	HostVisibility         string
 	Force                  bool
 	Local                  bool
 	Save                   bool
@@ -71,9 +75,15 @@ type Options struct {
 	PreserveUpstream       bool
 	Env                    envOption
 	AlertThrottling        bool
-	MaxAlertPerSec         int32
-	ThrottleSec            int32
+	MaxAlertPerSec         int
+	ThrottleSec            int
 	AnnotateExisting       bool
+	NonK8s                 bool
+	VmMode                 utils.VMMode
+	ComposeCmd             string
+	ComposeVersion         string
+	ImagePullPolicy        string
+	SecureContainers       bool
 }
 
 type envOption struct {
