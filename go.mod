@@ -11,7 +11,7 @@ replace (
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/clarketm/json v1.17.1
-	github.com/docker/docker v27.5.0+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20250115110030-a82efe763c39
