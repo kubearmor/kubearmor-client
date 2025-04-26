@@ -138,9 +138,11 @@ func StartObserver(c *k8s.Client, o Options) error {
 	} else {
 		pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 		if err != nil {
-			return err
+			fmt.Fprintf(os.Stderr, "Failed to initiate port forward (%s)\n", err)
+			gRPC = "localhost:32767"
+		} else {
+			gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 		}
-		gRPC = "localhost:" + strconv.FormatInt(pf.LocalPort, 10)
 	}
 
 	if o.MsgPath == "none" && o.LogPath == "none" {
