@@ -469,7 +469,11 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 			// Check if fields are present in the structure and if present verifying that they are not empty
 			// Certain fields like Container* are not present in HostLogs, this check handles that and other edge cases
 			if v, ok := res[k]; ok && v != "" {
-				str = str + fmt.Sprintf("%s: %v\n", k, res[k])
+				if _, ok := res[k].(float64); ok {
+					str = str + fmt.Sprintf("%s: %.0f\n", k, res[k])
+				} else {
+					str = str + fmt.Sprintf("%s: %v\n", k, res[k])
+				}
 			}
 		}
 	}
