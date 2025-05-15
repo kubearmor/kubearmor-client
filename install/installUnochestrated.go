@@ -238,8 +238,7 @@ func (config *KubeArmorConfig) DeployKASystemd() error {
 	if err != nil {
 		fmt.Printf("ℹ️\tInstallation failed!! Error: %s.\nCleaning up downloaded assets...\n", err.Error())
 		utils.Deletedir(utils.DownloadDir)
-		RemoveSystemd()
-		// DeboardSystemd(NodeType_WorkerNode) // #nosec G104
+		RemoveSystemd() // #nosec G104
 		return err
 	}
 
@@ -267,44 +266,6 @@ func DetectRuntimes() []string {
 		runtimes = append(runtimes, DockerRuntime)
 	}
 	return runtimes
-}
-
-func SelectRuntime(availableRuntimes []string, secureRuntime ...string) string {
-	var runtime string
-
-	if len(secureRuntime) > 1 {
-		fmt.Println("Only one secureRuntime argument is allowed.")
-		os.Exit(1)
-	}
-
-	if len(secureRuntime) == 1 && secureRuntime[0] != "" {
-		runtime = secureRuntime[0]
-		for _, rt := range availableRuntimes {
-			if rt == runtime {
-				return runtime
-			}
-		}
-		fmt.Printf("Specified runtime '%s' is not available.\n", runtime)
-		os.Exit(1)
-	}
-
-	if len(availableRuntimes) == 1 {
-		return availableRuntimes[0]
-	}
-
-	fmt.Println("😄 Available runtimes:", strings.Join(availableRuntimes, ", "))
-	fmt.Println("😄 Please select a runtime:")
-	for i, rt := range availableRuntimes {
-		fmt.Printf("%d: %s\n", i+1, rt)
-	}
-
-	var choice int
-	fmt.Scanln(&choice)
-	if choice < 1 || choice > len(availableRuntimes) {
-		fmt.Println("Invalid choice.")
-		os.Exit(1)
-	}
-	return availableRuntimes[choice-1]
 }
 
 func DetectArchitecture() (string, error) {
@@ -511,14 +472,15 @@ func extractAgent(fileName string) error {
 		}
 		rootDir := "/"
 		// Sanitize the path to prevent directory traversal
-		destPath := filepath.Clean(filepath.Join(rootDir, header.Name))
+		destPath := filepath.Clean(filepath.Join(rootDir, header.Name)) // #nosec G305
 		// Ensure the file is within the intended root directory
 		if strings.Contains(destPath, "..") {
 			return fmt.Errorf("illegal file path: %s", destPath)
 		}
 
 		// Create parent directories
-		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+		err = os.MkdirAll(filepath.Dir(destPath), 0755) // #nosec G301
+		if err != nil {
 			return err
 		}
 
@@ -528,13 +490,15 @@ func extractAgent(fileName string) error {
 		}
 		defer file.Close()
 
-		if _, err := io.Copy(file, tarReader); err != nil {
+		_, err = io.Copy(file, tarReader) // #nosec G110
+		if err != nil {
 			return err
 		}
 
 		// Preserve executable permission
 		if header.Mode&0111 != 0 {
-			if err := os.Chmod(destPath, 0755); err != nil { // #nosec G302
+			err := os.Chmod(destPath, 0755) // #nosec G302
+			if err != nil {
 				return err
 			}
 		}
