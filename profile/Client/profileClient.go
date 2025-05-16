@@ -419,6 +419,8 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 				var logType string
 				if entry.Type == "HostLog" {
 					logType = "Host"
+					entry.NamespaceName = "--"
+					entry.ContainerName = "--"
 				} else {
 					logType = "Container"
 				}
