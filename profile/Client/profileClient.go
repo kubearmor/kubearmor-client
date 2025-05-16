@@ -25,6 +25,7 @@ import (
 
 // Column keys
 const (
+	ColumnLogSource     = "LogSource"
 	ColumnNamespace     = "Namespace"
 	ColumnContainerName = "ContainerName"
 	ColumnProcessName   = "ProcName"
@@ -102,6 +103,8 @@ func waitForActivity() tea.Cmd {
 var o1 Options
 
 func generateColumns(Operation string) []table.Column {
+	LogSource := table.NewFlexColumn(ColumnLogSource, "LogSource", 1).WithStyle(ColumnStyle).WithFiltered(true)
+
 	CountCol := table.NewFlexColumn(ColumnCount, "Count", 1).WithStyle(ColumnStyle).WithFiltered(true)
 
 	Namespace := table.NewFlexColumn(ColumnNamespace, "Namespace", 2).WithStyle(ColumnStyle).WithFiltered(true)
@@ -120,6 +123,7 @@ func generateColumns(Operation string) []table.Column {
 	Timestamp := table.NewFlexColumn(ColumnTimestamp, "TimeStamp", 3).WithStyle(ColumnStyle)
 
 	return []table.Column{
+		LogSource,
 		Namespace,
 		ContainerName,
 		ProcName,
@@ -302,6 +306,7 @@ func (m Model) View() string {
 
 // Profile Row Data to display
 type Profile struct {
+	LogSource     string `json:"log-source"`
 	Namespace     string `json:"namespace"`
 	ContainerName string `json:"container-name"`
 	Process       string `json:"process"`
@@ -411,9 +416,18 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 				(entry.ContainerName == o1.Container) ||
 				(len(o1.Namespace) == 0 && len(o1.Pod) == 0 && len(o1.Container) == 0) {
 				var p Profile
+				var logType string
+				if entry.Type == "HostLog" {
+					logType = "Host"
+					entry.NamespaceName = "--"
+					entry.ContainerName = "--"
+				} else {
+					logType = "Container"
+				}
 
 				if entry.Operation == "Syscall" {
 					p = Profile{
+						LogSource:     logType,
 						Namespace:     entry.NamespaceName,
 						ContainerName: entry.ContainerName,
 						Process:       entry.ProcessName,
@@ -422,6 +436,7 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 					}
 				} else {
 					p = Profile{
+						LogSource:     logType,
 						Namespace:     entry.NamespaceName,
 						ContainerName: entry.ContainerName,
 						Process:       entry.ProcessName,
@@ -444,6 +459,7 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	finalmap := AggregateSummary(w, Operation)
 	for r, frequency := range finalmap {
 		row := table.NewRow(table.RowData{
+			ColumnLogSource:     r.LogSource,
 			ColumnNamespace:     r.Namespace,
 			ColumnContainerName: r.ContainerName,
 			ColumnProcessName:   r.Process,
@@ -453,6 +469,7 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 			ColumnTimestamp:     frequency.time,
 		})
 		jsondata = append(jsondata, Profile{
+			LogSource:     r.LogSource,
 			Namespace:     r.Namespace,
 			ContainerName: r.ContainerName,
 			Process:       r.Process,
@@ -498,7 +515,7 @@ func Start(o Options) {
 	}()
 
 	os.Stderr = nil
-	if err := p.Start(); err != nil {
+	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
 	select {
