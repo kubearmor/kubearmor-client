@@ -1,0 +1,27 @@
+# generic settings
+k8s: false
+enableKubeArmorStateAgent: true
+{{- if .SecureContainers }}
+# overall container settings
+enableKubeArmorPolicy: true
+visibility: {{.KubeArmorVisibility}}
+criSocket: unix:///var/run/docker.sock
+defaultFilePosture: {{.KubeArmorFilePosture}}
+defaultNetworkPosture: {{.KubeArmorNetworkPosture}}
+defaultCapabilitiesPosture: {{.KubeArmorCapPosture}}
+{{- else }}
+# overall container settings
+enableKubeArmorPolicy: false
+visibility: "none"
+{{- end }}
+# overall host settings
+enableKubeArmorHostPolicy: true
+hostVisibility: {{.KubeArmorHostVisibility}}
+hostDefaultFilePosture: {{.KubeArmorHostFilePosture}}
+hostDefaultNetworkPosture: {{.KubeArmorHostNetworkPosture}}
+hostDefaultCapabilitiesPosture: {{.KubeArmorHostCapPosture}}
+
+# alert throttling config
+alertThrottling: {{.KubeArmorAlertThrottling}}
+maxAlertPerSec: {{.KubeArmorMaxAlertsPerSec}}
+throttleSec: {{.KubeArmorThrottleSec}}
