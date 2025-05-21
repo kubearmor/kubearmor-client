@@ -372,7 +372,11 @@ func SetKAConfig(installOptions *Options) (*KubeArmorConfig, error) {
 	}
 	if installOptions.VmMode == utils.VMMode_Systemd {
 		if installOptions.KubearmorImage == "" {
-			config.KubeArmorImage = utils.DefaultKubeArmorSystemdImage + ":" + config.KubeArmorTag
+			if installOptions.KubeArmorTag != "" {
+				config.KubeArmorImage = utils.DefaultKubeArmorSystemdImage + ":" + installOptions.KubeArmorTag
+			} else {
+				config.KubeArmorImage = utils.DefaultKubeArmorSystemdImage + ":" + config.KubeArmorTag
+			}
 		} else {
 			config.KubeArmorImage = installOptions.KubearmorImage
 		}

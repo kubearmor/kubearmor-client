@@ -86,6 +86,8 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	//these flags should only be availabe only for mode k8s
 	installCmd.Flags().StringVarP(&installOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
+	// Leaving defaults empty here because the KubeArmor systemd installation uses the 'kubearmor/kubearmor-systemd' repo,
+	// whereas the regular (Docker/K8s) installation uses the 'kubearmor/kubearmor' repo.
 	installCmd.Flags().StringVarP(&installOptions.KubearmorImage, "image", "i", "", "Kubearmor daemonset image to use")
 	installCmd.Flags().StringVarP(&installOptions.InitImage, "init-image", "", "", "Kubearmor daemonset init container image to use")
 	installCmd.Flags().StringVarP(&installOptions.OperatorImage, "operator-image", "", "kubearmor/kubearmor-operator:stable", "Kubearmor operator container image to use")

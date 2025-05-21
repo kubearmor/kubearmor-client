@@ -124,7 +124,14 @@ func getOperatorCR(o Options) (*Operatorv1.KubeArmorConfig, string) {
 	var defaultCapabilitiesPosture Operatorv1.PostureType
 	var defaultNetworkPosture Operatorv1.PostureType
 
+	// Setting default images to stable version
+	if len(o.KubearmorImage) == 0 {
+		o.KubearmorImage = utils.DefaultKubeArmorImage + ":" + utils.DefaultDockerTag
+	}
 	o.KubearmorImage = updateImageTag(o.KubearmorImage, o.KubeArmorTag)
+	if len(o.InitImage) == 0 {
+		o.InitImage = utils.DefaultKubeArmorInitImage + ":" + utils.DefaultDockerTag
+	}
 	o.InitImage = updateImageTag(o.InitImage, o.KubeArmorTag)
 	o.ControllerImage = updateImageTag(o.ControllerImage, o.KubeArmorControllerTag)
 	o.RelayImage = updateImageTag(o.RelayImage, o.KubeArmorRelayTag)
@@ -476,7 +483,15 @@ func updateImageTag(image, tag string) string {
 
 // K8sInstaller for karmor install
 func K8sLegacyInstaller(c *k8s.Client, o Options) error {
+
+	// Setting default images to stable version
+	if len(o.KubearmorImage) == 0 {
+		o.KubearmorImage = utils.DefaultKubeArmorImage + ":" + utils.DefaultDockerTag
+	}
 	o.KubearmorImage = updateImageTag(o.KubearmorImage, o.KubeArmorTag)
+	if len(o.InitImage) == 0 {
+		o.InitImage = utils.DefaultKubeArmorInitImage + ":" + utils.DefaultDockerTag
+	}
 	o.InitImage = updateImageTag(o.InitImage, o.KubeArmorTag)
 	o.ControllerImage = updateImageTag(o.ControllerImage, o.KubeArmorControllerTag)
 	o.RelayImage = updateImageTag(o.RelayImage, o.KubeArmorRelayTag)
