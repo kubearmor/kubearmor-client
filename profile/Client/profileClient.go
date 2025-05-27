@@ -403,60 +403,67 @@ func (p Profile) MarshalText() (text []byte, err error) {
 	return json.Marshal(x(p))
 }
 
-func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
+func generateRowsFromData(data []pb.Log, operation string) []table.Row {
 	var s SomeData
 	var jsondata []Profile
 	m := make(map[Profile]int)
 	w := make(map[Profile]*Frequency)
 	for _, entry := range data {
 
-		if entry.Operation == Operation {
-			if (entry.NamespaceName == o1.Namespace) ||
-				(entry.PodName == o1.Pod) ||
-				(entry.ContainerName == o1.Container) ||
-				(len(o1.Namespace) == 0 && len(o1.Pod) == 0 && len(o1.Container) == 0) {
-				var p Profile
-				var logType string
-				if entry.Type == "HostLog" {
-					logType = "Host"
-					entry.NamespaceName = "--"
-					entry.ContainerName = "--"
-				} else {
-					logType = "Container"
-				}
+		if entry.Operation != operation {
+			continue
+		}
 
-				if entry.Operation == "Syscall" {
-					p = Profile{
-						LogSource:     logType,
-						Namespace:     entry.NamespaceName,
-						ContainerName: entry.ContainerName,
-						Process:       entry.ProcessName,
-						Resource:      entry.Data,
-						Result:        entry.Result,
-					}
-				} else {
-					p = Profile{
-						LogSource:     logType,
-						Namespace:     entry.NamespaceName,
-						ContainerName: entry.ContainerName,
-						Process:       entry.ProcessName,
-						Resource:      entry.Resource,
-						Result:        entry.Result,
-					}
-				}
+		if (o1.Namespace != "") && (entry.NamespaceName != o1.Namespace) {
+			continue
+		}
+		if (o1.Pod != "") && (entry.PodName != o1.Pod) {
+			continue
+		}
+		if (o1.Container != "") && (entry.ContainerName != o1.Container) {
+			continue
+		}
 
-				f := &Frequency{
-					time: entry.UpdatedTime,
-				}
-				w[p] = f
-				m[p]++
-				w[p].freq = m[p]
+		var p Profile
+		var logType string
+		if entry.Type == "HostLog" {
+			logType = "Host"
+			entry.NamespaceName = "--"
+			entry.ContainerName = "--"
+		} else {
+			logType = "Container"
+		}
 
+		if entry.Operation == "Syscall" {
+			p = Profile{
+				LogSource:     logType,
+				Namespace:     entry.NamespaceName,
+				ContainerName: entry.ContainerName,
+				Process:       entry.ProcessName,
+				Resource:      entry.Data,
+				Result:        entry.Result,
+			}
+		} else {
+			p = Profile{
+				LogSource:     logType,
+				Namespace:     entry.NamespaceName,
+				ContainerName: entry.ContainerName,
+				Process:       entry.ProcessName,
+				Resource:      entry.Resource,
+				Result:        entry.Result,
 			}
 		}
+
+		f := &Frequency{
+			time: entry.UpdatedTime,
+		}
+		w[p] = f
+		m[p]++
+		w[p].freq = m[p]
+
 	}
 
-	finalmap := AggregateSummary(w, Operation)
+	finalmap := AggregateSummary(w, operation)
 	for r, frequency := range finalmap {
 		row := table.NewRow(table.RowData{
 			ColumnLogSource:     r.LogSource,
@@ -482,13 +489,13 @@ func generateRowsFromData(data []pb.Log, Operation string) []table.Row {
 	}
 
 	if o1.Save {
-		if Operation == "File" {
+		if operation == "File" {
 			convertToJSON("File", jsondata)
-		} else if Operation == "Process" {
+		} else if operation == "Process" {
 			convertToJSON("Process", jsondata)
-		} else if Operation == "Network" {
+		} else if operation == "Network" {
 			convertToJSON("Network", jsondata)
-		} else if Operation == "Syscall" {
+		} else if operation == "Syscall" {
 			convertToJSON("Syscall", jsondata)
 		}
 	}
