@@ -11,7 +11,6 @@ import (
 	klog "github.com/kubearmor/kubearmor-client/log"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
-	"sync"
 )
 
 var eventChan chan klog.EventInfo
@@ -19,11 +18,7 @@ var eventChan chan klog.EventInfo
 // ErrChan to make error channels from goroutines
 var ErrChan chan error
 
-// Telemetry to store incoming log events
-var Telemetry []pb.Log
-
-// TelMutex to prevent deadlock
-var TelMutex sync.RWMutex
+var EventChan = make(chan pb.Log)
 
 // GetLogs to fetch logs
 func GetLogs(grpc string) error {
@@ -43,9 +38,7 @@ func GetLogs(grpc string) error {
 				if err != nil {
 					return err
 				}
-				TelMutex.Lock()
-				Telemetry = append(Telemetry, log)
-				TelMutex.Unlock()
+				EventChan <- log
 			} else {
 				log.Errorf("UNKNOWN EVT type %s", evtin.Type)
 			}

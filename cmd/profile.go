@@ -8,24 +8,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var profileOptions profileclient.Options
-
 // profileCmd represents the profile command
 var profilecmd = &cobra.Command{
 	Use:   "profile",
 	Short: "Profiling of logs",
 	Long:  `Profiling of logs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		profileclient.Start(profileOptions)
+		profileclient.Start()
 		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(profilecmd)
-	profilecmd.Flags().StringVar(&profileOptions.GRPC, "gRPC", "", "use gRPC")
-	profilecmd.Flags().StringVarP(&profileOptions.Namespace, "namespace", "n", "", "Filter using namespace")
-	profilecmd.Flags().StringVar(&profileOptions.Pod, "pod", "", "Filter using Pod name")
-	profilecmd.Flags().StringVarP(&profileOptions.Container, "container", "c", "", "name of the container ")
-	profilecmd.Flags().BoolVar(&profileOptions.Save, "save", false, "Save Profile data in json format")
+	profilecmd.Flags().StringVar(&profileclient.ProfileOpts.GRPC, "gRPC", "", "use gRPC")
+	profilecmd.Flags().StringVarP(&profileclient.ProfileOpts.Namespace, "namespace", "n", "", "Filter using namespace")
+	profilecmd.Flags().StringVar(&profileclient.ProfileOpts.Pod, "pod", "", "Filter using Pod name")
+	profilecmd.Flags().StringVarP(&profileclient.ProfileOpts.Container, "container", "c", "", "name of the container ")
+	profilecmd.Flags().BoolVar(&profileclient.ProfileOpts.Save, "save", false, "Save Profile data in json format")
 }

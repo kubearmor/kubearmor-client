@@ -6,21 +6,16 @@ package profileclient
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
-	"time"
-
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
-	klog "github.com/kubearmor/kubearmor-client/log"
 	profile "github.com/kubearmor/kubearmor-client/profile"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 // Column keys
@@ -71,12 +66,26 @@ type Options struct {
 	Save      bool
 }
 
+var ProfileOpts Options
+
 // Model for main Bubble Tea
 type Model struct {
-	File     table.Model
-	Process  table.Model
-	Network  table.Model
-	Syscall  table.Model
+	File         table.Model
+	FileRows     []table.Row
+	FileRowIndex map[string]int
+
+	Process         table.Model
+	ProcessRows     []table.Row
+	ProcessRowIndex map[string]int
+
+	Network         table.Model
+	NetworkRows     []table.Row
+	NetworkRowIndex map[string]int
+
+	Syscall         table.Model
+	SyscallRows     []table.Row
+	SyscallRowIndex map[string]int
+
 	tabs     tea.Model
 	keys     keyMap
 	quitting bool
@@ -88,19 +97,11 @@ type Model struct {
 	state sessionState
 }
 
-// SomeData stores incoming row data
-type SomeData struct {
-	rows []table.Row
-}
-
-func waitForActivity() tea.Cmd {
+func waitForNextEvent() tea.Cmd {
 	return func() tea.Msg {
-		time.Sleep(2 * time.Second)
-		return klog.EventInfo{}
+		return <-profile.EventChan
 	}
 }
-
-var o1 Options
 
 func generateColumns(Operation string) []table.Column {
 	LogSource := table.NewFlexColumn(ColumnLogSource, "LogSource", 1).WithStyle(ColumnStyle).WithFiltered(true)
@@ -137,17 +138,29 @@ func generateColumns(Operation string) []table.Column {
 // Init calls initial functions if needed
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		waitForActivity(),
+		waitForNextEvent(),
 	)
 }
 
 // NewModel initializates new bubbletea model
 func NewModel() Model {
 	model := Model{
-		File:    table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
-		Process: table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
-		Network: table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
-		Syscall: table.New(generateColumns("Syscall")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		File:         table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		FileRows:     []table.Row{},
+		FileRowIndex: make(map[string]int),
+
+		Process:         table.New(generateColumns("Process")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		ProcessRows:     []table.Row{},
+		ProcessRowIndex: make(map[string]int),
+
+		Network:         table.New(generateColumns("Network")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		NetworkRows:     []table.Row{},
+		NetworkRowIndex: make(map[string]int),
+
+		Syscall:         table.New(generateColumns("Syscall")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
+		SyscallRows:     []table.Row{},
+		SyscallRowIndex: make(map[string]int),
+
 		tabs: &tabs{
 			active: "Lip Gloss",
 			items:  []string{"Process", "File", "Network", "Syscall"},
@@ -180,7 +193,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
 			return m, tea.Quit
-
 		}
 
 		switch msg.String() {
@@ -209,6 +221,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Process = m.Process.WithPageSize(m.Process.PageSize() + 1)
 			m.Syscall = m.Syscall.WithPageSize(m.Syscall.PageSize() + 1)
 
+		case "e":
+			var file string
+			var err error
+			switch m.state {
+			case fileview:
+				file, err = m.ExportFileJSON()
+			case processview:
+				file, err = m.ExportProcessJSON()
+			case syscallview:
+				file, err = m.ExportSyscallJSON()
+			case networkview:
+				file, err = m.ExportNetworkJSON()
+			default:
+				// Optionally log or handle unknown operations
+				fmt.Println("Unknown operation")
+			}
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Exported json data to file:", file)
+
 		}
 
 		switch m.state {
@@ -231,23 +264,99 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Syscall, cmd = m.Syscall.Update(msg)
 			cmds = append(cmds, cmd)
 		}
-	case klog.EventInfo:
-		profile.TelMutex.RLock()
-		m.File = m.File.WithRows(generateRowsFromData(profile.Telemetry, "File")).WithColumns(generateColumns("File"))
-		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		m.Process = m.Process.WithRows(generateRowsFromData(profile.Telemetry, "Process")).WithColumns(generateColumns("Process"))
-		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		m.Network = m.Network.WithRows(generateRowsFromData(profile.Telemetry, "Network")).WithColumns(generateColumns("Network"))
-		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		m.Syscall = m.Syscall.WithRows(generateRowsFromData(profile.Telemetry, "Syscall")).WithColumns(generateColumns("Syscall"))
-		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
-		profile.TelMutex.RUnlock()
+	case pb.Log:
+		if isCorrectLog(msg) {
+			m.updateTableWithNewEntry(msg)
+		}
 
-		return m, waitForActivity()
-
+		return m, waitForNextEvent()
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *Model) updateTableWithNewEntry(msg pb.Log) {
+
+	switch msg.Operation {
+	case "File":
+		key := makeKeyFromEntry(msg)
+		if idx, ok := m.FileRowIndex[key]; ok {
+			row := m.FileRows[idx]
+			count, ok := row.Data[ColumnCount].(int)
+			if ok {
+				count++
+				m.FileRows[idx].Data[ColumnCount] = count
+			}
+
+			m.FileRows[idx].Data[ColumnTimestamp] = msg.UpdatedTime
+		} else {
+			newRow := generateRowFromLog(msg)
+			m.FileRows = append(m.FileRows, newRow)
+			m.FileRowIndex[key] = len(m.FileRows) - 1
+		}
+
+		m.File = m.File.WithRows(m.FileRows)
+		m.File = m.File.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+
+	case "Process":
+		key := makeKeyFromEntry(msg)
+		if idx, ok := m.ProcessRowIndex[key]; ok {
+			row := m.ProcessRows[idx]
+			count, ok := row.Data[ColumnCount].(int)
+			if ok {
+				count++
+				m.ProcessRows[idx].Data[ColumnCount] = count
+			}
+
+			m.ProcessRows[idx].Data[ColumnTimestamp] = msg.UpdatedTime
+		} else {
+			newRow := generateRowFromLog(msg)
+			m.ProcessRows = append(m.ProcessRows, newRow)
+			m.ProcessRowIndex[key] = len(m.ProcessRows) - 1
+		}
+
+		m.Process = m.Process.WithRows(m.ProcessRows)
+		m.Process = m.Process.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+
+	case "Network":
+		key := makeKeyFromEntry(msg)
+		if idx, ok := m.NetworkRowIndex[key]; ok {
+			row := m.NetworkRows[idx]
+			count, ok := row.Data[ColumnCount].(int)
+			if ok {
+				count++
+				m.NetworkRows[idx].Data[ColumnCount] = count
+			}
+
+			m.NetworkRows[idx].Data[ColumnTimestamp] = msg.UpdatedTime
+		} else {
+			newRow := generateRowFromLog(msg)
+			m.NetworkRows = append(m.NetworkRows, newRow)
+			m.NetworkRowIndex[key] = len(m.NetworkRows) - 1
+		}
+		m.Network = m.Network.WithRows(m.NetworkRows)
+		m.Network = m.Network.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+
+	case "Syscall":
+		key := makeKeyFromEntry(msg)
+		if idx, ok := m.SyscallRowIndex[key]; ok {
+			row := m.SyscallRows[idx]
+			count, ok := row.Data[ColumnCount].(int)
+			if ok {
+				count++
+				m.SyscallRows[idx].Data[ColumnCount] = count
+			}
+
+			m.SyscallRows[idx].Data[ColumnTimestamp] = msg.UpdatedTime
+		} else {
+			newRow := generateRowFromLog(msg)
+			m.SyscallRows = append(m.SyscallRows, newRow)
+			m.SyscallRowIndex[key] = len(m.SyscallRows) - 1
+		}
+
+		m.Syscall = m.Syscall.WithRows(m.SyscallRows)
+		m.Syscall = m.Syscall.SortByAsc(ColumnNamespace).ThenSortByAsc(ColumnContainerName).ThenSortByAsc(ColumnProcessName).ThenSortByAsc(ColumnCount).ThenSortByAsc(ColumnResource)
+	}
 }
 
 func (m *Model) recalculateTable() {
@@ -260,48 +369,62 @@ func (m *Model) recalculateTable() {
 // View Renders Bubble Tea UI
 func (m Model) View() string {
 	pad := lipgloss.NewStyle().PaddingRight(1)
-	RowCount := lipgloss.JoinHorizontal(lipgloss.Left, lipgloss.NewStyle().Foreground(helptheme).Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())))
+	RowCount := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		lipgloss.NewStyle().
+			Foreground(helptheme).
+			Render(fmt.Sprintf("Max Rows: %d", m.Process.PageSize())),
+	)
 	helpKey := m.help.Styles.FullDesc.Foreground(helptheme).Padding(0, 0, 1)
-	help := lipgloss.JoinHorizontal(lipgloss.Left, helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())))
-	var total string
-	s := lipgloss.NewStyle().Height(m.height).MaxHeight(m.height)
-	switch m.state {
+	help := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		helpKey.Render(m.help.FullHelpView(m.keys.FullHelp())),
+	)
 
-	case processview:
-
-		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
+	content := func(view string) string {
+		return lipgloss.JoinVertical(
+			lipgloss.Top,
 			help,
 			RowCount,
 			m.tabs.View(),
-			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Process.View()))),
-		))
-	case fileview:
-		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
-		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
-			help,
-			RowCount,
-			m.tabs.View(),
-			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.File.View()))),
-		))
-	case networkview:
-		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
-		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
-			help,
-			RowCount,
-			m.tabs.View(),
-			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Network.View()))),
-		))
-	case syscallview:
-		// s := lipgloss.NewStyle().MaxHeight(m.height).MaxWidth(m.width)
-		total = s.Render(lipgloss.JoinVertical(lipgloss.Top, lipgloss.JoinVertical(lipgloss.Top,
-			help,
-			RowCount,
-			m.tabs.View(),
-			lipgloss.JoinVertical(lipgloss.Center, pad.Render(m.Syscall.View()))),
-		))
+			lipgloss.JoinVertical(lipgloss.Center, pad.Render(view)),
+		)
 	}
-	return total
 
+	var view string
+	switch m.state {
+	case processview:
+		view = m.Process.View()
+	case fileview:
+		view = m.File.View()
+	case networkview:
+		view = m.Network.View()
+	case syscallview:
+		view = m.Syscall.View()
+	default:
+		view = ""
+	}
+
+	return lipgloss.NewStyle().
+		Height(m.height).
+		MaxHeight(m.height).
+		Render(content(view))
+}
+
+func (m *Model) ExportProcessJSON() (string, error) {
+	return ExportRowsToJSON(generateColumns("Process"), m.ProcessRows, "Process")
+}
+
+func (m *Model) ExportFileJSON() (string, error) {
+	return ExportRowsToJSON(generateColumns("File"), m.FileRows, "File")
+}
+
+func (m *Model) ExportNetworkJSON() (string, error) {
+	return ExportRowsToJSON(generateColumns("Network"), m.NetworkRows, "Network")
+}
+
+func (m *Model) ExportSyscallJSON() (string, error) {
+	return ExportRowsToJSON(generateColumns("Syscall"), m.SyscallRows, "Syscall")
 }
 
 // Profile Row Data to display
@@ -317,204 +440,11 @@ type Profile struct {
 	Time          string `json:"time"`
 }
 
-// Frequency and Timestamp data for another map
-type Frequency struct {
-	freq int
-	time string
-}
-
-func isLaterTimestamp(timestamp1, timestamp2 string) bool {
-	t1, err := time.Parse(time.RFC3339, timestamp1)
-	if err != nil {
-		// Handle error, use some default value, or return false if you prefer
-		return false
-	}
-
-	t2, err := time.Parse(time.RFC3339, timestamp2)
-	if err != nil {
-		// Handle error, use some default value, or return false if you prefer
-		return false
-	}
-
-	return t1.After(t2)
-}
-
-// AggregateSummary used to aggregate summary data for a less cluttered view of file and process data
-func AggregateSummary(inputMap map[Profile]*Frequency, Operation string) map[Profile]*Frequency {
-	outputMap := make(map[Profile]*Frequency)
-	var fileArr []string
-	fileSumMap := make(map[Profile]*Frequency)
-	updatedSumMap := make(map[Profile]*Frequency)
-	if Operation == "Network" || Operation == "Syscall" {
-		return inputMap
-	}
-	for prof, count := range inputMap {
-		if Operation == "File" || Operation == "Process" {
-			fileArr = append(fileArr, prof.Resource)
-			fileSumMap[prof] = count
-		} else {
-			updatedSumMap[prof] = count
-		}
-	}
-	inputMap = updatedSumMap
-	aggregatedPaths := profile.AggregatePaths(fileArr)
-	for summary, countTime := range fileSumMap {
-		for _, path := range aggregatedPaths {
-			if strings.HasPrefix(summary.Resource, path.Path) && (len(summary.Resource) == len(path.Path) || summary.Resource[len(strings.TrimSuffix(path.Path, "/"))] == '/') {
-				summary.Resource = path.Path
-				break
-			}
-		}
-		if existingFreq, ok := outputMap[summary]; ok {
-			// If the prof already exists, update the frequency and timestamp if needed
-			existingFreq.freq += countTime.freq
-
-			if isLaterTimestamp(countTime.time, existingFreq.time) {
-				existingFreq.time = countTime.time
-			}
-			outputMap[summary] = existingFreq
-		} else {
-			outputMap[summary] = countTime
-		}
-	}
-
-	return outputMap
-}
-
-func convertToJSON(Operation string, data []Profile) {
-	var jsonArray []string
-	jsonByte, _ := json.MarshalIndent(data, " ", "   ")
-	//unmarshalling here because it is marshalled two times for some reason
-	if err := json.Unmarshal(jsonByte, &jsonArray); err != nil {
-		fmt.Println("Error parsing JSON array:", err)
-	}
-	if len(jsonArray) > 0 {
-		filepath := "Profile_Summary/"
-		err := os.MkdirAll(filepath, 0600)
-		err = os.WriteFile(filepath+Operation+".json", []byte(jsonArray[0]), 0600)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func (p Profile) MarshalText() (text []byte, err error) {
-	type x Profile
-	return json.Marshal(x(p))
-}
-
-func generateRowsFromData(data []pb.Log, operation string) []table.Row {
-	var s SomeData
-	var jsondata []Profile
-	m := make(map[Profile]int)
-	w := make(map[Profile]*Frequency)
-	for _, entry := range data {
-
-		if entry.Operation != operation {
-			continue
-		}
-
-		if (o1.Namespace != "") && (entry.NamespaceName != o1.Namespace) {
-			continue
-		}
-		if (o1.Pod != "") && (entry.PodName != o1.Pod) {
-			continue
-		}
-		if (o1.Container != "") && (entry.ContainerName != o1.Container) {
-			continue
-		}
-
-		var p Profile
-		var logType string
-		if entry.Type == "HostLog" {
-			logType = "Host"
-			entry.NamespaceName = "--"
-			entry.ContainerName = "--"
-		} else {
-			logType = "Container"
-		}
-
-		if entry.Operation == "Syscall" {
-			p = Profile{
-				LogSource:     logType,
-				Namespace:     entry.NamespaceName,
-				ContainerName: entry.ContainerName,
-				Process:       entry.ProcessName,
-				Resource:      entry.Data,
-				Result:        entry.Result,
-			}
-		} else {
-			p = Profile{
-				LogSource:     logType,
-				Namespace:     entry.NamespaceName,
-				ContainerName: entry.ContainerName,
-				Process:       entry.ProcessName,
-				Resource:      entry.Resource,
-				Result:        entry.Result,
-			}
-		}
-
-		f := &Frequency{
-			time: entry.UpdatedTime,
-		}
-		w[p] = f
-		m[p]++
-		w[p].freq = m[p]
-
-	}
-
-	finalmap := AggregateSummary(w, operation)
-	for r, frequency := range finalmap {
-		row := table.NewRow(table.RowData{
-			ColumnLogSource:     r.LogSource,
-			ColumnNamespace:     r.Namespace,
-			ColumnContainerName: r.ContainerName,
-			ColumnProcessName:   r.Process,
-			ColumnResource:      r.Resource,
-			ColumnResult:        r.Result,
-			ColumnCount:         frequency.freq,
-			ColumnTimestamp:     frequency.time,
-		})
-		jsondata = append(jsondata, Profile{
-			LogSource:     r.LogSource,
-			Namespace:     r.Namespace,
-			ContainerName: r.ContainerName,
-			Process:       r.Process,
-			Resource:      r.Resource,
-			Result:        r.Result,
-			Count:         frequency.freq,
-			Time:          frequency.time,
-		})
-		s.rows = append(s.rows, row)
-	}
-
-	if o1.Save {
-		if operation == "File" {
-			convertToJSON("File", jsondata)
-		} else if operation == "Process" {
-			convertToJSON("Process", jsondata)
-		} else if operation == "Network" {
-			convertToJSON("Network", jsondata)
-		} else if operation == "Syscall" {
-			convertToJSON("Syscall", jsondata)
-		}
-	}
-
-	return s.rows
-}
-
 // Start entire TUI
-func Start(o Options) {
-	o1 = Options{
-		Namespace: o.Namespace,
-		Pod:       o.Pod,
-		GRPC:      o.GRPC,
-		Container: o.Container,
-		Save:      o.Save,
-	}
+func Start() {
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 	go func() {
-		err := profile.GetLogs(o1.GRPC)
+		err := profile.GetLogs(ProfileOpts.GRPC)
 		if err != nil {
 			p.Quit()
 			profile.ErrChan <- err
