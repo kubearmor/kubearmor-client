@@ -89,7 +89,7 @@ func ExportRowsToJSON(columns []table.Column, rows []table.Row, operation string
 
 	// Create ProfileSummary directory if it doesn't exist
 	outputDir := filepath.Join(cwd, "ProfileSummary")
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0700); err != nil {
 		return "", fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func ExportRowsToJSON(columns []table.Column, rows []table.Row, operation string
 	filePath := filepath.Join(outputDir, fileName)
 
 	// Write JSON to file
-	if err := os.WriteFile(filePath, jsonBytes, 0644); err != nil {
+	if err := os.WriteFile(filePath, jsonBytes, 0600); err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
