@@ -16,7 +16,42 @@ var vmMode string
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install KubeArmor",
-	Long:  `Install KubeArmor in either Kubernetes or non-Kubernetes mode.`,
+	Long: `Install KubeArmor in either Kubernetes or non‑Kubernetes mode.
+
+This command bootstraps KubeArmor in your environment by deploying all necessary components
+and configuring them according to the options you specify. It supports two primary modes:
+
+  • Kubernetes mode (default)
+    – Deploys the KubeArmor Operator, Controller, Relay Server, and DaemonSets
+      into the target cluster.
+    – Honors flags like --namespace, --image, --tag, --operator-image, --controller-image,
+      --relay-image, and visibility/audit/block posture settings.
+    – Use --legacy to invoke the legacy installer path for clusters that don’t support
+      Operator‑based installation.
+
+  • Non‑Kubernetes mode (--nonk8s)
+    – Installs KubeArmor as a standalone service on a host or VM.
+    – Automatically selects Docker or systemd VM mode based on host capabilities,
+      or force a mode with --vm-mode (docker|systemd).
+    – Supports secure container monitoring, host‑audit/host‑block posture, and
+      telemetry visibility flags just like Kubernetes mode.
+
+Examples:
+  # Install with default settings into namespace "kubearmor"
+  karmor install
+
+  # Use a specific image tag and enable only network telemetry
+  karmor install --tag v1.6.0 --viz network
+
+  # Legacy installer for clusters without Operator support
+  karmor install --legacy
+
+  # Non‑Krnetes install using Docker mode
+  karmor install --nonk8s --vm-mode docker
+
+For more details on each flag, run:
+  karmor install --help
+`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if !installOptions.NonK8s {
 			if installOptions.Legacy {
