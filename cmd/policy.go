@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 Authors of KubeArmor
-//go:build darwin || (linux && !windows)
 
 package cmd
 
@@ -81,6 +80,15 @@ var vmPolicyDeleteCmd = &cobra.Command{
 	},
 }
 
+var vmPolicyGetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "get policy for bare-metal vm/kvms control plane vm",
+	Long:  `get policy for bare-metal vm/kvms control plane vm`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return policyOptions.HandleGet(args)
+	},
+}
+
 // ========== //
 // == Init == //
 // ========== //
@@ -88,9 +96,13 @@ var vmPolicyDeleteCmd = &cobra.Command{
 func init() {
 	vmCmd.AddCommand(vmPolicyCmd)
 
+	// Add flags to vmPolicyGetCmd
+	vmPolicyGetCmd.Flags().StringVarP(&policyOptions.Type, "type", "t", "ksp", "Specify the type of policy to get. (ksp or hsp)")
+
 	// Subcommand for policy command
 	vmPolicyCmd.AddCommand(vmPolicyAddCmd)
 	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
+	vmPolicyCmd.AddCommand(vmPolicyGetCmd)
 
 	// gRPC endpoint flag to communicate with KubeArmor. Available across subcommands.
 	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "gRPC server information")
