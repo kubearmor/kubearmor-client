@@ -847,11 +847,6 @@ func getPoliciesOnAnnotatedPods(c *k8s.Client) ([]map[string]interface{}, error)
 	return maps, nil
 }
 
-/*
-	{
-		"policy_name": map[string][]string
-	}
-*/
 func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy string) bool {
 	for _, slice := range input {
 		// if slice contains podname, then append the policy to the existing policies
@@ -870,9 +865,6 @@ func checkIfDataAlreadyContainsPodName(input [][]string, name string, policy str
 func sliceToSet(mySlice []string) mapset.Set[string] {
 	mySet := mapset.NewSet[string]()
 	for _, ele := range mySlice {
-		if len(ele) >= 10 && ele[0:9] == "namespace" {
-			continue
-		}
 		mySet.Add(ele)
 	}
 	return mySet
