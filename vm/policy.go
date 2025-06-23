@@ -225,7 +225,6 @@ func (o *PolicyOptions) HandleGet(args []string) error {
 	default:
 		return errors.New("invalid type: " + o.Type)
 	}
-	return nil
 }
 
 func (o *PolicyOptions) printContainerTable(podData [][]string) error {
