@@ -54,9 +54,7 @@ const (
 	DockerHubURL             = "https://hub.docker.com/v2/repositories/kubearmor/kubearmor-systemd/tags/"
 )
 
-var (
-	DefaultSystemdFile string
-)
+var DefaultSystemdFile string
 
 type Config struct {
 	HostVisibility            string `json:"hostVisibility"`
@@ -126,6 +124,7 @@ func createDefaultConfigPath() (string, error) {
 
 	return configPath, nil
 }
+
 func (config *KubeArmorConfig) DeployKAdocker() error {
 	_, err := config.ValidateEnv()
 	if err != nil {
@@ -231,6 +230,7 @@ func findLatestTag(tags []string) string {
 	}
 	return ""
 }
+
 func (config *KubeArmorConfig) DeployKASystemd() error {
 	// Download and install agents
 	fmt.Printf("ℹ️\tInstalling KubeArmor as a systemd service\n")
@@ -279,6 +279,7 @@ func DetectArchitecture() (string, error) {
 		return "", fmt.Errorf("unsupported architecture: %s", arch)
 	}
 }
+
 func (config *KubeArmorConfig) SystemdInstall() error {
 	btfPresent, err := verifyBTF()
 	// BTF not present, we need to fail
@@ -320,6 +321,7 @@ func (config *KubeArmorConfig) SystemdInstall() error {
 
 	return nil
 }
+
 func verifyBTF() (bool, error) {
 	btfPath := "/sys/kernel/btf/vmlinux"
 
@@ -420,6 +422,7 @@ func SetKAConfig(installOptions *Options) (*KubeArmorConfig, error) {
 
 	return config, nil
 }
+
 func (config *KubeArmorConfig) installAgent(agentName, agentRepo, agentTag string) error {
 	fileName, err := config.downloadAgent(agentName, agentRepo, agentTag)
 	if err != nil {
@@ -434,6 +437,7 @@ func (config *KubeArmorConfig) installAgent(agentName, agentRepo, agentTag strin
 
 	return nil
 }
+
 func (config *KubeArmorConfig) placeServiceFiles() error {
 	// initialize sprig for templating
 	sprigFuncs := sprig.GenericFuncMap()
@@ -483,7 +487,7 @@ func extractAgent(fileName string) error {
 		}
 
 		// Create parent directories
-		err = os.MkdirAll(filepath.Dir(destPath), 0755) // #nosec G301
+		err = os.MkdirAll(filepath.Dir(destPath), 0o755) // #nosec G301
 		if err != nil {
 			return err
 		}
@@ -500,8 +504,8 @@ func extractAgent(fileName string) error {
 		}
 
 		// Preserve executable permission
-		if header.Mode&0111 != 0 {
-			err := os.Chmod(destPath, 0755) // #nosec G302
+		if header.Mode&0o111 != 0 {
+			err := os.Chmod(destPath, 0o755) // #nosec G302
 			if err != nil {
 				return err
 			}
@@ -532,6 +536,7 @@ func (config *KubeArmorConfig) downloadAgent(agentName, agentRepo, agentTag stri
 	filepath := path.Join(utils.DownloadDir, agentName+"_"+agentTag+".tar.gz")
 	return filepath, nil
 }
+
 func (installOptions *KubeArmorConfig) ValidateEnv() (string, error) {
 	_, err := exec.LookPath("docker")
 	if err != nil {
@@ -611,6 +616,7 @@ func RemoveSystemd() error {
 	utils.Deletedir(utils.KAconfigPath)
 	return nil
 }
+
 func getContainerIDByName(containerName string) (string, error) {
 	ctx := context.Background()
 
@@ -633,8 +639,8 @@ func getContainerIDByName(containerName string) (string, error) {
 	}
 	return "", nil // not found
 }
-func stopAndDeleteContainerByID(containerID string) error {
 
+func stopAndDeleteContainerByID(containerID string) error {
 	configPath, err := utils.GetDefaultConfigPath()
 	if err != nil {
 		fmt.Println(err.Error())

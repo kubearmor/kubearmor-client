@@ -277,7 +277,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateTableWithNewEntry(msg pb.Log) {
-
 	switch msg.Operation {
 	case "File":
 		key := makeKeyFromEntry(msg)

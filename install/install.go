@@ -483,7 +483,6 @@ func updateImageTag(image, tag string) string {
 
 // K8sInstaller for karmor install
 func K8sLegacyInstaller(c *k8s.Client, o Options) error {
-
 	// Setting default images to stable version
 	if len(o.KubearmorImage) == 0 {
 		o.KubearmorImage = utils.DefaultKubeArmorImage + ":" + utils.DefaultDockerTag
@@ -1632,7 +1631,6 @@ func writeToYAML(f *os.File, o interface{}) error {
 
 // this function stores the common elements for legacy and helm-based uninstallation
 func commonUninstall(c *k8s.Client, o Options) {
-
 	fmt.Print("🗑️  Mutation Admission Registration\n")
 	if err := c.K8sClientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(context.Background(), deployments.KubeArmorControllerMutatingWebhookConfiguration, metav1.DeleteOptions{}); err != nil {
 		if !strings.Contains(err.Error(), "not found") {

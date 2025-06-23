@@ -6,7 +6,6 @@ package profile
 
 import (
 	"errors"
-	"sync"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"github.com/kubearmor/kubearmor-client/k8s"

@@ -133,7 +133,6 @@ func execIntoPod(c *k8s.Client, podname, namespace, cmd string) (string, error) 
 		Stdout: buf,
 		Stderr: errBuf,
 	})
-
 	if err != nil {
 		return "none", err
 	}
@@ -255,11 +254,12 @@ func printWhenKubeArmorIsRunningInSystemmd(o Options) error {
 	armoredContainers, containerMap := getArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
 	hostPolicyData := getHostPolicyData(policyData)
 	if o.Output == "json" {
-		probeData := map[string]interface{}{"Probe Data": map[string]interface{}{
-			"Host":              kd,
-			"HostPolicies":      policyData.HostMap,
-			"ArmoredContainers": containerMap,
-		},
+		probeData := map[string]interface{}{
+			"Probe Data": map[string]interface{}{
+				"Host":              kd,
+				"HostPolicies":      policyData.HostMap,
+				"ArmoredContainers": containerMap,
+			},
 		}
 		out, err := json.Marshal(probeData)
 		if err != nil {
@@ -284,24 +284,18 @@ func printWhenKubeArmorIsRunningInSystemmd(o Options) error {
 }
 
 func getHostPolicyData(policyData *pb.ProbeResponse) [][]string {
-
 	var data [][]string
 	for k, v := range policyData.HostMap {
-
 		for _, policy := range v.PolicyList {
 			data = append(data, []string{k, policy})
 		}
-
 	}
 	return data
-
 }
 
 func getArmoredContainerData(containerList []string, containerMap map[string]*pb.ContainerData) ([][]string, map[string][]string) {
-
 	var data [][]string
 	for _, containerName := range containerList {
-
 		if _, ok := containerMap[containerName]; ok {
 			if containerMap[containerName].PolicyEnabled == 1 {
 				for _, policyName := range containerMap[containerName].PolicyList {
@@ -311,12 +305,10 @@ func getArmoredContainerData(containerList []string, containerMap map[string]*pb
 		} else {
 			data = append(data, []string{containerName, ""})
 		}
-
 	}
 	mp := make(map[string][]string)
 
 	for _, v := range data {
-
 		if val, exists := mp[v[0]]; exists {
 
 			val = append(val, v[1])
@@ -325,11 +317,9 @@ func getArmoredContainerData(containerList []string, containerMap map[string]*pb
 		} else {
 			mp[v[0]] = []string{v[1]}
 		}
-
 	}
 
 	return data, mp
-
 }
 
 func checkLsmSupport(supportedLSM string, o Options) {
@@ -377,10 +367,10 @@ func checkBTFSupport() bool {
 }
 
 func checkKernelHeaderPresent() bool {
-	//check if there's any directory /usr/src/$(uname -r)
+	// check if there's any directory /usr/src/$(uname -r)
 	var uname unix.Utsname
 	if err := unix.Uname(&uname); err == nil {
-		var path = ""
+		path := ""
 		if _, err := os.Stat("/etc/redhat-release"); !os.IsNotExist(err) {
 			path = "/usr/src/" + string(uname.Release[:])
 		} else if _, err := os.Stat("/lib/modules/" + string(uname.Release[:]) + "/build/Kconfig"); !os.IsNotExist(err) {
@@ -429,7 +419,7 @@ func probeSystemdMode() (KubeArmorProbeData, error) {
 	}
 
 	var kd KubeArmorProbeData
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err = json.Unmarshal(buf, &kd)
 	if err != nil {
 		return KubeArmorProbeData{}, err
@@ -462,5 +452,4 @@ func getPolicyData(o Options) (*pb.ProbeResponse, error) {
 	}
 
 	return resp, nil
-
 }

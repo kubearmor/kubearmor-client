@@ -136,7 +136,6 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 		// Systemd mode, hence send policy over gRPC
 		if err = sendPolicyOverGRPC(o, policyEventData, k.Kind); err != nil {
 			return err
-
 		}
 
 	}

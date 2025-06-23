@@ -52,6 +52,7 @@ func GetComposeCommand() (string, string, error) {
 
 	return "", "", fmt.Errorf("docker requirements not met")
 }
+
 func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
 	if !strings.Contains(tryCmd, "docker") {
 		return "", fmt.Errorf("Command %s not supported", tryCmd)
@@ -102,6 +103,7 @@ func ExecComposeCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (
 
 	return string(stdout), nil
 }
+
 func compareVersionsAndGetComposeCommand(v1, v1Cmd, v2, v2Cmd string) (string, string) {
 	v1Clean := strings.TrimSpace(string(v1))
 	v2Clean := strings.TrimSpace(string(v2))
@@ -200,7 +202,7 @@ func CopyOrGenerateFile(userConfigDir, dirPath, filePath string, tempFuncs templ
 	// ignoring G302 - if containers are run by the root user, members of the
 	// docker group should be able to read the files
 	// overwrite files if need
-	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644) // #nosec G304 G302
+	resultFile, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0o644) // #nosec G304 G302
 	if err != nil {
 		return "", err
 	}
@@ -229,6 +231,7 @@ func GetDefaultConfigPath() (string, error) {
 
 	return configPath, nil
 }
+
 func ExecDockerCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (string, error) {
 	dockerCmd := exec.Command(tryCmd) // #nosec G204
 	if dryRun {
@@ -260,6 +263,7 @@ func ExecDockerCommand(setStdOut, dryRun bool, tryCmd string, args ...string) (s
 
 	return string(stdout), nil
 }
+
 func StopSystemdService(serviceName string, skipDeleteDisable, force bool) error {
 	ctx := context.Background()
 	conn, err := dbus.NewWithContext(ctx)
@@ -337,6 +341,7 @@ func Deletedir(dirName string) {
 		fmt.Printf("error deleting %s : %v", dirName, err)
 	}
 }
+
 func StartSystemdService(serviceName string) error {
 	if serviceName == "" {
 		return nil
@@ -404,6 +409,7 @@ func StopAndDeleteContainer(containerName string) error {
 	}
 	return nil
 }
+
 func GetDefaultPosture(auditPostureVal, blockPostureVal, ruleType string) string {
 	if auditPostureVal == "all" || (auditPostureVal == "" && blockPostureVal == "") {
 		return "audit"
