@@ -83,7 +83,27 @@ var vmPolicyDeleteCmd = &cobra.Command{
 var vmPolicyGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "get policy for bare-metal vm/kvms control plane vm",
-	Long:  `get policy for bare-metal vm/kvms control plane vm`,
+	Long: `Retrieve and inspect standalone (VM or bare‑metal) KubeArmor security policies.
+
+The "get" command lets you list all enforced policies or view the full YAML content of a specific policy, 
+for both container and host types, when running KubeArmor outside a Kubernetes cluster.
+
+By default, container policies are shown. Use the --type flag to select host policies.
+
+Examples:
+  # List all container policies:
+  karmor vm policy get
+
+  # List all host policies:
+  karmor vm policy get --type=hsp
+
+  # Show the YAML content of a specific container policy:
+  karmor vm policy get <policy>
+
+  # Show the YAML content of a specific host policy:
+  karmor vm policy get --type=hsp <policy>
+
+See --help for more details on the --type flag and usage.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return policyOptions.HandleGet(args)
 	},
@@ -97,7 +117,7 @@ func init() {
 	vmCmd.AddCommand(vmPolicyCmd)
 
 	// Add flags to vmPolicyGetCmd
-	vmPolicyGetCmd.Flags().StringVarP(&policyOptions.Type, "type", "t", "ksp", "Specify the type of policy to get. (ksp or hsp)")
+	vmPolicyGetCmd.Flags().StringVarP(&policyOptions.Type, "type", "t", "ksp", "Specify the type of policy to get.\n ksp/container/Container for Container policy\n hsp/host/Host for Host policy")
 
 	// Subcommand for policy command
 	vmPolicyCmd.AddCommand(vmPolicyAddCmd)
