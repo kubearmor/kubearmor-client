@@ -24,7 +24,6 @@ the supported KubeArmor features in the environment, the pods being handled by K
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := probe.PrintProbeResultCmd(client, probeInstallOptions)
 		return err
-
 	},
 }
 

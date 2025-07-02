@@ -16,7 +16,7 @@ var uninstallCmd = &cobra.Command{
 	Short: "Uninstall KubeArmor",
 	Long:  `Uninstall KubeArmor  in either Kubernetes or non-Kubernetes mode.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		//check for systemd or docker installation
+		// check for systemd or docker installation
 		exist := install.CheckAndRemoveKAVmInstallation()
 		if !exist {
 			if err := install.K8sUninstaller(client, uninstallOptions); err != nil {
@@ -37,5 +37,4 @@ func init() {
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.Force, "force", false, "Force remove KubeArmor annotations from deployments. (Deployments might be restarted)")
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.Verify, "verify", true, "Verify whether all KubeArmor resources are cleaned up or not")
 	uninstallCmd.Flags().BoolVar(&uninstallOptions.NonK8s, "nonk8s", false, "uninstall docker or systemd KubeArmor")
-
 }
