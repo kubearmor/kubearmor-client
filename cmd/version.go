@@ -14,7 +14,7 @@ var versionCmd = &cobra.Command{
 	Short: "Display version information",
 	Long:  `Display version information`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := version.PrintVersion(client); err != nil {
+		if err := version.PrintVersion(k8sClient); err != nil {
 			return err
 		}
 		return nil

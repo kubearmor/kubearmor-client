@@ -16,7 +16,7 @@ var sysdumpCmd = &cobra.Command{
 	Short: "Collect system dump information for troubleshooting and error report",
 	Long:  `Collect system dump information for troubleshooting and error reports`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := sysdump.Collect(client, dumpOptions); err != nil {
+		if err := sysdump.Collect(k8sClient, dumpOptions); err != nil {
 			return err
 		}
 		return nil

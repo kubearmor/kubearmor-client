@@ -14,7 +14,7 @@ var selfUpdateCmd = &cobra.Command{
 	Short: "selfupdate this cli tool",
 	Long:  `selfupdate this cli tool for checking the latest release on the github`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := selfupdate.SelfUpdate(client); err != nil {
+		if err := selfupdate.SelfUpdate(k8sClient); err != nil {
 			return err
 		}
 		return nil
