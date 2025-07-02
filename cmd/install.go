@@ -95,13 +95,13 @@ For more details on each flag, run:
 			case utils.VMMode_Docker:
 				err = config.DeployKAdocker()
 				if err != nil {
-					return fmt.Errorf("\n⚠️\terror installing ka in docker: %v", err)
+					return fmt.Errorf("\n⚠️\terror installing KubeArmor in docker: %v", err)
 				}
 
 			case utils.VMMode_Systemd:
 				err = config.DeployKASystemd()
 				if err != nil {
-					return fmt.Errorf("\n⚠️\terror installing ka in systemd: %v", err)
+					return fmt.Errorf("\n⚠️\terror installing KubeArmor in systemd: %v", err)
 				}
 
 			}
