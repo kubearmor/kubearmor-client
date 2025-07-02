@@ -45,7 +45,7 @@ require (
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250509115833-5b371e16ac8a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20250509115833-5b371e16ac8a
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20250509115833-5b371e16ac8a
-	github.com/onsi/ginkgo/v2 v2.22.0
+	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.36.1
 	helm.sh/helm/v3 v3.17.3
 	k8s.io/api v0.33.0
