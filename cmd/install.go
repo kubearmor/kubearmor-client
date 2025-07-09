@@ -21,20 +21,6 @@ var installCmd = &cobra.Command{
 This command bootstraps KubeArmor in your environment by deploying all necessary components
 and configuring them according to the options you specify. It supports two primary modes:
 
-  • Kubernetes mode (default)
-    – Deploys the KubeArmor Operator, Controller, Relay Server, and DaemonSets
-      into the target cluster.
-    – Honors flags like --namespace, --image, --tag, --operator-image, --controller-image,
-      --relay-image, and visibility/audit/block posture settings.
-    – Use --legacy to invoke the legacy installer path for clusters that don’t support
-      Operator‑based installation.
-
-  • Non‑Kubernetes mode (--nonk8s)
-    – Installs KubeArmor as a standalone service on a host or VM.
-    – Automatically selects Docker or systemd VM mode based on host capabilities,
-      or force a mode with --vm-mode (docker|systemd).
-    – Supports secure container monitoring, host‑audit/host‑block posture, and
-      telemetry visibility flags just like Kubernetes mode.
 
 Examples:
   # Install with default settings into namespace "kubearmor"
