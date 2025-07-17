@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 
-		//Initialise k8sClient for all child commands to inherit
+		// Initialise k8sClient for all child commands to inherit
 		client, err = k8s.ConnectK8sClient()
 		// fmt.Printf("%v", client.K8sClientset)
 		if err != nil {

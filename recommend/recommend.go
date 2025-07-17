@@ -84,7 +84,7 @@ func createOutDir(dir string) error {
 	}
 	_, err := os.Stat(dir)
 	if errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(dir, 0750)
+		err = os.Mkdir(dir, 0o750)
 		if err != nil {
 			return err
 		}

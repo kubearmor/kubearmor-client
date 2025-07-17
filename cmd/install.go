@@ -10,8 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var installOptions install.Options
-var vmMode string
+var (
+	installOptions install.Options
+	vmMode         string
+)
 
 var installCmd = &cobra.Command{
 	Use:   "install",
@@ -66,7 +68,6 @@ For more details on each flag, run:
 					return fmt.Errorf("error installing kubearmor: %v", err)
 				}
 			}
-
 		} else {
 			var cfg install.KubeArmorConfig
 			_, err := cfg.ValidateEnv()
@@ -119,7 +120,7 @@ func markDeprecated(cmd *cobra.Command, flag, message string) {
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	//these flags should only be availabe only for mode k8s
+	// these flags should only be availabe only for mode k8s
 	installCmd.Flags().StringVarP(&installOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 	// Leaving defaults empty here because the KubeArmor systemd installation uses the 'kubearmor/kubearmor-systemd' repo,
 	// whereas the regular (Docker/K8s) installation uses the 'kubearmor/kubearmor' repo.
@@ -161,5 +162,4 @@ func init() {
 	installCmd.Flags().BoolVar(&installOptions.SecureContainers, "secure-containers", true, "to monitor containers")
 	markDeprecated(installCmd, "env", "Only relevant when using legacy")
 	markDeprecated(installCmd, "legacy", "KubeArmor now utilizes operator-based installation. This command may not set up KubeArmor in the intended way.")
-
 }
