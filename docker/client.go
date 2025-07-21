@@ -2,11 +2,12 @@ package docker
 
 import (
 	"context"
+	"strings"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
-	"strings"
 )
 
 type Client struct {
@@ -21,7 +22,7 @@ func ConnectDockerClient() (*Client, error) {
 	return &Client{cli}, nil
 }
 
-func (c *Client) ListObjects(o common.Options) ([]common.Object, error) {
+func (c *Client) ListObjects(_ common.Options) ([]common.Object, error) {
 	var result []common.Object
 	containers, err := c.Client.ContainerList(context.Background(), container.ListOptions{
 		Filters: filters.NewArgs(),
