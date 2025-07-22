@@ -58,7 +58,7 @@ Examples:
 	Use "karmor logs --help" to see detailed flag descriptions and defaults.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.StopChan = make(chan struct{})
-		return log.StartObserver(client, logOptions)
+		return log.StartObserver(k8sClient, logOptions)
 	},
 }
 

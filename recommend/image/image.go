@@ -234,7 +234,11 @@ func (img *Info) GetPolicyDir(outDir string) string {
 		}
 	} else {
 		// policy recommendation based on k8s manifest
-		policyDir = fmt.Sprintf("%s-%s", img.Namespace, img.Deployment)
+		if img.Namespace == "" {
+			policyDir = fmt.Sprintf("%s", img.Deployment)
+		} else {
+			policyDir = fmt.Sprintf("%s-%s", img.Namespace, img.Deployment)
+		}
 	}
 	return filepath.Join(outDir, policyDir)
 }

@@ -7,12 +7,28 @@ package common
 import (
 	"os"
 	"runtime"
+	"strings"
 
 	pol "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 )
 
 // Handler interface
 var Handler interface{}
+
+// LabelMap is an alias for map[string]string
+type LabelMap = map[string]string
+
+type Client interface {
+	ListObjects(o Options) ([]Object, error)
+}
+
+// Object contains brief information about a k8s object
+type Object struct {
+	Name      string
+	Namespace string
+	Labels    LabelMap
+	Images    []string
+}
 
 // MatchSpec spec to match for defining policy
 type MatchSpec struct {
@@ -46,6 +62,7 @@ type Options struct {
 	OutDir     string
 	ReportFile string
 	Config     string
+	K8s        bool
 }
 
 // UserHome function returns users home directory
@@ -58,4 +75,19 @@ func UserHome() string {
 		return home
 	}
 	return os.Getenv("HOME")
+}
+
+func labelSplitter(r rune) bool {
+	return r == ':' || r == '='
+}
+func LabelArrayToLabelMap(labels []string) LabelMap {
+	labelMap := LabelMap{}
+	for _, label := range labels {
+		kvPair := strings.FieldsFunc(label, labelSplitter)
+		if len(kvPair) != 2 {
+			continue
+		}
+		labelMap[kvPair[0]] = kvPair[1]
+	}
+	return labelMap
 }
