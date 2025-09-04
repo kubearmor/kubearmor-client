@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -314,6 +316,23 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 	if err != nil {
 		return
 	}
+	// decode base64 hash fields (protobuf bytes -> base64 in JSON) to hex for readability
+	decodeHashField := func(key string) {
+		if v, ok := res[key]; ok {
+			if s, ok2 := v.(string); ok2 && s != "" {
+				if b, err := base64.StdEncoding.DecodeString(s); err == nil {
+					res[key] = hex.EncodeToString(b)
+				}
+			}
+		}
+	}
+	decodeHashField("ProcessHash")
+	decodeHashField("ParentHash")
+	decodeHashField("ResourceHash")
+	// re-marshal with decoded fields so downstream output (and EventChan) uses hex
+	if marshaled, mErr := json.Marshal(res); mErr == nil {
+		arr = marshaled
+	}
 	// Filter Telemetry based on provided options
 	if len(o.Selector) != 0 && res["Labels"] != nil {
 		labels := strings.Split(res["Labels"].(string), ",")
@@ -430,7 +449,7 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 		}
 
 		// Array of Keys to preserve order in Output
-		telKeys := []string{
+			telKeys := []string{
 			"UpdatedTime",
 			"Timestamp",
 			"ClusterName",
@@ -450,6 +469,10 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 			"Operation",
 			"Action",
 			"Data",
+			"ProcessHash",
+			"ParentHash",
+			"ResourceHash",
+			"HashAlgo",
 			"Enforcer",
 			"Result",
 		}
