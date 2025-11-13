@@ -450,6 +450,7 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 			"Operation",
 			"Action",
 			"Data",
+			"EventData",
 			"Enforcer",
 			"Result",
 		}
