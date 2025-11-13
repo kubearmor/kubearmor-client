@@ -1,6 +1,6 @@
 module github.com/kubearmor/kubearmor-client
 
-go 1.24.5
+go 1.24.9
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
@@ -8,7 +8,7 @@ require (
 	github.com/docker/docker v28.3.1+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/json-iterator/go v1.1.12
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20250707142851-6b7fc953dd6c
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20251112065124-b3d682e08d62
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.5.2
 	github.com/olekukonko/tablewriter v0.0.5
@@ -102,6 +102,7 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
