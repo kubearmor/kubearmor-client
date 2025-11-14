@@ -36,7 +36,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20250707142851-6b7fc953dd6c
-	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250707142851-6b7fc953dd6c
+	github.com/kubearmor/KubeArmor/deployments 4eefe7825535
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20250707142851-6b7fc953dd6c
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20250707142851-6b7fc953dd6c
 	github.com/onsi/ginkgo/v2 v2.22.0
