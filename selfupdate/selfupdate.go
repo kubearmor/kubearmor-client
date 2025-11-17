@@ -25,7 +25,9 @@ var BuildDate string
 
 const ghrepo = "kubearmor/kubearmor-client"
 
-func isValidVersion(ver string) bool {
+// IsValidVersion checks if a given string is a valid semantic version.
+// Returns true if the string is a valid semantic version, false otherwise.
+func IsValidVersion(ver string) bool {
 	_, err := semver.Make(ver)
 	return err == nil
 }
@@ -59,7 +61,7 @@ func getLatest() (*selfupdate.Release, error) {
 
 // IsLatest - check if the current binary is the latest
 func IsLatest(curver string) (bool, string) {
-	if curver != "" && !isValidVersion(curver) {
+	if curver != "" && !IsValidVersion(curver) {
 		return true, ""
 	}
 	latest, err := getLatest()
@@ -110,7 +112,7 @@ func doSelfUpdate(curver string) error {
 func SelfUpdate(c *k8s.Client) error {
 	var ver = GitSummary
 	fmt.Printf("current karmor version %s\n", ver)
-	if !isValidVersion(ver) {
+	if !IsValidVersion(ver) {
 		fmt.Println("version does not match the pattern. Maybe using a locally built karmor!")
 		if !ConfirmUserAction("Do you want to update it?") {
 			return nil
