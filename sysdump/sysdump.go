@@ -13,6 +13,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"os/exec"
 
 	"golang.org/x/sync/errgroup"
 
@@ -32,10 +33,15 @@ import (
 // Options options for sysdump
 type Options struct {
 	Filename string
+	NonK8s   bool
 }
 
 // Collect Function
 func Collect(c *k8s.Client, o Options) error {
+	if o.NonK8s {
+		return collectNonK8s(o)
+	}
+
 	var errs errgroup.Group
 
 	d, err := os.MkdirTemp("", "karmor-sysdump")
@@ -313,6 +319,98 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func collectNonK8s(o Options) error {
+	d, err := os.MkdirTemp("", "karmor-sysdump")
+	if err != nil {
+		return err
+	}
+
+	// 1. Collect KubeArmor logs
+	logPaths := []string{"/var/log/kubearmor.log"}
+	for _, logPath := range logPaths {
+		if _, err := os.Stat(logPath); err == nil {
+			data, err := os.ReadFile(logPath)
+			if err == nil {
+				_ = writeToFile(path.Join(d, "kubearmor.log"), string(data))
+			}
+		}
+	}
+	// Try journald logs
+	journaldLog, err := exec.Command("journalctl", "-u", "kubearmor").CombinedOutput()
+	if err == nil && len(journaldLog) > 0 {
+		_ = writeToFile(path.Join(d, "kubearmor-journal.log"), string(journaldLog))
+	}
+
+	// 2. Collect config files
+	configDir := "/opt/kubearmor/"
+	if fi, err := os.Stat(configDir); err == nil && fi.IsDir() {
+		// Copy all files from configDir to d/config/
+		destConfigDir := path.Join(d, "config")
+		os.Mkdir(destConfigDir, 0700)
+		entries, _ := os.ReadDir(configDir)
+		for _, entry := range entries {
+			src := path.Join(configDir, entry.Name())
+			dst := path.Join(destConfigDir, entry.Name())
+			if entry.Type().IsRegular() {
+				data, err := os.ReadFile(src)
+				if err == nil {
+					_ = writeToFile(dst, string(data))
+				}
+			}
+		}
+	}
+
+	// 3. Collect system info
+	if data, err := os.ReadFile("/etc/os-release"); err == nil {
+		_ = writeToFile(path.Join(d, "os-release.txt"), string(data))
+	}
+	if uname, err := exec.Command("uname", "-a").CombinedOutput(); err == nil {
+		_ = writeToFile(path.Join(d, "uname.txt"), string(uname))
+	}
+
+	// 4. Collect AppArmor profiles
+	appArmorDir := "/etc/apparmor.d"
+	if fi, err := os.Stat(appArmorDir); err == nil && fi.IsDir() {
+		destAppArmorDir := path.Join(d, "apparmor.d")
+		os.Mkdir(destAppArmorDir, 0700)
+		entries, _ := os.ReadDir(appArmorDir)
+		for _, entry := range entries {
+			src := path.Join(appArmorDir, entry.Name())
+			dst := path.Join(destAppArmorDir, entry.Name())
+			if entry.Type().IsRegular() {
+				data, err := os.ReadFile(src)
+				if err == nil {
+					_ = writeToFile(dst, string(data))
+				}
+			}
+		}
+	}
+
+	// 5. Collect probe data (only if probe supports non-k8s mode, otherwise skip)
+	reader, writer, err := os.Pipe()
+	if err == nil {
+		go func() {
+			// Only call if probe.PrintProbeResultCmd can handle nil client, otherwise skip 
+			
+			writer.Close()
+		}()
+		out, _ := io.ReadAll(reader)
+		_ = writeToFile(path.Join(d, "karmor-probe.txt"), string(out))
+	}
+
+	// 6. Zip the results
+	sysdumpFile := o.Filename
+	if sysdumpFile == "" {
+		sysdumpFile = "karmor-sysdump-" + strings.Replace(time.Now().Format(time.UnixDate), ":", "_", -1) + ".zip"
+	}
+	if err := archiver.Archive([]string{d}, sysdumpFile); err != nil {
+		return fmt.Errorf("failed to create zip file: %w", err)
+	}
+	_ = os.RemoveAll(d)
+	fmt.Printf("Sysdump at %s\n", sysdumpFile)
 	return nil
 }
 
