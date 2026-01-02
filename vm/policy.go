@@ -6,14 +6,19 @@ package vm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/fatih/color"
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	"github.com/kubearmor/kubearmor-client/utils"
+	"github.com/olekukonko/tablewriter"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"google.golang.org/grpc"
 	"sigs.k8s.io/yaml"
@@ -26,9 +31,14 @@ const (
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
 )
 
+var (
+	BoldWhite = color.New(color.FgWhite, color.Bold)
+)
+
 // PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
 	GRPC string
+	Type string
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
@@ -140,5 +150,125 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 
 	}
 
+	return nil
+}
+
+func (o *PolicyOptions) getPolicyData() (*pb.ProbeResponse, error) {
+	gRPC := ""
+	if o.GRPC != "" {
+		gRPC = o.GRPC
+	} else {
+		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
+			gRPC = val
+		} else {
+			gRPC = "localhost:32767"
+		}
+	}
+	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	client := pb.NewProbeServiceClient(conn)
+
+	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (o *PolicyOptions) HandleGet(args []string) error {
+	policyData, err := o.getPolicyData()
+	if err != nil {
+		return err
+	}
+	switch o.Type {
+	case "ksp", "Container", "container":
+		if len(args) == 0 {
+			armoredContainer, _ := utils.GetArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
+			return o.printContainerTable(armoredContainer)
+		}
+		targetPolicy := args[0]
+		for _, container := range policyData.GetContainerMap() {
+			for i, policy := range container.GetPolicyList() {
+				if policy == targetPolicy { // access the policyDataList using the index from the policyList
+					if len(container.GetPolicyDataList()) <= i { // check if the index is valid. fallback for backward compatibility
+						return errors.New("Cannot retrieve data for policy " + targetPolicy)
+					}
+					return prettyPrintPolicy(*container.GetPolicyDataList()[i])
+				}
+			}
+		}
+		return errors.New("Policy " + targetPolicy + " not found")
+	case "hsp", "Host", "host":
+		if len(args) == 0 {
+			hostPolicyData := utils.GetHostPolicyData(policyData)
+			if len(hostPolicyData) == 0 {
+				return errors.New("no host policies found")
+			}
+			return o.printHostTable(hostPolicyData)
+		}
+		targetPolicy := args[0]
+		for _, host := range policyData.HostMap {
+			for i, policy := range host.GetPolicyList() {
+				if policy == targetPolicy {
+					if len(host.GetPolicyDataList()) <= i { // check if the index is valid. fallback for backward compatibility
+						return errors.New("Cannot retrieve data for policy " + targetPolicy)
+					}
+					return prettyPrintPolicy(*host.GetPolicyDataList()[i])
+				}
+			}
+		}
+		return errors.New("Policy " + targetPolicy + " not found")
+	default:
+		return errors.New("invalid type: " + o.Type)
+	}
+}
+
+func (o *PolicyOptions) printContainerTable(podData [][]string) error {
+	_, err := BoldWhite.Println("Armored Up Containers:")
+	if err != nil {
+		return err
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"CONTAINER NAME", "POLICY"})
+	for _, v := range podData {
+		table.Append(v)
+	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Render()
+	return nil
+}
+
+func (o *PolicyOptions) printHostTable(hostPolicy [][]string) error {
+	_, err := BoldWhite.Println("Host Policy:")
+	if err != nil {
+		return err
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"HOST NAME ", "POLICY"})
+	for _, v := range hostPolicy {
+		table.Append(v)
+	}
+	table.SetRowLine(true)
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.Render()
+	return nil
+}
+
+func prettyPrintPolicy(policy pb.Policy) error {
+	var policyJSON tp.SecurityPolicy
+	err := json.Unmarshal(policy.Policy, &policyJSON)
+	if err != nil {
+		return err
+	}
+	yamlPolicy, err := yaml.Marshal(policyJSON)
+	if err != nil {
+		return err
+	}
+	fmt.Println(strings.TrimRight(string(yamlPolicy), "\n"))
 	return nil
 }
