@@ -5,7 +5,7 @@ go 1.24.9
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/clarketm/json v1.17.1
-	github.com/docker/docker v28.3.1+incompatible
+	github.com/docker/docker v28.3.3+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20251112065124-b3d682e08d62
