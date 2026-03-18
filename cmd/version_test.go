@@ -52,11 +52,20 @@ func TestVersionCmd(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := fake.NewClientset(tc.objects...)
+			originalClient := k8sClient
 			k8sClient = &k8s.Client{
 				K8sClientset: client,
 			}
+			defer func() {
+				k8sClient = originalClient
+			}()
 			var buffer bytes.Buffer
 			originalStdout := os.Stdout
+
+			defer func() {
+				os.Stdout = originalStdout
+			}()
+
 			r, w, err := os.Pipe()
 			if err != nil {
 				t.Fatal(err)
@@ -66,7 +75,6 @@ func TestVersionCmd(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			os.Stdout = originalStdout
 			if err := w.Close(); err != nil {
 				t.Fatal(err)
 			}
