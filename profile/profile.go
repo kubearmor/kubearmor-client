@@ -6,6 +6,7 @@ package profile
 
 import (
 	"errors"
+	"strings"
 
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"github.com/kubearmor/kubearmor-client/k8s"
@@ -22,7 +23,7 @@ var ErrChan chan error
 var EventChan = make(chan pb.Log)
 
 // GetLogs to fetch logs
-func GetLogs(grpc string) error {
+func GetLogs(grpc string, operationFilter string) error {
 	errCh := KarmorProfileStart("system", grpc)
 	var err error
 	if eventChan == nil {
@@ -38,6 +39,9 @@ func GetLogs(grpc string) error {
 				err := protojson.Unmarshal(evtin.Data, &log)
 				if err != nil {
 					return err
+				}
+				if operationFilter != "" && !strings.EqualFold(log.Operation, operationFilter) {
+					continue
 				}
 				EventChan <- log
 			} else {

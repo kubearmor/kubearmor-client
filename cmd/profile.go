@@ -37,8 +37,7 @@ Controls:
   • Ctrl+C        quit the TUI  
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		profileclient.Start()
-		return nil
+		return profileclient.Start()
 	},
 }
 
@@ -48,5 +47,6 @@ func init() {
 	profilecmd.Flags().StringVarP(&profileclient.ProfileOpts.Namespace, "namespace", "n", "", "Filter using namespace")
 	profilecmd.Flags().StringVar(&profileclient.ProfileOpts.Pod, "pod", "", "Filter using Pod name")
 	profilecmd.Flags().StringVarP(&profileclient.ProfileOpts.Container, "container", "c", "", "name of the container ")
+	profilecmd.Flags().StringVarP(&profileclient.ProfileOpts.PolicyType, "type", "t", "", "Filter by policy type: network | file | process")
 	profilecmd.Flags().BoolVar(&profileclient.ProfileOpts.Save, "save", false, "Save Profile data in json format")
 }
