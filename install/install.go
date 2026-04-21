@@ -565,6 +565,19 @@ func K8sLegacyInstaller(c *k8s.Client, o Options) error {
 		printYAML = append(printYAML, hspCRD)
 	}
 
+	nspCRD := CreateCustomResourceDefinition(nspName)
+	if !o.Save {
+		printMessage("🔥\tCRD "+nspName+"  ", true)
+		if _, err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Create(context.Background(), &nspCRD, metav1.CreateOptions{}); err != nil {
+			if !apierrors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create CRD %s: %+v", nspName, err)
+			}
+			printMessage("ℹ️\tCRD "+nspName+" already exists", false)
+		}
+	} else {
+		printYAML = append(printYAML, nspCRD)
+	}
+
 	serviceAccount := deployments.GetServiceAccount(o.Namespace)
 	if !o.Save {
 		printMessage("💫\tService Account  ", true)
@@ -1516,6 +1529,14 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 			fmt.Printf("CRD %s not found\n", hspName)
 		}
 
+		fmt.Printf("CRD %s\n", nspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), nspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", nspName)
+		}
+
 		removeAnnotations(c)
 	}
 
@@ -1595,6 +1616,14 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 				return err
 			}
 			fmt.Printf("CRD %s not found\n", hspName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", nspName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), nspName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", nspName)
 		}
 
 		removeAnnotations(c)

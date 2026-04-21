@@ -32,7 +32,7 @@ func loadTLSCredentials(client kubernetes.Interface, o Options) (credentials.Tra
 	tlsConfig := cert.TlsConfig{
 		CertCfg:              clientCertCfg,
 		ReadCACertFromSecret: o.ReadCAFromSecret,
-		Secret:               secret,
+		SecretName:           secret,
 		Namespace:            namespace,
 		K8sClient:            client.(*kubernetes.Clientset),
 		CertPath:             cert.GetClientCertPath(o.TlsCertPath),

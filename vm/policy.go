@@ -24,6 +24,8 @@ const (
 	KubeArmorPolicy = "KubeArmorPolicy"
 	// KubeArmorHostPolicy is the Kind used for KubeArmor host policies
 	KubeArmorHostPolicy = "KubeArmorHostPolicy"
+	// KubeArmorNetworkPolicy is the Kind used for KubeArmor network policies
+	KubeArmorNetworkPolicy = "KubeArmorNetworkPolicy"
 )
 
 // PolicyOptions are optional configuration for kArmor vm policy
@@ -63,6 +65,13 @@ func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) er
 		fmt.Printf("Policy %s \n", resp.Status)
 		return nil
 
+	} else if kind == KubeArmorNetworkPolicy {
+		resp, err := client.NetworkPolicy(context.Background(), &req)
+		if err != nil {
+			return fmt.Errorf("failed to send policy")
+		}
+		fmt.Printf("Policy %s \n", resp.Status)
+		return nil
 	}
 	resp, err := client.ContainerPolicy(context.Background(), &req)
 	if err != nil {
@@ -103,6 +112,7 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 
 		var containerPolicy tp.K8sKubeArmorPolicy
 		var hostPolicy tp.K8sKubeArmorHostPolicy
+		var networkPolicy tp.K8sKubeArmorNetworkPolicy
 		var policyEvent interface{}
 
 		if k.Kind == KubeArmorHostPolicy {
@@ -114,6 +124,17 @@ func PolicyHandling(t string, path string, o PolicyOptions) error {
 			policyEvent = tp.K8sKubeArmorHostPolicyEvent{
 				Type:   t,
 				Object: hostPolicy,
+			}
+
+		} else if k.Kind == KubeArmorNetworkPolicy {
+			err = json.Unmarshal(js, &networkPolicy)
+			if err != nil {
+				return err
+			}
+
+			policyEvent = tp.K8sKubeArmorNetworkPolicyEvent{
+				Type:   t,
+				Object: networkPolicy,
 			}
 
 		} else if k.Kind == KubeArmorPolicy {

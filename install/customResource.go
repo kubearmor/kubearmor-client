@@ -8,12 +8,11 @@ import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
-var (
-	kspName = "kubearmorpolicies.security.kubearmor.com"
-	hspName = "kubearmorhostpolicies.security.kubearmor.com"
-	cspName = "kubearmorclusterpolicies.security.kubearmor.com"
-	kocName = "kubearmorconfigs.operator.kubearmor.com"
-)
+var kspName = "kubearmorpolicies.security.kubearmor.com"
+var hspName = "kubearmorhostpolicies.security.kubearmor.com"
+var cspName = "kubearmorclusterpolicies.security.kubearmor.com"
+var nspName = "kubearmornetworkpolicies.security.kubearmor.com"
+var kocName = "kubearmorconfigs.operator.kubearmor.com"
 
 // CreateCustomResourceDefinition creates the CRD and add it into Kubernetes.
 func CreateCustomResourceDefinition(crdName string) apiextensions.CustomResourceDefinition {
@@ -23,6 +22,8 @@ func CreateCustomResourceDefinition(crdName string) apiextensions.CustomResource
 		crd = ksp.GetKspCRD()
 	case hspName:
 		crd = ksp.GetHspCRD()
+	case nspName:
+		crd = ksp.GetNspCRD()
 	}
 
 	return crd
