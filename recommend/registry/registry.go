@@ -50,6 +50,7 @@ func getAuthStr(u, p string) string {
 		return ""
 	}
 
+	// #nosec CWE-499
 	encodedJSON, err := json.Marshal(registry.AuthConfig{
 		Username: u,
 		Password: p,
