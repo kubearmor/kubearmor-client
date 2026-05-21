@@ -15,7 +15,7 @@ require (
 	github.com/rhysd/go-github-selfupdate v1.2.3
 	github.com/rs/zerolog v1.34.0
 	github.com/sirupsen/logrus v1.9.4
-	github.com/spf13/cobra v1.10.0
+	github.com/spf13/cobra v1.10.2
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
 	golang.org/x/mod v0.35.0
 	golang.org/x/sync v0.20.0
@@ -36,7 +36,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/kubearmor/KubeArmor/KubeArmor v0.0.0-20260519072523-d139952ecc8e
 	github.com/kubearmor/KubeArmor/deployments v0.0.0-20250707142851-6b7fc953dd6c
-	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20260406102335-87edc770f8bf
+	github.com/kubearmor/KubeArmor/pkg/KubeArmorController v0.0.0-20260521154542-6789b83a8cee
 	github.com/kubearmor/KubeArmor/pkg/KubeArmorOperator v0.0.0-20250707142851-6b7fc953dd6c
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
@@ -71,9 +71,7 @@ require (
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.35.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 )
 
