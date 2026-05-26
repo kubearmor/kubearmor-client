@@ -20,31 +20,6 @@ This command connects to a running KubeArmor instance (in‑cluster or remote) o
 continuously prints the events you care about. You can control the connection security,
 select which namespaces or containers to watch, and format the output to suit your workflow.
 
-Connection Options:
-  • --gRPC <port>          port of the KubeArmor gRPC server (port)
-  • --secure                  use mutual TLS for the gRPC connection
-  • --tlsCertPath <path>      local directory containing ca.crt, client.crt & client.key
-  • --tlsCertProvider <mode>  certificate provisioning: “self” (auto‑generate) or “external”
-  • --readCAFromSecret        fetch CA cert from in‑cluster secret (default true)
-
-Output Control:
-  • --msgPath <path|stdout|none>   where to write raw event messages
-  • --logPath <path|stdout|none>   where to write human‑readable alerts & logs
-  • --output, -o <text|json|pretty-json>  choose your output format
-  • --json                       shorthand to force JSON output
-
-Filtering:
-  • --logFilter <policy|system|all>  type of logs to receive (default “policy” i.e alerts)
-  • --namespace, -n <ns>             only show events for this Kubernetes namespace
-  • --operation <Process|File|Network> filter by operation type
-  • --logType <ContainerLog|HostLog>  filter by log source
-  • --container <name>                filter by container name
-  • --pod <name>                      filter by pod name
-  • --resource <cmd>                  filter by executed command
-  • --source <binary>                 filter by system binary path
-  • --labels, -l <key=val,…>          label selectors to narrow pods/services
-  • --limit <n>                       maximum number of events to print (0 for unlimited)
-
 Examples:
   # Stream all policy‑related events in JSON by connecting to local kubearmor instance:
   karmor logs --gRPC 32767 --json --logFilter policy
