@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -16,7 +17,6 @@ import (
 	"github.com/evertras/bubble-table/table"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	profile "github.com/kubearmor/kubearmor-client/profile"
-	log "github.com/sirupsen/logrus"
 )
 
 // Column keys
@@ -60,14 +60,45 @@ var (
 
 // Options for filter
 type Options struct {
-	Namespace string
-	Pod       string
-	GRPC      string
-	Container string
-	Save      bool
+	Namespace  string
+	Pod        string
+	GRPC       string
+	Container  string
+	PolicyType string
+	Save       bool
 }
 
 var ProfileOpts Options
+
+func normalizePolicyType(policyType string) (string, error) {
+	policyType = strings.ToLower(strings.TrimSpace(policyType))
+	switch policyType {
+	case "", "network", "file", "process":
+		return policyType, nil
+	default:
+		return "", fmt.Errorf("invalid --type value %q; valid options are: network, file, process", policyType)
+	}
+}
+
+func visibleTabsForPolicyType(policyType string) []string {
+	switch policyType {
+	case "network":
+		return []string{"Network"}
+	case "file":
+		return []string{"File"}
+	case "process":
+		return []string{"Process"}
+	default:
+		return []string{"Process", "File", "Network", "Syscall"}
+	}
+}
+
+func operationAllowed(policyType string, operation string) bool {
+	if policyType == "" {
+		return true
+	}
+	return strings.EqualFold(policyType, strings.ToLower(operation))
+}
 
 // Model for main Bubble Tea
 type Model struct {
@@ -144,7 +175,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 // NewModel initializates new bubbletea model
-func NewModel() Model {
+func NewModel(policyType string) Model {
 	model := Model{
 		File:         table.New(generateColumns("File")).WithBaseStyle(styleBase).WithPageSize(30).Filtered(true),
 		FileRows:     []table.Row{},
@@ -164,11 +195,20 @@ func NewModel() Model {
 
 		tabs: &tabs{
 			active: "Lip Gloss",
-			items:  []string{"Process", "File", "Network", "Syscall"},
+			items:  visibleTabsForPolicyType(policyType),
 		},
 		keys:  keys,
 		help:  help.New(),
 		state: processview,
+	}
+
+	switch policyType {
+	case "file":
+		model.state = fileview
+	case "network":
+		model.state = networkview
+	case "process":
+		model.state = processview
 	}
 
 	return model
@@ -266,7 +306,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 	case pb.Log:
-		if isCorrectLog(msg) {
+		if isCorrectLog(msg) && operationAllowed(ProfileOpts.PolicyType, msg.Operation) {
 			m.updateTableWithNewEntry(msg)
 		}
 
@@ -441,10 +481,16 @@ type Profile struct {
 }
 
 // Start entire TUI
-func Start() {
-	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
+func Start() error {
+	policyType, err := normalizePolicyType(ProfileOpts.PolicyType)
+	if err != nil {
+		return err
+	}
+	ProfileOpts.PolicyType = policyType
+
+	p := tea.NewProgram(NewModel(policyType), tea.WithAltScreen())
 	go func() {
-		err := profile.GetLogs(ProfileOpts.GRPC)
+		err := profile.GetLogs(ProfileOpts.GRPC, policyType)
 		if err != nil {
 			p.Quit()
 			profile.ErrChan <- err
@@ -453,12 +499,12 @@ func Start() {
 
 	os.Stderr = nil
 	if _, err := p.Run(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	select {
 	case err := <-profile.ErrChan:
-		log.Errorf("failed to start observer. Error=%s", err.Error())
+		return err
 	default:
-		break
+		return nil
 	}
 }
