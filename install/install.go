@@ -284,6 +284,9 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			}
 		}
 	}
+	allPodsReady := true
+	podsWaiting := false
+	var podStatus string
 	for {
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor", FieldSelector: "status.phase==Running"})
 		podno := len(pods.Items)
@@ -291,6 +294,37 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 		cursorcount++
 		if cursorcount == len(cursor) {
 			cursorcount = 0
+		}
+		if podno == 0 {
+			fmt.Printf("\r\tNo pods found!             \n")
+			break
+		}
+		if podno > 0 {
+			// This loop will break even if only one of the pod is not ready
+			for _, p := range pods.Items {
+				status, ready, waiting := GetRealPodStatus(p)
+				fmt.Printf("\r\tThe pod %s is in %s state             ", p.Name, status)
+				podStatus = status
+				if !ready && !waiting {
+					allPodsReady = false
+					podsWaiting = false
+					break
+				} else if !ready && waiting {
+					allPodsReady = false
+					podsWaiting = true
+					break
+				}
+			}
+			if !allPodsReady && !podsWaiting {
+				break
+			} else if !allPodsReady && podsWaiting {
+				continue
+			} else if allPodsReady && !podsWaiting {
+				fmt.Printf("\r🥳\tKubeArmor Daemonset Deployed!             \n")
+				fmt.Printf("\r🥳\tDone Checking , ALL Services are running!             \n")
+				fmt.Printf("⌚️\tExecution Time : %s \n", time.Since(stime))
+				break
+			}
 		}
 		if podno > 0 {
 			fmt.Printf("\r🥳\tKubeArmor Daemonset Deployed!             \n")
@@ -302,6 +336,10 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			fmt.Printf("\r⌚️\tCheck Incomplete due to Time-Out!                     \n")
 			break
 		}
+	}
+	if !allPodsReady {
+		fmt.Printf("\n⚠️\tFailed verifying KubeArmor functionality, kubearmor deamonset failed to start due to pod ran into %s\n", podStatus)
+		return
 	}
 	fmt.Print("\n🔧\tVerifying KubeArmor functionality (this may take upto a minute)...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -356,6 +394,36 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 			fmt.Printf("\n\t	➤ kubectl rollout restart deployment <deployment> -n <namespace>\n")
 		}
 	}
+}
+
+// GetRealPodStatus accumulates the overall status of pod. A pod may be running but it's containers might not
+// It will return the reason and a boolean which will be true only if all the containers of pod are running
+// The reason is wholesome status of the pod. It may be Running/CrashLoopBackOff or any other state
+// Another returning variable is pending, It is true if phase of Pod is Pending but if container state is waiting it will
+// return pod's pending phase as false! This is because Pending pod can have many reasons and it can become Running
+// in future but waiting container means there is some problem in container
+func GetRealPodStatus(pod corev1.Pod) (string, bool, bool) {
+	status := pod.Status.Phase
+	reason := string(status)
+	var podReady = false
+	var podPending = false
+	if status == corev1.PodRunning {
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if !containerStatus.Ready {
+				if containerStatus.State.Waiting != nil {
+					reason = containerStatus.State.Waiting.Reason
+				} else if containerStatus.State.Terminated != nil {
+					reason = containerStatus.State.Terminated.Reason
+				}
+				return reason, false, false
+			} else {
+				podReady = true
+			}
+		}
+	} else if status == corev1.PodPending {
+		return reason, podReady, true
+	}
+	return reason, podReady, podPending
 }
 
 func checkPodsLegacy(c *k8s.Client, o Options) {
