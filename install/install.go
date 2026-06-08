@@ -960,6 +960,10 @@ func K8sInstaller(c *k8s.Client, o Options) error {
 	kubearmorConfig, postureSettings := getOperatorCR(o)
 	values := getOperatorConfig(o)
 	settings := cli.New()
+	// Honor the --kubeconfig/--context flags so the Helm-based operator install
+	// targets the same cluster as the rest of the client (see k8s.ConnectK8sClient).
+	settings.KubeConfig = k8s.KubeConfig
+	settings.KubeContext = k8s.ContextName
 
 	actionConfig := actionConfigInit(ns, settings)
 
@@ -1529,6 +1533,10 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 func K8sUninstaller(c *k8s.Client, o Options) error {
 	var ns string
 	settings := cli.New()
+	// Honor the --kubeconfig/--context flags so the Helm-based operator uninstall
+	// targets the same cluster as the rest of the client (see k8s.ConnectK8sClient).
+	settings.KubeConfig = k8s.KubeConfig
+	settings.KubeContext = k8s.ContextName
 
 	actionConfig := actionConfigInit("", settings)
 	statusClient := action.NewStatus(actionConfig)
