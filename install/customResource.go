@@ -13,6 +13,7 @@ var (
 	hspName = "kubearmorhostpolicies.security.kubearmor.com"
 	cspName = "kubearmorclusterpolicies.security.kubearmor.com"
 	kocName = "kubearmorconfigs.operator.kubearmor.com"
+	knpName = "kubearmornetworkpolicies.security.kubearmor.com"
 )
 
 // CreateCustomResourceDefinition creates the CRD and add it into Kubernetes.
