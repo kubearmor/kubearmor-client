@@ -1,6 +1,6 @@
 module github.com/kubearmor/kubearmor-client
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
@@ -8,7 +8,7 @@ require (
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/json-iterator/go v1.1.12
-	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20260519072523-d139952ecc8e
+	github.com/kubearmor/KubeArmor/protobuf v0.0.0-20260609162346-6dcee36fe61d
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/moby/term v0.5.2
 	github.com/olekukonko/tablewriter v0.0.5
@@ -19,8 +19,8 @@ require (
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
 	golang.org/x/mod v0.35.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.44.0
-	google.golang.org/grpc v1.80.0
+	golang.org/x/sys v0.45.0
+	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -209,13 +209,13 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260406210006-6f92a3bedf2d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260519071638-aa98bba5eb94 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
