@@ -59,6 +59,12 @@ type Options struct {
 	Limit            uint32
 	Selector         []string
 	EventChan        chan EventInfo // channel to send events on
+
+	// API Observer specific filters
+	Protocol      string // protocol filter for API events (e.g. "HTTP", "gRPC")
+	Method        string // HTTP method filter (e.g. "GET", "POST")
+	StatusPattern string // status code pattern filter (e.g. "2xx", "404")
+	MinDurationMs int64  // minimum latency filter in milliseconds
 }
 
 // StopChan Channel
@@ -152,7 +158,7 @@ func StartObserver(c *k8s.Client, o Options) error {
 		return nil
 	}
 
-	if o.LogFilter != "all" && o.LogFilter != "policy" && o.LogFilter != "system" {
+	if o.LogFilter != "all" && o.LogFilter != "policy" && o.LogFilter != "system" && o.LogFilter != "api" {
 		flag.PrintDefaults()
 		return nil
 	}
@@ -176,36 +182,45 @@ func StartObserver(c *k8s.Client, o Options) error {
 
 	fmt.Fprintf(os.Stderr, "Created a gRPC client (%s)\n", gRPC)
 
-	// do healthcheck
-	if ok := logClient.DoHealthCheck(); !ok {
-		return errors.New("failed to check the liveness of the gRPC server")
-	}
-	fmt.Fprintln(os.Stderr, "Checked the liveness of the gRPC server")
-
-	if o.MsgPath != "none" {
-		// watch messages
-		go logClient.WatchMessages(o.MsgPath, o.JSON)
-		fmt.Fprintln(os.Stderr, "Started to watch messages")
-	}
-
-	err = regexCompile(o)
-	if err != nil {
-		fmt.Print(err)
-		return err
+	// do healthcheck (skip for API observer — it uses a separate gRPC service)
+	if o.LogFilter != "api" {
+		if ok := logClient.DoHealthCheck(); !ok {
+			return errors.New("failed to check the liveness of the gRPC server")
+		}
+		fmt.Fprintln(os.Stderr, "Checked the liveness of the gRPC server")
 	}
 
 	Limitchan = make(chan bool, 2)
-	if o.LogPath != "none" {
-		if o.LogFilter == "all" || o.LogFilter == "policy" {
-			// watch alerts
-			go logClient.WatchAlerts(o)
-			fmt.Fprintln(os.Stderr, "Started to watch alerts")
+
+	if o.LogFilter == "api" {
+		// watch API observer events
+		go logClient.WatchAPIEvents(o)
+		fmt.Fprintln(os.Stderr, "Started to watch API events")
+	} else {
+		if o.MsgPath != "none" {
+			// watch messages
+			go logClient.WatchMessages(o.MsgPath, o.JSON)
+			fmt.Fprintln(os.Stderr, "Started to watch messages")
 		}
 
-		if o.LogFilter == "all" || o.LogFilter == "system" {
-			// watch logs
-			go logClient.WatchLogs(o)
-			fmt.Fprintln(os.Stderr, "Started to watch logs")
+		err = regexCompile(o)
+		if err != nil {
+			fmt.Print(err)
+			return err
+		}
+
+		if o.LogPath != "none" {
+			if o.LogFilter == "all" || o.LogFilter == "policy" {
+				// watch alerts
+				go logClient.WatchAlerts(o)
+				fmt.Fprintln(os.Stderr, "Started to watch alerts")
+			}
+
+			if o.LogFilter == "all" || o.LogFilter == "system" {
+				// watch logs
+				go logClient.WatchLogs(o)
+				fmt.Fprintln(os.Stderr, "Started to watch logs")
+			}
 		}
 	}
 
