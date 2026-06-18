@@ -941,13 +941,20 @@ func getOperatorConfig(o Options) map[string]interface{} {
 		operatorImage = o.ImageRegistry + "/" + operatorImage
 	}
 	return map[string]interface{}{
-		"kubearmorOperator": map[string]interface{}{
-			"image": map[string]interface{}{
-				"repository": operatorImage,
-				"tag":        operatorImageTag,
+		"global": map[string]interface{}{
+			"autoDeploy":   false,
+			"imagePinning": false,
+			"registry": map[string]interface{}{
+				"secretName": "",
 			},
-			"imagePullPolicy":  operatorImagePullPolicy,
-			"annotateExisting": o.AnnotateExisting,
+			"kubearmorOperator": map[string]interface{}{
+				"image": map[string]interface{}{
+					"repository": operatorImage,
+					"tag":        operatorImageTag,
+				},
+				"imagePullPolicy":  operatorImagePullPolicy,
+				"annotateExisting": o.AnnotateExisting,
+			},
 		},
 	}
 }
