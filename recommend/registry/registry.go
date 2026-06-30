@@ -18,13 +18,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/jsonmessage"
 	image "github.com/kubearmor/kubearmor-client/recommend/image"
+	"github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
+	"github.com/moby/moby/client/pkg/jsonmessage"
 	"github.com/moby/term"
 
-	dockerTypes "github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
 	kg "github.com/kubearmor/KubeArmor/KubeArmor/log"
 	"github.com/kubearmor/kubearmor-client/hacks"
 	log "github.com/sirupsen/logrus"
@@ -100,7 +99,7 @@ func New(dockerConfigPath string) *Scanner {
 		log.WithError(err).Error("could not create temp dir")
 	}
 
-	scanner.cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	scanner.cli, err = client.New(client.FromEnv)
 	if err != nil {
 		log.WithError(err).Fatal("could not create new docker client")
 	}
@@ -169,7 +168,7 @@ func (r *Scanner) pullImage(imageName string) (err error) {
 
 	for _, cred := range r.authConfiguration.authCreds {
 		out, err = r.cli.ImagePull(context.Background(), imageName,
-			dockerTypes.PullOptions{
+			client.ImagePullOptions{
 				RegistryAuth: cred,
 			})
 		if err == nil {

@@ -12,8 +12,7 @@ import (
 	"text/template"
 
 	"github.com/coreos/go-systemd/v22/dbus"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 	"golang.org/x/mod/semver"
 )
 
@@ -378,27 +377,25 @@ func StartSystemdService(serviceName string) error {
 func StopAndDeleteContainer(containerName string) error {
 	ctx := context.Background()
 
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		return fmt.Errorf("failed to create Docker client: %w", err)
 	}
-	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
+	resp, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		return fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	for _, obj := range containers {
+	for _, obj := range resp.Items {
 		for _, name := range obj.Names {
 			if strings.TrimPrefix(name, "/") == containerName {
 				fmt.Printf("Found container '%s' (ID: %s). Stopping and removing...\n", containerName, obj.ID)
 
-				// Stop container (graceful stop)
-				if err := cli.ContainerStop(ctx, obj.ID, container.StopOptions{}); err != nil {
+				if _, err := cli.ContainerStop(ctx, obj.ID, client.ContainerStopOptions{}); err != nil {
 					return fmt.Errorf("failed to stop container: %w", err)
 				}
 
-				// Remove container
-				if err := cli.ContainerRemove(ctx, obj.ID, container.RemoveOptions{}); err != nil {
+				if _, err := cli.ContainerRemove(ctx, obj.ID, client.ContainerRemoveOptions{}); err != nil {
 					return fmt.Errorf("failed to remove container: %w", err)
 				}
 
