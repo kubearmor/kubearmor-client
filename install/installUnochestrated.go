@@ -22,10 +22,9 @@ import (
 	"strings"
 
 	"github.com/Masterminds/sprig"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/fatih/color"
 	"github.com/kubearmor/kubearmor-client/utils"
+	"github.com/moby/moby/client"
 	"golang.org/x/mod/semver"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
@@ -620,17 +619,17 @@ func RemoveSystemd() error {
 func getContainerIDByName(containerName string) (string, error) {
 	ctx := context.Background()
 
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		return "", err
 	}
 
-	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
+	resp, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		return "", err
 	}
 
-	for _, c := range containers {
+	for _, c := range resp.Items {
 		for _, name := range c.Names {
 			if strings.TrimPrefix(name, "/") == containerName {
 				return c.ID, nil
@@ -675,16 +674,16 @@ func stopAndDeleteContainerByID(containerID string) error {
 		fmt.Printf("compose not found but container found")
 		ctx := context.Background()
 
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		cli, err := client.New(client.FromEnv)
 		if err != nil {
 			return err
 		}
 
-		if err := cli.ContainerStop(ctx, containerID, container.StopOptions{}); err != nil {
+		if _, err := cli.ContainerStop(ctx, containerID, client.ContainerStopOptions{}); err != nil {
 			return err
 		}
 
-		if err := cli.ContainerRemove(ctx, containerID, container.RemoveOptions{}); err != nil {
+		if _, err := cli.ContainerRemove(ctx, containerID, client.ContainerRemoveOptions{}); err != nil {
 			return err
 		}
 	}
