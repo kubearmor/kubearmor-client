@@ -26,4 +26,5 @@ var sysdumpCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(sysdumpCmd)
 	sysdumpCmd.Flags().StringVarP(&dumpOptions.Filename, "file", "f", "", "output file to use")
+	sysdumpCmd.Flags().BoolVar(&dumpOptions.NonK8s, "nonk8s", false, "Collect sysdump for non-Kubernetes (process/VM) environments")
 }
