@@ -28,6 +28,7 @@ require (
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
+	github.com/accuknox/SentryFlow/protobuf/golang v0.0.0-20260514050050-22a4d4f04e17
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.6
 	github.com/charmbracelet/lipgloss v1.1.0

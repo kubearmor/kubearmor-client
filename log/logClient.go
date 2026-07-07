@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 
+	apipb "github.com/accuknox/SentryFlow/protobuf/golang"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
@@ -92,6 +93,9 @@ type Feeder struct {
 	// client
 	client pb.LogServiceClient
 
+	// api observer client
+	apiClient apipb.APIObserverServiceClient
+
 	// messages
 	msgStream pb.LogService_WatchMessagesClient
 
@@ -100,6 +104,9 @@ type Feeder struct {
 
 	// logs
 	logStream pb.LogService_WatchLogsClient
+
+	// api event stream
+	apiEventStream apipb.APIObserverService_GetAPIEventsClient
 
 	// wait group
 	WgClient sync.WaitGroup
@@ -132,39 +139,68 @@ func NewClient(server string, o Options, c kubernetes.Interface) (*Feeder, error
 	}
 	fd.conn = conn
 
-	fd.client = pb.NewLogServiceClient(fd.conn)
+	if o.LogFilter == "api" {
+		// Set up API Observer client and stream
+		fd.apiClient = apipb.NewAPIObserverServiceClient(fd.conn)
 
-	msgIn := pb.RequestMessage{}
-	msgIn.Filter = ""
+		filter := &apipb.APIEventFilter{
+			Namespace: o.Namespace,
+			PodName:   o.PodName,
+		}
+		if o.Protocol != "" {
+			filter.Protocols = []string{o.Protocol}
+		}
+		if o.Method != "" {
+			filter.Methods = []string{o.Method}
+		}
+		if o.StatusPattern != "" {
+			filter.StatusPatterns = []string{o.StatusPattern}
+		}
+		if o.MinDurationMs > 0 {
+			filter.MinDurationMs = o.MinDurationMs
+		}
 
-	if o.MsgPath != "none" {
-		msgStream, err := fd.client.WatchMessages(context.Background(), &msgIn)
+		apiEventStream, err := fd.apiClient.GetAPIEvents(context.Background(), filter)
 		if err != nil {
 			return nil, err
 		}
-		fd.msgStream = msgStream
-	}
+		fd.apiEventStream = apiEventStream
+	} else {
+		// Set up LogService client and streams
+		fd.client = pb.NewLogServiceClient(fd.conn)
 
-	alertIn := pb.RequestMessage{}
-	alertIn.Filter = o.LogFilter
+		msgIn := pb.RequestMessage{}
+		msgIn.Filter = ""
 
-	if o.LogPath != "none" && (alertIn.Filter == "all" || alertIn.Filter == "policy") {
-		alertStream, err := fd.client.WatchAlerts(context.Background(), &alertIn)
-		if err != nil {
-			return nil, err
+		if o.MsgPath != "none" {
+			msgStream, err := fd.client.WatchMessages(context.Background(), &msgIn)
+			if err != nil {
+				return nil, err
+			}
+			fd.msgStream = msgStream
 		}
-		fd.alertStream = alertStream
-	}
 
-	logIn := pb.RequestMessage{}
-	logIn.Filter = o.LogFilter
+		alertIn := pb.RequestMessage{}
+		alertIn.Filter = o.LogFilter
 
-	if o.LogPath != "none" && (logIn.Filter == "all" || logIn.Filter == "system") {
-		logStream, err := fd.client.WatchLogs(context.Background(), &logIn)
-		if err != nil {
-			return nil, err
+		if o.LogPath != "none" && (alertIn.Filter == "all" || alertIn.Filter == "policy") {
+			alertStream, err := fd.client.WatchAlerts(context.Background(), &alertIn)
+			if err != nil {
+				return nil, err
+			}
+			fd.alertStream = alertStream
 		}
-		fd.logStream = logStream
+
+		logIn := pb.RequestMessage{}
+		logIn.Filter = o.LogFilter
+
+		if o.LogPath != "none" && (logIn.Filter == "all" || logIn.Filter == "system") {
+			logStream, err := fd.client.WatchLogs(context.Background(), &logIn)
+			if err != nil {
+				return nil, err
+			}
+			fd.logStream = logStream
+		}
 	}
 
 	fd.WgClient = sync.WaitGroup{}
@@ -482,6 +518,131 @@ func WatchTelemetryHelper(arr []byte, t string, o Options) {
 	if o.LogPath == "stdout" {
 		fmt.Printf("%s", str)
 	} else if o.LogPath != "" {
+		StrToFile(str, o.LogPath)
+	}
+}
+
+// WatchAPIEvents streams API Observer events from the APIObserverService
+func (fd *Feeder) WatchAPIEvents(o Options) error {
+	fd.WgClient.Add(1)
+	defer fd.WgClient.Done()
+
+	if o.Limit > 0 {
+		for i = 0; i < o.Limit; i++ {
+			res, err := fd.apiEventStream.Recv()
+			if err != nil {
+				break
+			}
+
+			str := formatAPIEvent(res, o)
+			writeAPIEventOutput(str, o)
+		}
+		Limitchan <- true
+		return nil
+	}
+
+	for fd.Running {
+		res, err := fd.apiEventStream.Recv()
+		if err != nil {
+			UnblockSignal = err
+			break
+		}
+
+		str := formatAPIEvent(res, o)
+		writeAPIEventOutput(str, o)
+	}
+
+	fmt.Fprintln(os.Stderr, "Stopped WatchAPIEvents")
+	return nil
+}
+
+// formatAPIEvent formats an APIEvent as a string (JSON or human-readable text)
+func formatAPIEvent(res *apipb.APIEvent, o Options) string {
+	if o.JSON || o.Output == "json" {
+		arr, _ := json.Marshal(res)
+		return fmt.Sprintf("%s\n", string(arr))
+	}
+
+	if o.Output == "pretty-json" {
+		arr, _ := json.Marshal(res)
+		var prettyJSON bytes.Buffer
+		if err := json.Indent(&prettyJSON, arr, "", "  "); err == nil {
+			return fmt.Sprintf("%s\n", prettyJSON.String())
+		}
+		return fmt.Sprintf("%s\n", string(arr))
+	}
+
+	// Human-readable text format
+	var sb strings.Builder
+
+	timestamp := ""
+	if res.Metadata != nil {
+		timestamp = fmt.Sprintf("%d", res.Metadata.Timestamp)
+	}
+	sb.WriteString(fmt.Sprintf("== APIEvent / %s ==\n", timestamp))
+
+	if res.Protocol != "" {
+		sb.WriteString(fmt.Sprintf("Protocol: %s\n", res.Protocol))
+	}
+
+	if res.Metadata != nil {
+		if res.Metadata.NodeName != "" {
+			sb.WriteString(fmt.Sprintf("Node: %s\n", res.Metadata.NodeName))
+		}
+	}
+
+	if res.Source != nil {
+		src := res.Source
+		sb.WriteString(fmt.Sprintf("Source: %s/%s (%s:%d)\n", src.Namespace, src.Name, src.Ip, src.Port))
+	}
+
+	if res.Destination != nil {
+		dst := res.Destination
+		sb.WriteString(fmt.Sprintf("Destination: %s/%s (%s:%d)\n", dst.Namespace, dst.Name, dst.Ip, dst.Port))
+	}
+
+	if res.Request != nil {
+		if res.Request.Method != "" {
+			sb.WriteString(fmt.Sprintf("Method: %s\n", res.Request.Method))
+		}
+		if res.Request.Path != "" {
+			sb.WriteString(fmt.Sprintf("Path: %s\n", res.Request.Path))
+		}
+		if res.Request.GrpcService != "" {
+			sb.WriteString(fmt.Sprintf("gRPC Service: %s\n", res.Request.GrpcService))
+		}
+		if res.Request.GrpcMethod != "" {
+			sb.WriteString(fmt.Sprintf("gRPC Method: %s\n", res.Request.GrpcMethod))
+		}
+	}
+
+	if res.Response != nil {
+		sb.WriteString(fmt.Sprintf("Status: %d\n", res.Response.StatusCode))
+		if res.Response.GrpcStatusCode != 0 {
+			sb.WriteString(fmt.Sprintf("gRPC Status: %d\n", res.Response.GrpcStatusCode))
+		}
+		if res.Response.GrpcStatusMessage != "" {
+			sb.WriteString(fmt.Sprintf("gRPC Message: %s\n", res.Response.GrpcStatusMessage))
+		}
+	}
+
+	if res.LatencyMs > 0 {
+		sb.WriteString(fmt.Sprintf("Latency: %dms\n", res.LatencyMs))
+	}
+
+	return sb.String()
+}
+
+// writeAPIEventOutput writes the formatted API event string to the configured output
+func writeAPIEventOutput(str string, o Options) {
+	if o.EventChan != nil {
+		arr, _ := json.Marshal(str)
+		o.EventChan <- EventInfo{Data: arr, Type: "APIEvent"}
+	}
+
+	if o.LogPath == "stdout" {
+		fmt.Printf("%s", str)
+	} else if o.LogPath != "" && o.LogPath != "none" {
 		StrToFile(str, o.LogPath)
 	}
 }
