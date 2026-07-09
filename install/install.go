@@ -244,7 +244,7 @@ func printBar(msg string, total int) int {
 
 func printAnimation(msg string, flag bool) int {
 	clearLine(90)
-	fmt.Printf(msg + "\n")
+	fmt.Printf("%s\n", msg)
 	if verify {
 		if flag {
 			progress++
@@ -1327,7 +1327,7 @@ func listPods(c *k8s.Client) {
 		}
 	}
 	if cnt != 0 {
-		fmt.Println("ℹ️   Following pods will get restarted with karmor uninstall --force: \n")
+		fmt.Printf("ℹ️   Following pods will get restarted with karmor uninstall --force: \n\n")
 		table.Render()
 	}
 }
@@ -1516,6 +1516,14 @@ func K8sLegacyUninstaller(c *k8s.Client, o Options) error {
 			fmt.Printf("CRD %s not found\n", hspName)
 		}
 
+		fmt.Printf("CRD %s\n", knpName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), knpName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", knpName)
+		}
+
 		removeAnnotations(c)
 	}
 
@@ -1595,6 +1603,14 @@ func K8sUninstaller(c *k8s.Client, o Options) error {
 				return err
 			}
 			fmt.Printf("CRD %s not found\n", hspName)
+		}
+
+		fmt.Printf("❌  Removing CRD %s\n", knpName)
+		if err := c.APIextClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), knpName, metav1.DeleteOptions{}); err != nil {
+			if !strings.Contains(err.Error(), "not found") {
+				return err
+			}
+			fmt.Printf("CRD %s not found\n", knpName)
 		}
 
 		removeAnnotations(c)

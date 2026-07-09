@@ -4,10 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
 	"github.com/kubearmor/kubearmor-client/recommend/common"
+	"github.com/moby/moby/client"
 )
 
 type Client struct {
@@ -15,7 +13,7 @@ type Client struct {
 }
 
 func ConnectDockerClient() (*Client, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -24,13 +22,12 @@ func ConnectDockerClient() (*Client, error) {
 
 func (c *Client) ListObjects(_ common.Options) ([]common.Object, error) {
 	var result []common.Object
-	containers, err := c.Client.ContainerList(context.Background(), container.ListOptions{
-		Filters: filters.NewArgs(),
-	})
+
+	resp, err := c.Client.ContainerList(context.Background(), client.ContainerListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	for _, ctr := range containers {
+	for _, ctr := range resp.Items {
 		result = append(result, common.Object{
 			Name:   strings.TrimPrefix(ctr.Names[0], "/"),
 			Images: []string{ctr.Image},
