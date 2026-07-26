@@ -194,8 +194,9 @@ func (r *Scanner) pullImage(imageName string) (err error) {
 
 // Sanitize archive file pathing from "G305: Zip Slip vulnerability"
 func sanitizeArchivePath(d, t string) (v string, err error) {
-	v = filepath.Join(d, t)
-	if strings.HasPrefix(v, filepath.Clean(d)) {
+	cleanD := filepath.Clean(d)
+	v = filepath.Join(cleanD, t)
+	if v == cleanD || strings.HasPrefix(v, cleanD+string(os.PathSeparator)) {
 		return v, nil
 	}
 
