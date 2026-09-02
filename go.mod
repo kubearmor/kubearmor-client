@@ -19,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.10.0
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
 	golang.org/x/mod v0.35.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.22.0
 	golang.org/x/sys v0.44.0
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
@@ -48,7 +48,7 @@ require (
 	k8s.io/cli-runtime v0.33.10
 	k8s.io/client-go v0.35.3
 	k8s.io/kubectl v0.33.10
-	oras.land/oras-go/v2 v2.6.0
+	oras.land/oras-go/v2 v2.6.2
 )
 
 require (
