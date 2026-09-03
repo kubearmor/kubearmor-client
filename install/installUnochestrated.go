@@ -124,6 +124,21 @@ func createDefaultConfigPath() (string, error) {
 	return configPath, nil
 }
 
+// SetupVMTLS generates the split-plane PKI (management + log CAs and karmor
+// client identities) used by unorchestrated deployments. An empty baseDir
+// selects DefaultVMTLSBaseDir. It is idempotent: existing key material is
+// never rotated, so re-running install is safe.
+func SetupVMTLS(baseDir string) error {
+	if baseDir == "" {
+		baseDir = DefaultVMTLSBaseDir
+	}
+	if err := EnsureVMPlanePKI(baseDir); err != nil {
+		return fmt.Errorf("failed to set up VM TLS PKI at %s: %w", baseDir, err)
+	}
+	fmt.Printf("🔐\tVM TLS PKI ready at %s (management/ and log/ trust planes)\n", baseDir)
+	return nil
+}
+
 func (config *KubeArmorConfig) DeployKAdocker() error {
 	_, err := config.ValidateEnv()
 	if err != nil {
@@ -132,6 +147,9 @@ func (config *KubeArmorConfig) DeployKAdocker() error {
 	fmt.Printf("ℹ️\tInstalling KubeArmor as a docker container")
 	configPath, err := createDefaultConfigPath()
 	if err != nil {
+		return err
+	}
+	if err := SetupVMTLS(""); err != nil {
 		return err
 	}
 	// initialize sprig for templating
@@ -317,6 +335,12 @@ func (config *KubeArmorConfig) SystemdInstall() error {
 	}
 
 	fmt.Printf("😄\tKubearmor service files placed successfully\n")
+
+	// Lay down the split-plane PKI before the service starts so the agent's
+	// SelfSignedCertLoader finds its per-plane CAs on first boot.
+	if err := SetupVMTLS(""); err != nil {
+		return err
+	}
 
 	return nil
 }
