@@ -15,8 +15,6 @@ import (
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"sigs.k8s.io/yaml"
 )
 
@@ -32,29 +30,29 @@ const (
 // PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
 	GRPC string
+	// ManagementTLSCertPath is the management trust-plane directory
+	// (management/ca.crt + management/client.crt/client.key). Empty means
+	// resolve via KUBEARMOR_MANAGEMENT_TLS_CERT_PATH or the default.
+	ManagementTLSCertPath string
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
 	var (
-		gRPC = ""
 		resp *pb.Response
 		err  error
 	)
 
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
-			gRPC = val
-		} else {
-			gRPC = "localhost:32767"
-		}
-	}
+	// PolicyService lives on the management plane; always use the
+	// management CA + client identity, never the log-plane credentials
+	// and never an insecure channel.
+	gRPC := ManagementGRPCAddress(o.GRPC)
+	mgmtDir := ManagementTLSCertPath(o.ManagementTLSCertPath)
 
-	conn, err := grpc.NewClient(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := NewManagementGRPCClient(gRPC, mgmtDir)
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
 	client := pb.NewPolicyServiceClient(conn)
 
