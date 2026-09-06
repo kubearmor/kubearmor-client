@@ -328,7 +328,7 @@ func checkLsmSupport(supportedLSM string, o Options) {
 		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else if strings.Contains(supportedLSM, "selinux") {
 		o.printToOutput(yellow, " Partial (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, apparmor must be supported")
-	} else if strings.Contains(supportedLSM, "apparmor") || strings.Contains(supportedLSM, "bpf") {
+	} else if strings.Contains(supportedLSM, "apparmor") {
 		o.printToOutput(green, " Full (Supported LSMs: "+supportedLSM+")")
 	} else {
 		o.printToOutput(red, " None (Supported LSMs: "+supportedLSM+") \n\t To have full enforcement support, AppArmor or BPFLSM must be supported")
