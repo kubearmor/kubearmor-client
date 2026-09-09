@@ -93,5 +93,6 @@ func init() {
 	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
 
 	// gRPC endpoint flag to communicate with KubeArmor. Available across subcommands.
-	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "gRPC server information")
+	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "management gRPC server information (default localhost:32765, or KUBEARMOR_MANAGEMENT_SERVICE)")
+	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.ManagementTLSCertPath, "managementTLSCertPath", "", "management trust-plane directory holding ca.crt, client.crt and client.key (default /var/lib/kubearmor/tls/management, or KUBEARMOR_MANAGEMENT_TLS_CERT_PATH)")
 }

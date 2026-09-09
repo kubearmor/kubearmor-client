@@ -5,7 +5,7 @@ Description=KubeArmor
 User=root
 KillMode=process
 WorkingDirectory=/opt/kubearmor/
-ExecStart=/opt/kubearmor/kubearmor
+ExecStart=/opt/kubearmor/kubearmor -tlsCertPath=/var/lib/kubearmor/tls/log -managementTLSCertPath=/var/lib/kubearmor/tls/management
 Restart=always
 RestartSec=10
 

@@ -49,10 +49,13 @@ services:
       - "-alertThrottling={{.KubeArmorAlertThrottling}}"
       - "-maxAlertPerSec={{.KubeArmorMaxAlertsPerSec}}"
       - "-throttleSec={{.KubeArmorThrottleSec}}"
+      - "-tlsCertPath=/var/lib/kubearmor/tls/log"
+      - "-managementTLSCertPath=/var/lib/kubearmor/tls/management"
     labels:
       app: kubearmor
     volumes:
       - "kubearmor-init-vol:/opt/kubearmor/BPF"
+      - "/var/lib/kubearmor/tls:/var/lib/kubearmor/tls:ro"
       - "/sys/fs/bpf:/sys/fs/bpf"
       - "/sys/kernel/security:/sys/kernel/security"
       - "/sys/kernel/debug:/sys/kernel/debug"

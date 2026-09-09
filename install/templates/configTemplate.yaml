@@ -25,3 +25,7 @@ hostDefaultCapabilitiesPosture: {{.KubeArmorHostCapPosture}}
 alertThrottling: {{.KubeArmorAlertThrottling}}
 maxAlertPerSec: {{.KubeArmorMaxAlertsPerSec}}
 throttleSec: {{.KubeArmorThrottleSec}}
+
+# tls settings (split-plane PKI provisioned by karmor install)
+tlsCertPath: /var/lib/kubearmor/tls/log
+managementTLSCertPath: /var/lib/kubearmor/tls/management

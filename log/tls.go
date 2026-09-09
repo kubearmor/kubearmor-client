@@ -29,15 +29,20 @@ func loadTLSCredentials(client kubernetes.Interface, o Options) (credentials.Tra
 		clientCertCfg = cert.DefaultKubeArmorClientConfig
 		clientCertCfg.NotAfter = time.Now().AddDate(1, 0, 0) // valid for 1 year
 	}
+	// Resolve the log trust plane: with a split-PKI layout
+	// (<base>/log/ca.crt present) log commands use the Log CA + log
+	// client identity; otherwise fall back to the configured path
+	// (single-CA layouts).
+	logCertPath := ResolveLogCertPath(o.TlsCertPath)
 	tlsConfig := cert.TlsConfig{
 		CertCfg:              clientCertCfg,
 		ReadCACertFromSecret: o.ReadCAFromSecret,
 		SecretName:           secret,
 		Namespace:            namespace,
 		K8sClient:            client.(*kubernetes.Clientset),
-		CertPath:             cert.GetClientCertPath(o.TlsCertPath),
+		CertPath:             cert.GetClientCertPath(logCertPath),
 		CertProvider:         o.TlsCertProvider,
-		CACertPath:           cert.GetCACertPath(o.TlsCertPath),
+		CACertPath:           cert.GetCACertPath(logCertPath),
 	}
 	creds, err := cert.NewTlsCredentialManager(&tlsConfig).CreateTlsClientCredentials()
 	if err != nil {

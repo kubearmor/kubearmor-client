@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -16,7 +17,9 @@ import (
 	pb "github.com/kubearmor/KubeArmor/protobuf"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"sigs.k8s.io/yaml"
 )
 
@@ -32,49 +35,88 @@ const (
 // PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
 	GRPC string
+	// ManagementTLSCertPath is the management trust-plane directory
+	// (management/ca.crt + management/client.crt/client.key). Empty means
+	// resolve via KUBEARMOR_MANAGEMENT_TLS_CERT_PATH or the default.
+	ManagementTLSCertPath string
+}
+
+func isManagementUnavailable(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "connection refused") || strings.Contains(msg, "connection closed") {
+		return true
+	}
+	if s, ok := status.FromError(err); ok && s.Code() == codes.Unavailable {
+		return true
+	}
+	return false
+}
+
+func doPolicyRPC(client pb.PolicyServiceClient, kind string, data []byte) (*pb.Response, error) {
+	req := pb.Policy{Policy: data}
+	switch kind {
+	case KubeArmorPolicy:
+		return client.ContainerPolicy(context.Background(), &req)
+	case KubeArmorHostPolicy:
+		return client.HostPolicy(context.Background(), &req)
+	case KubeArmorNetworkPolicy:
+		return client.NetworkPolicy(context.Background(), &req)
+	default:
+		return nil, fmt.Errorf("unknown policy kind %q", kind)
+	}
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
-	var (
-		gRPC = ""
-		resp *pb.Response
-		err  error
-	)
+	// Primary path: management plane on :32765 with mTLS.
+	gRPC := ManagementGRPCAddress(o.GRPC)
+	mgmtDir := ManagementTLSCertPath(o.ManagementTLSCertPath)
 
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
-			gRPC = val
-		} else {
-			gRPC = "localhost:32767"
-		}
-	}
-
-	conn, err := grpc.NewClient(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := NewManagementGRPCClient(gRPC, mgmtDir)
 	if err != nil {
+		if isManagementUnavailable(err) {
+			return sendPolicyOverGRPCFallback(gRPC, policyEventData, kind)
+		}
 		return err
 	}
+	defer conn.Close()
 
-	client := pb.NewPolicyServiceClient(conn)
-
-	req := pb.Policy{
-		Policy: policyEventData,
-	}
-
-	switch kind {
-	case KubeArmorPolicy:
-		resp, err = client.ContainerPolicy(context.Background(), &req)
-	case KubeArmorHostPolicy:
-		resp, err = client.HostPolicy(context.Background(), &req)
-	case KubeArmorNetworkPolicy:
-		resp, err = client.NetworkPolicy(context.Background(), &req)
-	}
-
+	resp, err := doPolicyRPC(pb.NewPolicyServiceClient(conn), kind, policyEventData)
 	if err != nil {
+		if isManagementUnavailable(err) {
+			return sendPolicyOverGRPCFallback(gRPC, policyEventData, kind)
+		}
 		return fmt.Errorf("failed to send policy")
 	}
 
+	fmt.Printf("Policy %s \n", resp.Status)
+	return nil
+}
+
+// sendPolicyOverGRPCFallback is the pre-split-plane path: PolicyService on
+// :32767 (log plane port) over an insecure channel. Used when the agent is
+// an older KubeArmor that does not serve the management plane on :32765.
+func sendPolicyOverGRPCFallback(primaryAddr string, policyEventData []byte, kind string) error {
+	legacyAddr := "localhost:32767"
+	if host, _, err := net.SplitHostPort(primaryAddr); err == nil && host != "" {
+		legacyAddr = net.JoinHostPort(host, "32767")
+	} else if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok && val != "" {
+		if host, _, err := net.SplitHostPort(val); err == nil && host != "" {
+			legacyAddr = net.JoinHostPort(host, "32767")
+		}
+	}
+	conn, err := grpc.NewClient(legacyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	resp, err := doPolicyRPC(pb.NewPolicyServiceClient(conn), kind, policyEventData)
+	if err != nil {
+		return fmt.Errorf("failed to send policy")
+	}
 	fmt.Printf("Policy %s \n", resp.Status)
 	return nil
 }
