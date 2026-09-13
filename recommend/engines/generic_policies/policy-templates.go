@@ -184,7 +184,8 @@ func DownloadAndUnzipRelease() (string, error) {
 // Sanitize archive file pathing from "G305: Zip Slip vulnerability"
 func sanitizeArchivePath(d, t string) (v string, err error) {
 	v = filepath.Join(d, t)
-	if strings.HasPrefix(v, filepath.Clean(d)) {
+	cleanDir := filepath.Clean(d)
+	if v == cleanDir || strings.HasPrefix(v, cleanDir+string(os.PathSeparator)) {
 		return v, nil
 	}
 
