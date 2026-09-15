@@ -284,7 +284,7 @@ func copyFromPod(srcPath string, d string, c *k8s.Client) error {
 			Name(pod.Name).
 			SubResource("exec").
 			VersionedParams(&corev1.PodExecOptions{
-				Container: pods.Items[0].Spec.Containers[0].Name,
+				Container: pod.Spec.Containers[0].Name,
 				Command:   cmdArr,
 				Stdin:     true,
 				Stdout:    true,
