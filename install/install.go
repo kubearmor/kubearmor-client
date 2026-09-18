@@ -259,6 +259,24 @@ func printMessage(msg string, flag bool) int {
 	return 0
 }
 
+func daemonsetPodStatus(c *k8s.Client) string {
+	pods, err := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor"})
+	if err != nil || len(pods.Items) == 0 {
+		return "(no pods yet)"
+	}
+	counts := map[corev1.PodPhase]int{}
+	for _, pod := range pods.Items {
+		counts[pod.Status.Phase]++
+	}
+	var parts []string
+	for _, phase := range []corev1.PodPhase{corev1.PodPending, corev1.PodRunning, corev1.PodFailed, corev1.PodUnknown} {
+		if counts[phase] > 0 {
+			parts = append(parts, fmt.Sprintf("%s: %d", phase, counts[phase]))
+		}
+	}
+	return "(" + strings.Join(parts, ", ") + ")"
+}
+
 func checkPods(c *k8s.Client, o Options, i bool) {
 	stime := time.Now()
 	otime := stime.Add(600 * time.Second)
@@ -287,7 +305,7 @@ func checkPods(c *k8s.Client, o Options, i bool) {
 	for {
 		pods, _ := c.K8sClientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{LabelSelector: "kubearmor-app=kubearmor", FieldSelector: "status.phase==Running"})
 		podno := len(pods.Items)
-		fmt.Printf("\rℹ️\tWaiting for Daemonset to start: %s", cursor[cursorcount])
+		fmt.Printf("\rℹ️\tWaiting for Daemonset to start: %s %s", daemonsetPodStatus(c), cursor[cursorcount])
 		cursorcount++
 		if cursorcount == len(cursor) {
 			cursorcount = 0
