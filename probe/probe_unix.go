@@ -5,7 +5,6 @@ package probe
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,13 +17,10 @@ import (
 
 	"github.com/fatih/color"
 	jsoniter "github.com/json-iterator/go"
-	pb "github.com/kubearmor/KubeArmor/protobuf"
 	"github.com/kubearmor/kubearmor-client/deployment"
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"golang.org/x/mod/semver"
 	"golang.org/x/sys/unix"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/remotecommand"
@@ -247,79 +243,7 @@ func printWhenKubeArmorIsRunningInSystemmd(o Options) error {
 	if err != nil {
 		return err
 	}
-	policyData, err := getPolicyData(o)
-	if err != nil {
-		return err
-	}
-	armoredContainers, containerMap := getArmoredContainerData(policyData.ContainerList, policyData.ContainerMap)
-	hostPolicyData := getHostPolicyData(policyData)
-	if o.Output == "json" {
-		probeData := map[string]interface{}{
-			"Probe Data": map[string]interface{}{
-				"Host":              kd,
-				"HostPolicies":      policyData.HostMap,
-				"ArmoredContainers": containerMap,
-			},
-		}
-		out, err := json.Marshal(probeData)
-		if err != nil {
-			return err
-		}
-		o.printLn(string(out))
-	} else {
-
-		o.printToOutput(green, "\nFound KubeArmor running in Systemd mode \n\n")
-
-		o.printToOutput(boldWhite, "Host : \n")
-
-		o.printKubeArmorProbeOutput(kd)
-		if len(policyData.HostMap) > 0 {
-			o.printHostPolicy(hostPolicyData)
-		}
-		o.printContainersSystemd(armoredContainers)
-
-	}
-
-	return nil
-}
-
-func getHostPolicyData(policyData *pb.ProbeResponse) [][]string {
-	var data [][]string
-	for k, v := range policyData.HostMap {
-		for _, policy := range v.PolicyList {
-			data = append(data, []string{k, policy})
-		}
-	}
-	return data
-}
-
-func getArmoredContainerData(containerList []string, containerMap map[string]*pb.ContainerData) ([][]string, map[string][]string) {
-	var data [][]string
-	for _, containerName := range containerList {
-		if _, ok := containerMap[containerName]; ok {
-			if containerMap[containerName].PolicyEnabled == 1 {
-				for _, policyName := range containerMap[containerName].PolicyList {
-					data = append(data, []string{containerName, policyName})
-				}
-			}
-		} else {
-			data = append(data, []string{containerName, ""})
-		}
-	}
-	mp := make(map[string][]string)
-
-	for _, v := range data {
-		if val, exists := mp[v[0]]; exists {
-
-			val = append(val, v[1])
-			mp[v[0]] = val
-
-		} else {
-			mp[v[0]] = []string{v[1]}
-		}
-	}
-
-	return data, mp
+	return printStandaloneProbe(o, &kd)
 }
 
 func checkLsmSupport(supportedLSM string, o Options) {
@@ -411,6 +335,7 @@ func probeSystemdMode() (KubeArmorProbeData, error) {
 		log.Println(err)
 		return KubeArmorProbeData{}, err
 	}
+	defer jsonFile.Close()
 
 	buf, err := io.ReadAll(jsonFile)
 	if err != nil {
@@ -425,31 +350,4 @@ func probeSystemdMode() (KubeArmorProbeData, error) {
 		return KubeArmorProbeData{}, err
 	}
 	return kd, nil
-}
-
-func getPolicyData(o Options) (*pb.ProbeResponse, error) {
-	gRPC := ""
-
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
-			gRPC = val
-		} else {
-			gRPC = "localhost:32767"
-		}
-	}
-	conn, err := grpc.Dial(gRPC, grpc.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
-	client := pb.NewProbeServiceClient(conn)
-
-	resp, err := client.GetProbeData(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		o.printLn(err)
-		return nil, err
-	}
-
-	return resp, nil
 }

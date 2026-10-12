@@ -66,6 +66,7 @@ services:
     restart: always
     ports:
       - "{{.KubeArmorPort}}:32767"
+      - "127.0.0.1:32765:32765"
     pid: "host"
     privileged: true
 

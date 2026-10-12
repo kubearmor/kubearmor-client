@@ -18,6 +18,9 @@ var uninstallCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// check for systemd or docker installation
 		exist := install.CheckAndRemoveKAVmInstallation()
+		if uninstallOptions.NonK8s {
+			return nil
+		}
 		if !exist {
 			if err := install.K8sUninstaller(k8sClient, uninstallOptions); err != nil {
 				if err := install.K8sLegacyUninstaller(k8sClient, uninstallOptions); err != nil {

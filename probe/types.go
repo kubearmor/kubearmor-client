@@ -8,11 +8,13 @@ import (
 
 // Options provides probe daemonset options install
 type Options struct {
-	Namespace string
-	Full      bool
-	Output    string
-	GRPC      string
-	Writer    io.Writer
+	Namespace             string
+	Full                  bool
+	Output                string
+	GRPC                  string
+	NonK8s                bool
+	ManagementTLSCertPath string
+	Writer                io.Writer
 }
 
 // KubeArmorProbeData structure definition

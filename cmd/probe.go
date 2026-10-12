@@ -29,9 +29,12 @@ the supported KubeArmor features in the environment, the pods being handled by K
 
 func init() {
 	rootCmd.AddCommand(probeCmd)
+	probeCmd.Flags().BoolVar(&probeInstallOptions.NonK8s, "nonk8s", false, "query a standalone agent's policies using management mTLS (no kubeconfig required)")
+	probeCmd.Flags().StringVar(&probeInstallOptions.ManagementTLSCertPath, "managementTLSCertPath", "", "management ca.crt, client.crt and client.key directory (default: KUBEARMOR_MANAGEMENT_TLS_CERT_PATH or /var/lib/kubearmor/tls/management)")
 	probeCmd.Flags().StringVarP(&probeInstallOptions.Namespace, "namespace", "n", "kubearmor", "Namespace for resources")
 	probeCmd.Flags().BoolVar(&probeInstallOptions.Full, "full", false, `If KubeArmor is not running, it deploys a daemonset to have access to more
 information on KubeArmor support in the environment and deletes daemonset after probing`)
 	probeCmd.Flags().StringVarP(&probeInstallOptions.Output, "format", "f", "text", "Format: json or text or no-color")
-	probeCmd.Flags().StringVar(&probeInstallOptions.GRPC, "gRPC", "", "GRPC port ")
+	probeCmd.Flags().StringVar(&probeInstallOptions.GRPC, "gRPC", "", "management gRPC address for standalone agents (default: KUBEARMOR_MANAGEMENT_SERVICE or localhost:32765)")
+	probeCmd.MarkFlagsMutuallyExclusive("nonk8s", "full")
 }

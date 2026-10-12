@@ -94,6 +94,49 @@ Flags:
 Use "karmor [command] --help" for more information about a command.
 ```
 
+### Standalone agents
+
+`karmor install --nonk8s --vm-mode docker` (or `--vm-mode systemd`) provisions
+independent management and log certificate authorities under
+`/var/lib/kubearmor/tls/management` and `/var/lib/kubearmor/tls/log`. Each directory
+contains `ca.crt`, `ca.key`, `client.crt`, and `client.key`. Installation requires
+permission to create these files. Existing valid identities are reused; incomplete
+or invalid material produces an error without silently rotating the CA.
+
+The agent uses its shared `tlsCertProvider=self` configuration to issue server
+certificates, with `managementTLSCertPath` and `tlsCertPath` selecting the two
+independent directories. The CLI uses the persisted client certificates; it only
+needs `ca.crt`, `client.crt`, and `client.key` for the endpoint being accessed.
+Keep CA private keys on the agent host when copying credentials to another client.
+
+```shell
+# Management endpoint: localhost:32765
+karmor vm policy add ./policy.yaml
+karmor vm policy delete ./policy.yaml
+karmor probe --nonk8s
+
+# Log endpoint: localhost:32767
+karmor logs --nonk8s --json
+```
+
+These commands work without a kubeconfig. `--nonk8s` on `logs` always uses mutual
+TLS and locally stored client credentials. For a different log credential
+directory, use `--tlsCertPath /path/to/log`; the parent directory containing `log/`
+is also accepted. Kubernetes logging keeps its existing defaults.
+
+Policy and standalone probe commands accept `--gRPC host:port` and
+`--managementTLSCertPath /path/to/management`. Their environment variable
+equivalents are `KUBEARMOR_MANAGEMENT_SERVICE` and
+`KUBEARMOR_MANAGEMENT_TLS_CERT_PATH`. Logs accept `--gRPC host:port` or
+`KUBEARMOR_SERVICE`. The server certificate must cover the requested hostname or
+IP address. TLS failures are returned to the caller; policy requests never retry
+against the plaintext log port.
+
+The Docker installation publishes management port 32765 on `127.0.0.1` only.
+Remote administration requires an explicitly configured listener or tunnel and
+the management client identity. These management commands require an agent with
+the dedicated management server; older agents are not selected automatically.
+
 ## License
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkubearmor%2Fkubearmor-client.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkubearmor%2Fkubearmor-client?ref=badge_large)

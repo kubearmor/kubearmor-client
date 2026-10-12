@@ -45,6 +45,9 @@ var (
 var ErrKubeArmorNotRunningOnK8s = errors.New("kubearmor is not running in k8s")
 
 func PrintProbeResultCmd(c *k8s.Client, o Options) error {
+	if o.NonK8s {
+		return printStandaloneProbe(o, nil)
+	}
 	return printProbeResult(c, o)
 }
 

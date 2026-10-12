@@ -17,6 +17,9 @@ var dockerClient *docker.Client
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if usesStandaloneAgent(cmd) {
+			return nil
+		}
 		var err error
 
 		//Initialise k8sClient for all child commands to inherit
@@ -44,6 +47,21 @@ operation) of containers at the system level.
 	`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+}
+
+// Standalone commands connect directly to the agent or install it locally.
+// They must also work on hosts without Kubernetes or Docker client configuration.
+func usesStandaloneAgent(cmd *cobra.Command) bool {
+	for parent := cmd; parent != nil; parent = parent.Parent() {
+		if parent.Name() == "vm" {
+			return true
+		}
+	}
+	if cmd.Flags().Lookup("nonk8s") != nil {
+		nonK8s, _ := cmd.Flags().GetBool("nonk8s")
+		return nonK8s
+	}
+	return false
 }
 
 func init() {

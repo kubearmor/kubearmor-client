@@ -2,6 +2,7 @@ package install
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig"
 	"sigs.k8s.io/yaml"
@@ -25,6 +27,15 @@ func parseTestCert(t *testing.T, pemBytes []byte) *x509.Certificate {
 		t.Fatalf("failed to parse certificate: %v", err)
 	}
 	return crt
+}
+
+func privatePKIDir(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	return dir
 }
 
 func TestGeneratePlanePKI_CommonNames(t *testing.T) {
@@ -133,7 +144,7 @@ func TestGeneratePlanePKI_ClientsAreNotInterchangeable(t *testing.T) {
 }
 
 func TestSetupVMTLS_CreatesBothPlanes(t *testing.T) {
-	base := t.TempDir()
+	base := privatePKIDir(t)
 	if err := SetupVMTLS(base); err != nil {
 		t.Fatalf("SetupVMTLS failed: %v", err)
 	}
@@ -288,6 +299,19 @@ func TestUnorchestratedTemplatesRenderSplitPlaneTLS(t *testing.T) {
 	if !found {
 		t.Errorf("rendered compose volumes missing read-only TLS mount (got %v)", vols)
 	}
+	ports := strSlice(t, agent["ports"])
+	for _, want := range []string{cfg.KubeArmorPort + ":32767", "127.0.0.1:32765:32765"} {
+		found := false
+		for _, port := range ports {
+			if port == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("rendered compose ports missing %q (got %v)", want, ports)
+		}
+	}
 
 	agentCfg := renderTemplate(t, "kubearmor-config", kubeArmorConfig, cfg)
 	if agentCfg["tlsCertPath"] != "/var/lib/kubearmor/tls/log" {
@@ -299,7 +323,11 @@ func TestUnorchestratedTemplatesRenderSplitPlaneTLS(t *testing.T) {
 }
 
 func TestEnsureVMPlanePKI_Layout(t *testing.T) {
-	base := t.TempDir()
+	base := filepath.Join(t.TempDir(), "tls")
+	// Empty pre-created planes and missing planes are both safe to initialize.
+	if err := os.MkdirAll(VMManagementDir(base), 0750); err != nil {
+		t.Fatal(err)
+	}
 	if err := EnsureVMPlanePKI(base); err != nil {
 		t.Fatalf("EnsureVMPlanePKI failed: %v", err)
 	}
@@ -328,7 +356,7 @@ func TestEnsureVMPlanePKI_Layout(t *testing.T) {
 }
 
 func TestEnsureVMPlanePKI_Idempotent(t *testing.T) {
-	base := t.TempDir()
+	base := privatePKIDir(t)
 	if err := EnsureVMPlanePKI(base); err != nil {
 		t.Fatal(err)
 	}
@@ -356,8 +384,49 @@ func TestEnsureVMPlanePKI_Idempotent(t *testing.T) {
 	}
 }
 
+func TestEnsureVMPlanePKI_PreservesIssuingCA(t *testing.T) {
+	issuer, err := GeneratePlanePKI("external-issuer", "external-client")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pki, err := GeneratePlanePKI(VMManagementCACommonName, VMManagementClientCommonName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ca := parseTestCert(t, pki.CACert.Bytes())
+	parent := parseTestCert(t, issuer.CACert.Bytes())
+	keyBlock, _ := pem.Decode(issuer.CAKey.Bytes())
+	parentKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	der, err := x509.CreateCertificate(rand.Reader, ca, parent, ca.PublicKey, parentKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pki.CACert = bytes.NewBuffer(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}))
+	if bytes.Equal(parseTestCert(t, pki.CACert.Bytes()).RawIssuer, ca.RawSubject) {
+		t.Fatal("fixture CA is still self-signed")
+	}
+	base := privatePKIDir(t)
+	writeTestPlane(t, VMManagementDir(base), pki)
+	writeTestPlane(t, VMLogDir(base), issuer)
+	if err := EnsureVMPlanePKI(base); err != nil {
+		t.Fatalf("rejecting a valid issuing CA: %v", err)
+	}
+	for name, want := range map[string]*bytes.Buffer{
+		caCertFile: pki.CACert, caKeyFile: pki.CAKey,
+		clientCertFile: pki.ClientCrt, clientKeyFile: pki.ClientKey,
+	} {
+		got, err := os.ReadFile(filepath.Join(VMManagementDir(base), name))
+		if err != nil || !bytes.Equal(got, want.Bytes()) {
+			t.Errorf("valid issuing CA identity %s changed: %v", name, err)
+		}
+	}
+}
+
 func TestEnsureVMPlanePKI_OnDiskClientsVerify(t *testing.T) {
-	base := t.TempDir()
+	base := privatePKIDir(t)
 	if err := EnsureVMPlanePKI(base); err != nil {
 		t.Fatal(err)
 	}
@@ -379,5 +448,209 @@ func TestEnsureVMPlanePKI_OnDiskClientsVerify(t *testing.T) {
 	}
 	if err := verifyClientAgainstCA(t, mgmtCrt, logCA); err == nil {
 		t.Error("on-disk management client verified against log CA, want failure")
+	}
+}
+
+func writeTestPlane(t *testing.T, dir string, pki *PlanePKI) {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for name, data := range map[string]*bytes.Buffer{
+		caCertFile: pki.CACert, caKeyFile: pki.CAKey,
+		clientCertFile: pki.ClientCrt, clientKeyFile: pki.ClientKey,
+	} {
+		if err := os.WriteFile(filepath.Join(dir, name), data.Bytes(), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestEnsureVMPlanePKI_RejectsInvalidExistingIdentity(t *testing.T) {
+	pki, err := GeneratePlanePKI(VMManagementCACommonName, VMManagementClientCommonName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := GeneratePlanePKI(VMLogCACommonName, VMLogClientCommonName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ca := parseTestCert(t, pki.CACert.Bytes())
+	keyBlock, _ := pem.Decode(pki.CAKey.Bytes())
+	caKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	alterCert := func(name string, alter func(*x509.Certificate)) func(*testing.T, string) {
+		return func(t *testing.T, dir string) {
+			data := pki.ClientCrt.Bytes()
+			if name == caCertFile {
+				data = pki.CACert.Bytes()
+			}
+			cert := parseTestCert(t, data)
+			alter(cert)
+			parent := ca
+			if name == caCertFile {
+				parent = cert
+			}
+			der, err := x509.CreateCertificate(rand.Reader, cert, parent, cert.PublicKey, caKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, name), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	replace := func(name string, data []byte) func(*testing.T, string) {
+		return func(t *testing.T, dir string) {
+			if err := os.WriteFile(filepath.Join(dir, name), data, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	for _, tc := range []struct {
+		name   string
+		mutate func(*testing.T, string)
+		want   string
+	}{
+		{"missing CA key", func(t *testing.T, dir string) {
+			if err := os.Remove(filepath.Join(dir, caKeyFile)); err != nil {
+				t.Fatal(err)
+			}
+		}, "incomplete"},
+		{"only CA certificate", func(t *testing.T, dir string) {
+			for _, name := range []string{caKeyFile, clientCertFile, clientKeyFile} {
+				if err := os.Remove(filepath.Join(dir, name)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}, "incomplete"},
+		{"corrupt CA", replace(caCertFile, []byte("not a certificate")), "invalid ca.crt"},
+		{"non-CA certificate", alterCert(caCertFile, func(cert *x509.Certificate) {
+			cert.IsCA = false
+		}), "must be a CA certificate"},
+		{"corrupt client key", replace(clientKeyFile, []byte("not a key")), "client certificate/key pair"},
+		{"mismatched CA key", replace(caKeyFile, other.CAKey.Bytes()), "does not match"},
+		{"mismatched client key", replace(clientKeyFile, other.ClientKey.Bytes()), "client certificate/key pair"},
+		{"untrusted client", func(t *testing.T, dir string) {
+			replace(clientCertFile, other.ClientCrt.Bytes())(t, dir)
+			replace(clientKeyFile, other.ClientKey.Bytes())(t, dir)
+		}, "not currently valid for this CA"},
+		{"CA used as client", func(t *testing.T, dir string) {
+			replace(clientCertFile, pki.CACert.Bytes())(t, dir)
+			replace(clientKeyFile, pki.CAKey.Bytes())(t, dir)
+		}, "separate, non-CA identity"},
+		{"expired CA", alterCert(caCertFile, func(cert *x509.Certificate) {
+			cert.NotBefore = time.Now().Add(-2 * time.Hour)
+			cert.NotAfter = time.Now().Add(-time.Hour)
+		}), "expired"},
+		{"expired client", alterCert(clientCertFile, func(cert *x509.Certificate) {
+			cert.NotBefore = time.Now().Add(-2 * time.Hour)
+			cert.NotAfter = time.Now().Add(-time.Hour)
+		}), "expired"},
+		{"future client", alterCert(clientCertFile, func(cert *x509.Certificate) {
+			cert.NotBefore = time.Now().Add(time.Hour)
+		}), "not yet valid"},
+		{"wrong client usage", alterCert(clientCertFile, func(cert *x509.Certificate) {
+			cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+		}), "incompatible key usage"},
+		{"readable CA key", func(t *testing.T, dir string) {
+			if err := os.Chmod(filepath.Join(dir, caKeyFile), 0644); err != nil {
+				t.Fatal(err)
+			}
+		}, "unsafe permissions"},
+		{"symlink CA key", func(t *testing.T, dir string) {
+			if err := os.Remove(filepath.Join(dir, caKeyFile)); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(clientKeyFile, filepath.Join(dir, caKeyFile)); err != nil {
+				t.Fatal(err)
+			}
+		}, "not a symlink"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			base := privatePKIDir(t)
+			dir := VMManagementDir(base)
+			writeTestPlane(t, dir, pki)
+			tc.mutate(t, dir)
+			entries, err := os.ReadDir(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			before := make(map[string][]byte)
+			for _, entry := range entries {
+				before[entry.Name()], err = os.ReadFile(filepath.Join(dir, entry.Name()))
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := EnsureVMPlanePKI(base); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("EnsureVMPlanePKI error = %v, want %q", err, tc.want)
+			}
+			after, err := os.ReadDir(dir)
+			if err != nil || len(after) != len(entries) {
+				t.Fatalf("existing directory changed: entries = %v, error = %v", after, err)
+			}
+			for name, want := range before {
+				got, err := os.ReadFile(filepath.Join(dir, name))
+				if err != nil || !bytes.Equal(got, want) {
+					t.Errorf("existing %s changed after rejection: %v", name, err)
+				}
+			}
+			if _, err := os.Stat(VMLogDir(base)); !os.IsNotExist(err) {
+				t.Errorf("log plane created after rejecting management PKI: %v", err)
+			}
+		})
+	}
+}
+
+func TestEnsureVMPlanePKI_RejectsSymlinkDirectories(t *testing.T) {
+	for _, plane := range []string{"", VMPlaneManagement} {
+		t.Run("symlink_"+plane, func(t *testing.T) {
+			base := filepath.Join(t.TempDir(), "tls")
+			target := t.TempDir()
+			link := base
+			if plane != "" {
+				if err := os.Mkdir(base, 0700); err != nil {
+					t.Fatal(err)
+				}
+				link = VMPlaneDir(base, plane)
+			}
+			if err := os.Symlink(target, link); err != nil {
+				t.Fatal(err)
+			}
+			if err := EnsureVMPlanePKI(base); err == nil {
+				t.Fatal("accepted a symlink directory")
+			}
+			entries, err := os.ReadDir(target)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("wrote through symlink: entries = %v, error = %v", entries, err)
+			}
+		})
+	}
+}
+
+func TestEnsureVMPlanePKI_Concurrent(t *testing.T) {
+	base := privatePKIDir(t)
+	results := make(chan error, 2)
+	for range 2 {
+		go func() { results <- EnsureVMPlanePKI(base) }()
+	}
+	for range 2 {
+		if err := <-results; err != nil {
+			t.Errorf("concurrent install: %v", err)
+		}
+	}
+	if t.Failed() {
+		return
+	}
+	// A re-run validates both published identities and their matching keys.
+	if err := EnsureVMPlanePKI(base); err != nil {
+		t.Fatalf("concurrent installs left invalid PKI: %v", err)
+	}
+	entries, err := os.ReadDir(base)
+	if err != nil || len(entries) != 2 {
+		t.Fatalf("temporary PKI directories left behind: entries = %v, error = %v", entries, err)
 	}
 }

@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -274,66 +277,209 @@ func newClientSerial() *big.Int {
 	return serial
 }
 
-// planeComplete reports whether all four plane files already exist.
-// server.crt/server.key are intentionally absent (see package doc).
-func planeComplete(dir string) bool {
-	for _, f := range []string{caCertFile, caKeyFile, clientCertFile, clientKeyFile} {
-		if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
-			return false
+func readPlaneFile(dir *os.Root, name string) ([]byte, error) {
+	info, err := dir.Lstat(name)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", name, err)
+	}
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("%s must be a regular file, not a symlink", name)
+	}
+	if info.Mode().Perm()&0022 != 0 || ((name == caKeyFile || name == clientKeyFile) && info.Mode().Perm()&0077 != 0) {
+		return nil, fmt.Errorf("%s has unsafe permissions %o", name, info.Mode().Perm())
+	}
+	f, err := dir.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	opened, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if !os.SameFile(info, opened) {
+		return nil, fmt.Errorf("%s changed while reading PKI", name)
+	}
+	return io.ReadAll(f)
+}
+
+func parsePlaneCert(data []byte) (*x509.Certificate, error) {
+	block, rest := pem.Decode(data)
+	if block == nil || block.Type != "CERTIFICATE" || len(bytes.TrimSpace(rest)) != 0 {
+		return nil, errors.New("expected one PEM certificate")
+	}
+	return x509.ParseCertificate(block.Bytes)
+}
+
+func validatePlane(files map[string][]byte) error {
+	ca, err := parsePlaneCert(files[caCertFile])
+	if err != nil {
+		return fmt.Errorf("invalid %s: %w", caCertFile, err)
+	}
+	if !ca.IsCA || !ca.BasicConstraintsValid {
+		return fmt.Errorf("%s must be a CA certificate", caCertFile)
+	}
+	// The agent's self provider requires an RSA key in PKCS#1 format.
+	block, rest := pem.Decode(files[caKeyFile])
+	if block == nil || block.Type != "RSA PRIVATE KEY" || len(bytes.TrimSpace(rest)) != 0 {
+		return fmt.Errorf("%s must contain one PKCS#1 RSA private key", caKeyFile)
+	}
+	caKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return fmt.Errorf("invalid %s: %w", caKeyFile, err)
+	}
+	if err := caKey.Validate(); err != nil {
+		return fmt.Errorf("invalid %s: %w", caKeyFile, err)
+	}
+	if !caKey.PublicKey.Equal(ca.PublicKey) {
+		return fmt.Errorf("%s does not match %s", caKeyFile, caCertFile)
+	}
+	client, err := parsePlaneCert(files[clientCertFile])
+	if err != nil {
+		return fmt.Errorf("invalid %s: %w", clientCertFile, err)
+	}
+	if _, err := tls.X509KeyPair(files[clientCertFile], files[clientKeyFile]); err != nil {
+		return fmt.Errorf("invalid client certificate/key pair: %w", err)
+	}
+	if client.IsCA || bytes.Equal(ca.RawSubjectPublicKeyInfo, client.RawSubjectPublicKeyInfo) {
+		return errors.New("client certificate must use a separate, non-CA identity")
+	}
+	roots := x509.NewCertPool()
+	roots.AddCert(ca)
+	if _, err := client.Verify(x509.VerifyOptions{Roots: roots, KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}); err != nil {
+		return fmt.Errorf("client certificate is not currently valid for this CA: %w", err)
+	}
+	return nil
+}
+
+// existingPlane returns false only for a missing or empty directory. Any
+// incomplete or invalid existing identity must be repaired explicitly.
+func existingPlane(base *os.Root, plane string) (bool, error) {
+	info, err := base.Lstat(plane)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.IsDir() || info.Mode().Perm()&0022 != 0 {
+		return false, fmt.Errorf("%s must be a directory without group/other write permission, not a symlink", plane)
+	}
+	dir, err := base.OpenRoot(plane)
+	if err != nil {
+		return false, err
+	}
+	defer dir.Close()
+	opened, err := dir.Stat(".")
+	if err != nil {
+		return false, err
+	}
+	if !os.SameFile(info, opened) {
+		return false, fmt.Errorf("%s directory changed while reading PKI", plane)
+	}
+	entries, err := fs.ReadDir(dir.FS(), ".")
+	if err != nil {
+		return false, err
+	}
+	if len(entries) == 0 {
+		return false, nil
+	}
+	files := make(map[string][]byte)
+	for _, name := range []string{caCertFile, caKeyFile, clientCertFile, clientKeyFile} {
+		files[name], err = readPlaneFile(dir, name)
+		if err != nil {
+			return false, fmt.Errorf("existing PKI is incomplete or unsafe; refusing to replace it: %w", err)
 		}
 	}
-	return true
-}
-
-// writePlaneFile writes data to dir/file with 0600 unless it already exists.
-func writePlaneFile(dir, file string, data *bytes.Buffer) error {
-	path := filepath.Join(dir, file)
-	if _, err := os.Stat(path); err == nil {
-		return nil // never clobber existing key material
+	if err := validatePlane(files); err != nil {
+		return false, fmt.Errorf("existing PKI is invalid; refusing to replace it: %w", err)
 	}
-	return os.WriteFile(path, data.Bytes(), 0600)
+	return true, nil
 }
 
-// ensurePlane generates (via GeneratePlanePKI) and persists one plane,
-// skipping planes whose four files already exist.
-func ensurePlane(baseDir, plane, caCN, clientCN string) error {
-	dir := VMPlaneDir(baseDir, plane)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+func ensurePlane(base *os.Root, plane, caCN, clientCN string) error {
+	if exists, err := existingPlane(base, plane); err != nil || exists {
 		return err
-	}
-	if planeComplete(dir) {
-		return nil
 	}
 	pki, err := GeneratePlanePKI(caCN, clientCN)
 	if err != nil {
 		return err
 	}
-	if err := writePlaneFile(dir, caCertFile, pki.CACert); err != nil {
+	// Publish all files together. Rename cannot replace a populated directory,
+	// so concurrent installers cannot combine keys from different generations.
+	tmp := "." + plane + "-" + rand.Text()
+	if err := base.Mkdir(tmp, 0700); err != nil {
 		return err
 	}
-	if err := writePlaneFile(dir, caKeyFile, pki.CAKey); err != nil {
-		return err
+	defer base.RemoveAll(tmp)
+	for name, data := range map[string]*bytes.Buffer{
+		caCertFile: pki.CACert, caKeyFile: pki.CAKey,
+		clientCertFile: pki.ClientCrt, clientKeyFile: pki.ClientKey,
+	} {
+		f, err := base.OpenFile(filepath.Join(tmp, name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		if err != nil {
+			return err
+		}
+		_, writeErr := f.Write(data.Bytes())
+		closeErr := f.Close()
+		if err := errors.Join(writeErr, closeErr); err != nil {
+			return err
+		}
 	}
-	if err := writePlaneFile(dir, clientCertFile, pki.ClientCrt); err != nil {
-		return err
+	for attempt := 0; attempt < 2; attempt++ {
+		err = base.Rename(tmp, plane)
+		if err == nil {
+			return nil
+		}
+		// Another installer may have completed this plane while we generated it.
+		if exists, validationErr := existingPlane(base, plane); validationErr != nil {
+			return validationErr
+		} else if exists {
+			return nil
+		}
+		// Some filesystems do not rename over an existing empty directory.
+		// Remove only that empty destination; Remove fails if another installer
+		// has populated it, and the next iteration validates that winner.
+		if attempt == 0 {
+			_ = base.Remove(plane)
+		}
 	}
-	if err := writePlaneFile(dir, clientKeyFile, pki.ClientKey); err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // EnsureVMPlanePKI generates and persists both trust planes under baseDir.
-// It is idempotent: planes whose ca.crt/ca.key/client.crt/client.key all
-// exist are left untouched, so existing keys are never rotated by re-run.
+// Complete, valid existing identities are preserved. Partial, expired, or
+// mismatched PKI causes an error without replacing any existing material.
 func EnsureVMPlanePKI(baseDir string) error {
 	if baseDir == "" {
 		baseDir = DefaultVMTLSBaseDir
 	}
-	if err := ensurePlane(baseDir, VMPlaneManagement, VMManagementCACommonName, VMManagementClientCommonName); err != nil {
+	if err := os.MkdirAll(baseDir, 0750); err != nil {
+		return err
+	}
+	info, err := os.Lstat(baseDir)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() || info.Mode().Perm()&0022 != 0 {
+		return errors.New("PKI base must be a directory without group/other write permission, not a symlink")
+	}
+	base, err := os.OpenRoot(baseDir)
+	if err != nil {
+		return err
+	}
+	defer base.Close()
+	opened, err := base.Stat(".")
+	if err != nil {
+		return err
+	}
+	if !os.SameFile(info, opened) {
+		return errors.New("PKI base directory changed while opening it")
+	}
+	if err := ensurePlane(base, VMPlaneManagement, VMManagementCACommonName, VMManagementClientCommonName); err != nil {
 		return fmt.Errorf("cannot ensure management plane PKI: %w", err)
 	}
-	if err := ensurePlane(baseDir, VMPlaneLog, VMLogCACommonName, VMLogClientCommonName); err != nil {
+	if err := ensurePlane(base, VMPlaneLog, VMLogCACommonName, VMLogClientCommonName); err != nil {
 		return fmt.Errorf("cannot ensure log plane PKI: %w", err)
 	}
 	return nil

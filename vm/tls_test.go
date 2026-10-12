@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kubearmor/kubearmor-client/install"
+	"github.com/kubearmor/kubearmor-client/internal/transport/testutil"
 )
 
 func TestManagementTLSCertPathResolution(t *testing.T) {
@@ -43,11 +43,7 @@ func TestManagementGRPCAddressResolution(t *testing.T) {
 }
 
 func TestManagementClientCredentialsUsesManagementPlane(t *testing.T) {
-	base := t.TempDir()
-	if err := install.EnsureVMPlanePKI(base); err != nil {
-		t.Fatal(err)
-	}
-	mgmtDir := install.VMManagementDir(base)
+	mgmtDir := testutil.NewPKI(t).ClientDir
 
 	creds, err := ManagementClientCredentials(mgmtDir)
 	if err != nil {
@@ -59,7 +55,7 @@ func TestManagementClientCredentialsUsesManagementPlane(t *testing.T) {
 
 	// A missing plane directory must fail fast instead of silently
 	// falling back to another trust domain.
-	if _, err := ManagementClientCredentials(filepath.Join(base, "does-not-exist")); err == nil {
+	if _, err := ManagementClientCredentials(filepath.Join(mgmtDir, "does-not-exist")); err == nil {
 		t.Error("expected error for missing management plane dir, got nil")
 	}
 }
