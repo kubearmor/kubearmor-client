@@ -19,23 +19,25 @@ var vmPolicyCmd = &cobra.Command{
 	Short: "policy handling for non kubernetes/bare metal KubeArmor",
 	Long: `Manage standalone (VM or bare‑metal) KubeArmor security policies.
 
-The “policy” command lets you add, delete, and later list or update enforcement rules 
+The “policy” command lets you add or delete enforcement rules
 when running KubeArmor outside a Kubernetes cluster. Policies are defined in YAML and 
-sent over gRPC to the local KubeArmor agent.
+sent over mutual TLS to the KubeArmor management server. Kubernetes configuration
+and the CA private key are not required.
 
 Subcommands:
-  • add     Apply a new policy from a YAML file (kubearmor vm policy add <file>)
-  • delete  Remove an existing policy by its YAML file (kubearmor vm policy delete <file>)
+  • add     Apply a new policy from a YAML file (karmor vm policy add <file>)
+  • delete  Remove an existing policy by its YAML file (karmor vm policy delete <file>)
 
 Global Flags:
-  • --gRPC <address>   Address of the KubeArmor gRPC server (host:port)
+  • --gRPC <address>   Management server address (default localhost:32765)
+  • --managementTLSCertPath <path>   Directory containing ca.crt, client.crt and client.key
 
 Examples:
   # Apply a file‑access policy on a standalone host:
-  karmor vm policy add ./file-access.yaml --gRPC 127.0.0.1:50051
+  karmor vm policy add ./file-access.yaml
 
   # Remove that policy when finished:
-  karmor vm policy delete ./file-access.yaml --gRPC 127.0.0.1:50051
+  karmor vm policy delete ./file-access.yaml
 
 See each subcommand’s help for more details:
   karmor vm policy add --help
@@ -93,5 +95,6 @@ func init() {
 	vmPolicyCmd.AddCommand(vmPolicyDeleteCmd)
 
 	// gRPC endpoint flag to communicate with KubeArmor. Available across subcommands.
-	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "gRPC server information")
+	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.GRPC, "gRPC", "", "management gRPC server information (default localhost:32765, or KUBEARMOR_MANAGEMENT_SERVICE)")
+	vmPolicyCmd.PersistentFlags().StringVar(&policyOptions.ManagementTLSCertPath, "managementTLSCertPath", "", "management trust-plane directory holding ca.crt, client.crt and client.key (default /var/lib/kubearmor/tls/management, or KUBEARMOR_MANAGEMENT_TLS_CERT_PATH)")
 }

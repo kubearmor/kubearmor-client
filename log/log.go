@@ -17,6 +17,7 @@ import (
 
 	"github.com/kubearmor/kubearmor-client/k8s"
 	"github.com/kubearmor/kubearmor-client/utils"
+	"k8s.io/client-go/kubernetes"
 )
 
 type regexType *regexp.Regexp
@@ -40,6 +41,7 @@ var (
 // Options Structure
 type Options struct {
 	GRPC             string
+	NonK8s           bool
 	Secure           bool
 	TlsCertPath      string
 	TlsCertProvider  string
@@ -59,6 +61,18 @@ type Options struct {
 	Limit            uint32
 	Selector         []string
 	EventChan        chan EventInfo // channel to send events on
+}
+
+func (o Options) connectionOptions() Options {
+	if o.NonK8s {
+		o.Secure = true
+		o.TlsCertProvider = ExternalCertLoader
+		o.ReadCAFromSecret = false
+		if o.TlsCertPath == "" {
+			o.TlsCertPath = "/var/lib/kubearmor/tls"
+		}
+	}
+	return o
 }
 
 // StopChan Channel
@@ -132,6 +146,7 @@ func closeStopChan() {
 
 // StartObserver Function
 func StartObserver(c *k8s.Client, o Options) error {
+	o = o.connectionOptions()
 	gRPC := ""
 	targetSvc := "kubearmor-relay"
 
@@ -139,7 +154,12 @@ func StartObserver(c *k8s.Client, o Options) error {
 		gRPC = o.GRPC
 	} else if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
 		gRPC = val
+	} else if o.NonK8s {
+		gRPC = "localhost:32767"
 	} else {
+		if c == nil {
+			return errors.New("a Kubernetes client is required for log port forwarding; use --nonk8s for a standalone agent")
+		}
 		pf, err := utils.InitiatePortForward(c, port, port, matchLabels, targetSvc)
 		if err != nil {
 			return err
@@ -158,14 +178,18 @@ func StartObserver(c *k8s.Client, o Options) error {
 	}
 
 	// create client
-	logClient, err := NewClient(gRPC, o, c.K8sClientset)
+	var clientset kubernetes.Interface
+	if !o.NonK8s && c != nil {
+		clientset = c.K8sClientset
+	}
+	logClient, err := NewClient(gRPC, o, clientset)
 	if err != nil {
 		if !o.Secure && !isDialingError(err) {
 			// retry connecting to the server on secured channel
 			fmt.Fprintf(os.Stderr, "Failed to connect on insecure channel\n(%s)\n", err)
 			fmt.Fprint(os.Stderr, "Trying to reconnect using secured channel...\n")
 			o.Secure = true
-			logClient, err = NewClient(gRPC, o, c.K8sClientset)
+			logClient, err = NewClient(gRPC, o, clientset)
 			if err != nil {
 				return fmt.Errorf("unable to create log client, error=%s", err)
 			}

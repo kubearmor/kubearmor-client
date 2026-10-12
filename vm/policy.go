@@ -14,9 +14,8 @@ import (
 
 	tp "github.com/kubearmor/KubeArmor/KubeArmor/types"
 	pb "github.com/kubearmor/KubeArmor/protobuf"
+	"github.com/kubearmor/kubearmor-client/internal/transport"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"sigs.k8s.io/yaml"
 )
 
@@ -32,47 +31,42 @@ const (
 // PolicyOptions are optional configuration for kArmor vm policy
 type PolicyOptions struct {
 	GRPC string
+	// ManagementTLSCertPath is the management trust-plane directory
+	// (management/ca.crt + management/client.crt/client.key). Empty means
+	// resolve via KUBEARMOR_MANAGEMENT_TLS_CERT_PATH or the default.
+	ManagementTLSCertPath string
+}
+
+func doPolicyRPC(client pb.PolicyServiceClient, kind string, data []byte) (*pb.Response, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), transport.RPCTimeout)
+	defer cancel()
+	req := pb.Policy{Policy: data}
+	switch kind {
+	case KubeArmorPolicy:
+		return client.ContainerPolicy(ctx, &req)
+	case KubeArmorHostPolicy:
+		return client.HostPolicy(ctx, &req)
+	case KubeArmorNetworkPolicy:
+		return client.NetworkPolicy(ctx, &req)
+	default:
+		return nil, fmt.Errorf("unknown policy kind %q", kind)
+	}
 }
 
 func sendPolicyOverGRPC(o PolicyOptions, policyEventData []byte, kind string) error {
-	var (
-		gRPC = ""
-		resp *pb.Response
-		err  error
-	)
+	// Policy updates require the authenticated management endpoint.
+	gRPC := ManagementGRPCAddress(o.GRPC)
+	mgmtDir := ManagementTLSCertPath(o.ManagementTLSCertPath)
 
-	if o.GRPC != "" {
-		gRPC = o.GRPC
-	} else {
-		if val, ok := os.LookupEnv("KUBEARMOR_SERVICE"); ok {
-			gRPC = val
-		} else {
-			gRPC = "localhost:32767"
-		}
-	}
-
-	conn, err := grpc.NewClient(gRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := NewManagementGRPCClient(gRPC, mgmtDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("connect to management endpoint %s: %w", gRPC, err)
 	}
+	defer conn.Close()
 
-	client := pb.NewPolicyServiceClient(conn)
-
-	req := pb.Policy{
-		Policy: policyEventData,
-	}
-
-	switch kind {
-	case KubeArmorPolicy:
-		resp, err = client.ContainerPolicy(context.Background(), &req)
-	case KubeArmorHostPolicy:
-		resp, err = client.HostPolicy(context.Background(), &req)
-	case KubeArmorNetworkPolicy:
-		resp, err = client.NetworkPolicy(context.Background(), &req)
-	}
-
+	resp, err := doPolicyRPC(pb.NewPolicyServiceClient(conn), kind, policyEventData)
 	if err != nil {
-		return fmt.Errorf("failed to send policy")
+		return fmt.Errorf("send policy to management endpoint %s: %w", gRPC, err)
 	}
 
 	fmt.Printf("Policy %s \n", resp.Status)

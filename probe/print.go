@@ -66,7 +66,7 @@ func (o *Options) printToOutput(c *color.Color, s string) {
 			}
 		}
 	} else {
-		_, err := c.Fprintf(o.getWriter(), s)
+		_, err := c.Fprint(o.getWriter(), s)
 		if err != nil {
 			_, printErr := red.Printf(" error while printing to os.Stdout %s ", err.Error())
 			if printErr != nil {

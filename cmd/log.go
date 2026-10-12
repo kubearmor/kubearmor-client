@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/kubearmor/kubearmor-client/log"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +23,8 @@ continuously prints the events you care about. You can control the connection se
 select which namespaces or containers to watch, and format the output to suit your workflow.
 
 Connection Options:
-  • --gRPC <port>          port of the KubeArmor gRPC server (port)
+  • --nonk8s                  connect directly using the local log-plane client certificate
+  • --gRPC <host:port>         address of the KubeArmor gRPC server
   • --secure                  use mutual TLS for the gRPC connection
   • --tlsCertPath <path>      local directory containing ca.crt, client.crt & client.key
   • --tlsCertProvider <mode>  certificate provisioning: “self” (auto‑generate) or “external”
@@ -46,8 +49,11 @@ Filtering:
   • --limit <n>                       maximum number of events to print (0 for unlimited)
 
 Examples:
-  # Stream all policy‑related events in JSON by connecting to local kubearmor instance:
-  karmor logs --gRPC 32767 --json --logFilter policy
+  # Stream logs from a standalone agent using mutual TLS, without a kubeconfig:
+  karmor logs --nonk8s --json
+
+  # Connect to a remote standalone agent with a local log client identity:
+  karmor logs --nonk8s --gRPC agent.example.com:32767 --tlsCertPath ./log
 
   # Watch only file operations in namespace “prod”:
   karmor logs -n prod --operation File --logFilter all
@@ -57,6 +63,17 @@ Examples:
 
 	Use "karmor logs --help" to see detailed flag descriptions and defaults.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if logOptions.NonK8s {
+			if cmd.Flags().Changed("secure") && !logOptions.Secure {
+				return fmt.Errorf("--nonk8s requires TLS; --secure=false is incompatible")
+			}
+			if cmd.Flags().Changed("tlsCertProvider") && logOptions.TlsCertProvider != "external" {
+				return fmt.Errorf("--nonk8s uses persisted client certificates; --tlsCertProvider must be external")
+			}
+			if cmd.Flags().Changed("readCAFromSecret") && logOptions.ReadCAFromSecret {
+				return fmt.Errorf("--nonk8s reads local certificates; --readCAFromSecret=true is incompatible")
+			}
+		}
 		log.StopChan = make(chan struct{})
 		return log.StartObserver(k8sClient, logOptions)
 	},
@@ -65,9 +82,10 @@ Examples:
 func init() {
 	rootCmd.AddCommand(logCmd)
 
+	logCmd.Flags().BoolVar(&logOptions.NonK8s, "nonk8s", false, "connect to a standalone agent with local log-plane mTLS credentials (no kubeconfig required)")
 	logCmd.Flags().StringVar(&logOptions.GRPC, "gRPC", "", "gRPC server information")
 	logCmd.Flags().BoolVar(&logOptions.Secure, "secure", false, "connect to kubearmor on a secure connection")
-	logCmd.Flags().StringVar(&logOptions.TlsCertPath, "tlsCertPath", "/var/lib/kubearmor/tls", "path to the ca.crt, client.crt, and client.key if certs are provided locally")
+	logCmd.Flags().StringVar(&logOptions.TlsCertPath, "tlsCertPath", "/var/lib/kubearmor/tls", "path to the ca.crt, client.crt, and client.key if certs are provided locally (with split-plane PKI, the log plane at <path>/log is preferred automatically)")
 	logCmd.Flags().StringVar(&logOptions.TlsCertProvider, "tlsCertProvider", "self", "{self|external} self: dynamically crete client certificates, external: provide client certificate and key with --tlsCertPath")
 	logCmd.Flags().BoolVar(&logOptions.ReadCAFromSecret, "readCAFromSecret", true, "true if ca cert to be read from k8s secret on cluster running kubearmor")
 	logCmd.Flags().StringVar(&logOptions.MsgPath, "msgPath", "none", "Output location for messages, {path|stdout|none}")

@@ -107,6 +107,7 @@ type Feeder struct {
 
 // NewClient Function
 func NewClient(server string, o Options, c kubernetes.Interface) (*Feeder, error) {
+	o = o.connectionOptions()
 	fd := &Feeder{}
 
 	fd.Running = true
@@ -131,6 +132,12 @@ func NewClient(server string, o Options, c kubernetes.Interface) (*Feeder, error
 		return nil, err
 	}
 	fd.conn = conn
+	initialized := false
+	defer func() {
+		if !initialized {
+			_ = conn.Close()
+		}
+	}()
 
 	fd.client = pb.NewLogServiceClient(fd.conn)
 
@@ -168,6 +175,7 @@ func NewClient(server string, o Options, c kubernetes.Interface) (*Feeder, error
 	}
 
 	fd.WgClient = sync.WaitGroup{}
+	initialized = true
 
 	return fd, nil
 }

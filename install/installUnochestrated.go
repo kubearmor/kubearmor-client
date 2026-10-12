@@ -124,6 +124,21 @@ func createDefaultConfigPath() (string, error) {
 	return configPath, nil
 }
 
+// SetupVMTLS generates the split-plane PKI (management + log CAs and karmor
+// client identities) used by unorchestrated deployments. An empty baseDir
+// selects DefaultVMTLSBaseDir. It is idempotent: existing key material is
+// never rotated, so re-running install is safe.
+func SetupVMTLS(baseDir string) error {
+	if baseDir == "" {
+		baseDir = DefaultVMTLSBaseDir
+	}
+	if err := EnsureVMPlanePKI(baseDir); err != nil {
+		return fmt.Errorf("failed to set up VM TLS PKI at %s: %w", baseDir, err)
+	}
+	fmt.Printf("🔐\tVM TLS PKI ready at %s (management/ and log/ trust planes)\n", baseDir)
+	return nil
+}
+
 func (config *KubeArmorConfig) DeployKAdocker() error {
 	_, err := config.ValidateEnv()
 	if err != nil {
@@ -132,6 +147,9 @@ func (config *KubeArmorConfig) DeployKAdocker() error {
 	fmt.Printf("ℹ️\tInstalling KubeArmor as a docker container")
 	configPath, err := createDefaultConfigPath()
 	if err != nil {
+		return err
+	}
+	if err := SetupVMTLS(""); err != nil {
 		return err
 	}
 	// initialize sprig for templating
@@ -231,6 +249,19 @@ func findLatestTag(tags []string) string {
 }
 
 func (config *KubeArmorConfig) DeployKASystemd() error {
+	return deployWithVMTLS("", config.deployKASystemd)
+}
+
+func deployWithVMTLS(baseDir string, deploy func() error) error {
+	// Reject invalid existing PKI before stopping or replacing the service,
+	// and outside the deployment failure cleanup that removes the installation.
+	if err := SetupVMTLS(baseDir); err != nil {
+		return err
+	}
+	return deploy()
+}
+
+func (config *KubeArmorConfig) deployKASystemd() error {
 	// Download and install agents
 	fmt.Printf("ℹ️\tInstalling KubeArmor as a systemd service\n")
 	err := config.SystemdInstall()
