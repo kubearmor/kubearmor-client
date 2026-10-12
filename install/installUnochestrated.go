@@ -249,6 +249,19 @@ func findLatestTag(tags []string) string {
 }
 
 func (config *KubeArmorConfig) DeployKASystemd() error {
+	return deployWithVMTLS("", config.deployKASystemd)
+}
+
+func deployWithVMTLS(baseDir string, deploy func() error) error {
+	// Reject invalid existing PKI before stopping or replacing the service,
+	// and outside the deployment failure cleanup that removes the installation.
+	if err := SetupVMTLS(baseDir); err != nil {
+		return err
+	}
+	return deploy()
+}
+
+func (config *KubeArmorConfig) deployKASystemd() error {
 	// Download and install agents
 	fmt.Printf("ℹ️\tInstalling KubeArmor as a systemd service\n")
 	err := config.SystemdInstall()
@@ -335,12 +348,6 @@ func (config *KubeArmorConfig) SystemdInstall() error {
 	}
 
 	fmt.Printf("😄\tKubearmor service files placed successfully\n")
-
-	// Lay down the split-plane PKI before the service starts so the agent's
-	// SelfSignedCertLoader finds its per-plane CAs on first boot.
-	if err := SetupVMTLS(""); err != nil {
-		return err
-	}
 
 	return nil
 }
